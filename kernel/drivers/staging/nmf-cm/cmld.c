@@ -10,6 +10,7 @@
  *
  */
 
+#include <linux/module.h>
 #include <linux/cdev.h>
 #include <linux/io.h>
 #include <linux/mm.h>
@@ -186,8 +187,8 @@ static inline void freeChannels(struct cm_process_priv* processPriv)
 
 			/* Free the per-channel descriptor */
 			OSAL_Free(channelPriv);
-			warn = 1;
 		}
+		warn = 1;
 	}
 	mutex_unlock(&channel_lock);
 
@@ -357,14 +358,8 @@ out:
 static int cmld_channel_flush(struct file *file, fl_owner_t id)
 {
 	struct cm_channel_priv* channelPriv = file->private_data;
-	/*
-	 * Protect against flush called at fork(): we don't want to generate
-	 * flush messages when called from child processes
-	 */
-	if (current->tgid == channelPriv->proc->pid) {
-		file->f_flags |= O_FLUSH;
-		wake_up(&channelPriv->waitq);
-	}
+	file->f_flags |= O_FLUSH;
+	wake_up(&channelPriv->waitq);
 	return 0;
 }
 
@@ -1230,6 +1225,14 @@ static int __init cmld_init_module(void)
 	iowrite32((1<<26) | ioread32(htim_base), htim_base);
 	iounmap(htim_base);
 
+	/*i = ioread32(PRCM_SVAMMDSPCLK_MGT) & 0xFF;
+	if (i != 0x22)
+		pr_alert("CM: Looks like SVA is not clocked at 200MHz (PRCM_SVAMMDSPCLK_MGT=%x)\n", i);
+	i = ioread32(PRCM_SIAMMDSPCLK_MGT) & 0xFF;
+	if (i != 0x22)
+		pr_alert("CM: Looks like SIA is not clocked at 200MHz (PRCM_SIAMMDSPCLK_MGT=%x)\n", i);
+
+	i = 0;*/
 	err = init_config();
 	if (err)
 		goto out;

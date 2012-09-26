@@ -87,7 +87,6 @@ struct OsalEnvironment
 {
 	struct mpcConfig mpc[NB_MPC];
 	void* hwsem_base;  /** < Remapped base address of the hardware semaphores */
-	unsigned long esram_base_phys; /**< Physical base address of embedded RAM used within the CM */
 	void* esram_base;  /**< Remapped base address embedded RAM used within the CM */
 	struct regulator *esram_regulator[NB_ESRAM]; /**< regulator for ESRAM bank 1+2 and 3+4 */
 	struct prcmu_auto_pm_config dsp_sleep;

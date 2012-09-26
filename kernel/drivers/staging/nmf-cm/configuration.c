@@ -10,26 +10,11 @@
  *
  */
 
+#include <linux/module.h>
 #include <cm/engine/api/configuration_engine.h>
 #include <cm/engine/configuration/inc/configuration_status.h>
 #include <cm/engine/power_mgt/inc/power.h>
 #include "osal-kernel.h"
-
-/* Embedded Static RAM base address */
-/* 8500 config: 0-64k: secure */
-#define U8500_ESRAM_CM_BASE (U8500_ESRAM_BASE + U8500_ESRAM_DMA_LCPA_OFFSET)
-/* 9540 config: ESRAM base address is the same s on 8500  (incl. DMA part) */
-#define U9540_ESRAM_CM_BASE (U8500_ESRAM_BASE + U9540_ESRAM_DMA_LCPA_OFFSET)
-
-/*
- * 8500 Embedded ram size for CM (in Kb)
- * 5 banks of 128k: skip the first half bank (secure) and the last
- * one (used for MCDE/B2R2), but include DMA part (4k after the secure part)
- * to give access from DSP side
- */
-#define U8500_ESRAM_CM_SIZE 448
-/* 9540 Embedded ram size for CM (in Kb) */
-#define U9540_ESRAM_CM_SIZE 406
 
 /* Per-driver environment */
 struct OsalEnvironment osalEnv =
@@ -105,7 +90,7 @@ bool cfgSemaphoreTypeHSEM = true;
 module_param(cfgSemaphoreTypeHSEM, bool, S_IRUGO);
 MODULE_PARM_DESC(cfgSemaphoreTypeHSEM, "Semaphore used (HSEM or LSEM)");
 
-int cfgESRAMSize;
+int cfgESRAMSize = ESRAM_SIZE;
 module_param(cfgESRAMSize, uint, S_IRUGO);
 MODULE_PARM_DESC(cfgESRAMSize, "Size of ESRAM used in the CM (in Kb)");
 
@@ -141,14 +126,6 @@ int init_config(void)
 	if (cfgMpcSDRAMDataSize_SVA == 0) {
 		pr_err("SDRAM data size for SVA must be greater than 0\n");
 		return -EINVAL;
-	}
-
-	if (cpu_is_u9540()) {
-		osalEnv.esram_base_phys = U9540_ESRAM_CM_BASE;
-		cfgESRAMSize = U9540_ESRAM_CM_SIZE;
-	} else {
-		osalEnv.esram_base_phys = U8500_ESRAM_CM_BASE;
-		cfgESRAMSize = U8500_ESRAM_CM_SIZE;
 	}
 
 	osalEnv.mpc[SVA].nbYramBanks     = cfgMpcYBanks_SVA;

@@ -2,7 +2,6 @@
  * Copyright (C) ST-Ericsson SA 2010
  * Author: Pierre Peiffer <pierre.peiffer@stericsson.com> for ST-Ericsson.
  * License terms: GNU General Public License (GPL), version 2.
- * Copyright (c) 2012 Sony Mobile Communications AB
  */
 
 /** \file osal-kernel.c
@@ -10,6 +9,7 @@
  * Implements NMF OSAL for Linux kernel-space environment
  */
 
+#include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/kthread.h>
@@ -20,7 +20,9 @@
 #include <linux/uaccess.h>
 #include <linux/vmalloc.h>
 
+#ifdef CONFIG_STM_TRACE
 #include <trace/stm.h>
+#endif
 
 #include <cm/engine/configuration/inc/configuration_status.h>
 
@@ -88,7 +90,7 @@ int remapRegions(void)
 	}
 
 	/* Remap _all_ ESRAM banks */
-	osalEnv.esram_base = ioremap_nocache(osalEnv.esram_base_phys, cfgESRAMSize*ONE_KB);
+	osalEnv.esram_base = ioremap_nocache(ESRAM_BASE, cfgESRAMSize*ONE_KB);
 	if(osalEnv.esram_base == NULL){
 		pr_err("%s: could not remap ESRAM Base\n", __func__);
 		return -ENOMEM;
@@ -215,7 +217,7 @@ int getNmfHwMappingDesc(t_nmf_hw_mapping_desc* nmfHwMappingDesc)
 	if (nmfHwMappingDesc == NULL)
 		return -ENXIO;
 
-	nmfHwMappingDesc->esramDesc.systemAddr.physical = (t_cm_physical_address)osalEnv.esram_base_phys;
+	nmfHwMappingDesc->esramDesc.systemAddr.physical = ESRAM_BASE;
 	nmfHwMappingDesc->esramDesc.systemAddr.logical = (t_cm_logical_address)osalEnv.esram_base;
 	nmfHwMappingDesc->esramDesc.size = cfgESRAMSize*ONE_KB;
 
@@ -551,8 +553,7 @@ void* OSAL_Alloc(t_cm_size size)
 
 	if (size == 0)
 		return NULL;
-	/* Use kmalloc() if the size is small enough. */
-	mem = (size < (2 * PAGE_SIZE - 64)) ? kmalloc(size, GFP_KERNEL) : NULL;
+	mem = kmalloc(size, GFP_KERNEL | __GFP_NOWARN);
 	if (mem == NULL) {
 		mem = vmalloc(size);
 		if (mem == NULL)
@@ -602,8 +603,7 @@ void* OSAL_Alloc_Zero(t_cm_size size)
 
 	if (size == 0)
 		return NULL;
-	/* Use kzalloc() if the size is small enough. */
-	mem = (size < (2 * PAGE_SIZE - 64)) ? kzalloc(size, GFP_KERNEL) : NULL;
+	mem = kzalloc(size, GFP_KERNEL | __GFP_NOWARN);
 	if (mem == NULL) {
 		mem = vmalloc(size);
 		if (mem == NULL)
@@ -836,7 +836,7 @@ static int dspload_monitor(void *idx)
  	return 0;
 }
 
-static int enable_auto_pm = 1;
+static bool enable_auto_pm = 1;
 module_param(enable_auto_pm, bool, S_IWUSR|S_IRUGO);
 
 /** \ingroup OSAL_IMPLEMENTATION
