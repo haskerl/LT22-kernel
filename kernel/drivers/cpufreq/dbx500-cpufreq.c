@@ -18,7 +18,7 @@
 static struct cpufreq_frequency_table db8500_freq_table[] = {
 	[0] = {
 		.index = 0,
-		.frequency = 200000,
+		.frequency = 150000,
 	},
 	[1] = {
 		.index = 1,
@@ -165,7 +165,7 @@ static void __init dbx500_cpufreq_init_maxopp_freq(void)
 	case PRCMU_FW_PROJECT_U8500:
 	case PRCMU_FW_PROJECT_U9500:
 	case PRCMU_FW_PROJECT_U8420:
-		freq_table[3].frequency = 1000000;
+		freq_table[3].frequency = 1150000;
 		break;
 	case PRCMU_FW_PROJECT_U8500_C2:
 	case PRCMU_FW_PROJECT_U9500_C2:
