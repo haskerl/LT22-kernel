@@ -11,6 +11,10 @@ cp kernel/arch/arm/boot/zImage zImage
 cp ./kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_core.ko ./ramdisk/lib/modules/3.0.8+/kernel/net/compat-wireless/drivers/staging/cw1200/
 cp ./kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_wlan.ko ./ramdisk/lib/modules/3.0.8+/kernel/net/compat-wireless/drivers/staging/cw1200/
 
+# remove debug code
+../../compiler/4.6/bin/arm-eabi-strip -g --strip-unneeded ./ramdisk/lib/modules/3.0.8+/kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_core.ko
+../../compiler/4.6/bin/arm-eabi-strip -g --strip-unneeded ./ramdisk/lib/modules/3.0.8+/kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_wlan.ko
+
 # make ramdisk image
 cd ramdisk
 find . | cpio --quiet -H newc -o | gzip > ../ramdisk.img
