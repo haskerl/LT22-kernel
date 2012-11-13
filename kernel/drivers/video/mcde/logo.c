@@ -3,6 +3,7 @@
  * Show Logo in RLE 565 format
  *
  * Copyright (C) 2008 Google Incorporated
+ * Copyright (C) 2012 Sony Mobile Communications AB.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -113,7 +114,8 @@ static int load_565rle_image(char *filename)
 				unsigned int widepixel = ptr[1];
 				widepixel = (widepixel & 0xf800) << (19-11) |
 					(widepixel & 0x07e0) << (10-5) |
-					(widepixel & 0x001f) << (3-0);
+					(widepixel & 0x001f) << (3-0) |
+					0xff000000; /* Set alpha channel*/
 				memset32(bits, widepixel, j << 2);
 			}
 			bits += j * fb_depth(info);
