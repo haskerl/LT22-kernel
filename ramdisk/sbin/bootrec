@@ -1,5 +1,7 @@
 #!/sbin/sh
 
+cat /sys/devices/platform/ab8500-i2c.0/ab8500-usb.0/boot_time_device > /sys/devices/platform/ab8500-i2c.0/ab8500-usb.0/boot_time_device
+setprop service.adb.root 1
 if [ -e /sbin/bootrec-device ]
 then
   /sbin/bootrec-device
@@ -27,22 +29,7 @@ then
   mkdir /etc
   cp /recovery.fstab /etc/recovery.fstab
   /sbin/bootrec-device-fs
-
-  echo 1 > /sys/devices/platform/ab8500-i2c.0/ab8500-usb.0/boot_time_device
-  setprop service.adb.root 1
-
-  echo 0 > /sys/class/android_usb/android0/enable
-  echo 0fce > /sys/class/android_usb/android0/idVendor
-  echo 5172 > /sys/class/android_usb/android0/idProduct
-  echo mtp,adb > /sys/class/android_usb/android0/functions
-  echo 1 > /sys/class/android_usb/android0/enable
-
-  setprop sys.usb.state mtp,adb
-
-  /sbin/recovery &
-  /sbin/adbd_rec &
-  /sbin/adbd_rec recovery
-
+  /sbin/recovery&
 fi
 
 #continue booting
