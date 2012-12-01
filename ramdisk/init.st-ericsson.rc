@@ -40,6 +40,7 @@ on early-boot
 
 # Start suntrold
 service suntrold /system/bin/suntrold
+    class main
     user system
     group system
     oneshot
@@ -81,6 +82,11 @@ service grabramdump /system/bin/grabramdump -m "179,14,sdcard" -m "179,97,ext_ca
     disabled
 
 #Starting crashmonitor daemon
+
+
+
+
+# Enable audio logs
 
 
 
@@ -303,8 +309,45 @@ service hw_config /system/bin/sh /system/etc/hw_config.sh
     user root
     oneshot
 
-on property:sys.usb.config=*
+on property:sys.usb.config=mass_storage
     exec /init.usbmode.sh
+    stop adbd
+    setprop sys.usb.state $sys.usb.config
+
+on property:sys.usb.config=mass_storage,adb
+    exec /init.usbmode.sh
+    start adbd
+    setprop sys.usb.state $sys.usb.config
+
+on property:sys.usb.config=mtp
+    exec /init.usbmode.sh
+    stop adbd
+    setprop sys.usb.state $sys.usb.config
+
+on property:sys.usb.config=mtp,adb
+    exec /init.usbmode.sh
+    start adbd
+    setprop sys.usb.state $sys.usb.config
+
+on property:sys.usb.config=mtp,cdrom
+    exec /init.usbmode.sh
+    stop adbd
+    setprop sys.usb.state $sys.usb.config
+
+on property:sys.usb.config=mtp,cdrom,adb
+    exec /init.usbmode.sh
+    stop adbd
+    setprop sys.usb.state $sys.usb.config
+
+on property:sys.usb.config=rndis
+    exec /init.usbmode.sh
+    stop adbd
+    setprop sys.usb.state $sys.usb.config
+
+on property:sys.usb.config=rndis,adb
+    exec /init.usbmode.sh
+    start adbd
+    setprop sys.usb.state $sys.usb.config
 
 # SEMC: TrimArea Daemon
 service tad /system/bin/tad /dev/block/mmcblk0 9,4,256
@@ -312,13 +355,6 @@ service tad /system/bin/tad /dev/block/mmcblk0 9,4,256
     group root
     socket tad stream 0660 system system
     class trimarea
-
-# SEMC: Set the startup flag to boot complete, run on property change
-service setssflagbc /system/bin/startupflag bootcomplete
-    class main
-    user root
-    oneshot
-    disabled
 
 # SEMC: FOTA snooping
 service fota-snoop /system/bin/fota-snoop
@@ -373,6 +409,13 @@ on property:init.svc.wpa_supplicant=stopped
 service system_monitor /system/bin/system_monitor
     user root
 
+
+
+# SEMC Battery real capacity updater
+service batcap /system/bin/batcap
+    class main
+    user root
+    oneshot
 
 # init.nypon.rc
 on init

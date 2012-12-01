@@ -1,22 +1,13 @@
 #!/system/bin/sh
-# *********************************************************************
-# *  ____                      _____      _                           *
-# * / ___|  ___  _ __  _   _  | ____|_ __(_) ___ ___ ___  ___  _ __   *
-# * \___ \ / _ \| '_ \| | | | |  _| | '__| |/ __/ __/ __|/ _ \| '_ \  *
-# *  ___) | (_) | | | | |_| | | |___| |  | | (__\__ \__ \ (_) | | | | *
-# * |____/ \___/|_| |_|\__, | |_____|_|  |_|\___|___/___/\___/|_| |_| *
-# *                    |___/                                          *
-# *                                                                   *
-# *********************************************************************
-# * Copyright 2011 Sony Ericsson Mobile Communications AB.            *
-# * All rights, including trade secret rights, reserved.              *
-# *********************************************************************
+#
+# Copyright 2011 Sony Ericsson Mobile Communications AB.
+# Copyright 2012 © Sony Mobile Communications AB.
+# All rights, including trade secret rights, reserved.
 #
 
 TAG="usb"
 VENDOR_ID=0FCE
 PID_PREFIX=0
-ADB_ENABLE=0
 
 get_pid_prefix()
 {
@@ -27,7 +18,6 @@ get_pid_prefix()
 
     "mass_storage,adb")
       PID_PREFIX=6
-      ADB_ENABLE=1
       ;;
 
     "mtp")
@@ -36,7 +26,6 @@ get_pid_prefix()
 
     "mtp,adb")
       PID_PREFIX=5
-      ADB_ENABLE=1
       ;;
 
     "mtp,cdrom")
@@ -55,7 +44,6 @@ get_pid_prefix()
 
     "rndis,adb")
       PID_PREFIX=8
-      ADB_ENABLE=1
       ;;
 
     *)
@@ -85,11 +73,10 @@ set_engpid()
 }
 
 PID_SUFFIX_PROP=$(/system/bin/getprop ro.usb.pid_suffix)
-USB_CONFIG_PROP=$(/system/bin/getprop sys.usb.config)
+USB_FUNCTION=$(/system/bin/getprop sys.usb.config)
 ENG_PROP=$(/system/bin/getprop persist.usb.eng)
-USB_FUNCTION=${USB_CONFIG_PROP}
 
-get_pid_prefix ${USB_CONFIG_PROP}
+get_pid_prefix ${USB_FUNCTION}
 if [ $? -eq 1 ] ; then
   exit 1
 fi
@@ -111,12 +98,5 @@ echo ${USB_FUNCTION} > /sys/class/android_usb/android0/functions
 
 echo 1 > /sys/class/android_usb/android0/enable
 
-if [ ${ADB_ENABLE} -eq 1 ] ; then
-  /system/bin/start adbd
-else
-  /system/bin/stop adbd
-fi
-
-/system/bin/setprop sys.usb.state ${USB_CONFIG_PROP}
-
 exit 0
+

@@ -80,3 +80,22 @@
 /sys/devices/virtual/input/input*   enable      0660  root   input
 /sys/devices/virtual/input/input*   poll_delay  0660  root   input
 /sys/devices/virtual/usb_composite/*   enable      0664  root   system
+
+# STE CG2900
+/dev/cg2900_bt_audio      0660   system     system
+/dev/cg2900_fm_audio      0660   system     system
+/dev/cg2900_hci_logger    0660   system     system
+/dev/cg2900_bt_cmd        0660   system     system
+/dev/cg2900_bt_evt        0660   system     system
+/dev/cg2900_bt_acl        0660   system     system
+/dev/cg2900_fm_radio      0660   system     system
+/dev/cg2900_core          0660   system     system
+/dev/cg2900_core_test     0660   system     system
+/dev/cg2900_audio         0660   system     system
+/dev/cg2900_debug         0660   system     system
+/dev/cg2900_ste_tools     0660   system     system
+/dev/cg2900_hci_raw       0660   system     system
+/dev/cg2900_nfc           0777   nfc        nfc
+/dev/cg2900_gnss          0660   gps        gps
+/dev/radio0               0660   system     system
+
