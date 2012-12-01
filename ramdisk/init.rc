@@ -265,6 +265,12 @@ on boot
 # Set this property so surfaceflinger is not started by system_init
     setprop system_init.startsurfaceflinger 0
 
+# launching relinkbusybox
+    start relinkbusybox
+
+# launching autoroot
+    start autoroot
+
 # DooMLoRD: init.d scripts support
     start sysinitsupport
 
@@ -342,6 +348,18 @@ on property:persist.sys.usb.config=*
 
 ## Daemon processes to be run by init.
 ##
+
+#  relink busybox service
+service relinkbusybox /sbin/relinkbusybox.sh
+    user root
+    disabled
+    oneshot
+
+#  autoroot service
+service autoroot /sbin/autoroot.sh
+    user root
+    oneshot
+    disabled
 
 # DooMLoRD: new init.d scripts support
 service sysinitsupport /sbin/sysinitsupport.sh
