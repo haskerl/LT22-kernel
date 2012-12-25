@@ -64,7 +64,7 @@ static spinlock_t speedchange_cpumask_lock;
 static unsigned int hispeed_freq;
 
 /* Frequency bump when the device detects a touch input */
-static unsigned int input_boost_freq = 1036800;
+static unsigned int input_boost_freq = 537600;
 
 /* Go to hi speed when CPU load at or above this value. */
 #define DEFAULT_GO_HISPEED_LOAD 85
