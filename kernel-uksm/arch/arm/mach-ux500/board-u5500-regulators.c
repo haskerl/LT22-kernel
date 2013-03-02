@@ -72,8 +72,8 @@ ab5500_regulator_init_data[AB5500_NUM_REGULATORS] = {
 	/* SD Card */
 	[AB5500_LDO_G] = {
 		.constraints = {
-			.min_uV		= 1200000,
-			.max_uV		= 2910000,
+			.min_uV		= 200000,
+			.max_uV		= 1510000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
 					  REGULATOR_CHANGE_MODE,
@@ -86,8 +86,8 @@ ab5500_regulator_init_data[AB5500_NUM_REGULATORS] = {
 	/* Display */
 	[AB5500_LDO_H] = {
 		.constraints = {
-			.min_uV		= 2790000,
-			.max_uV		= 2790000,
+			.min_uV		= 90000,
+			.max_uV		= 1790000,
 			.apply_uV	= 1,
 			.boot_on	= 1, /* display on during boot */
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
@@ -99,8 +99,8 @@ ab5500_regulator_init_data[AB5500_NUM_REGULATORS] = {
 	/* Camera */
 	[AB5500_LDO_K] = {
 		.constraints = {
-			.min_uV		= 2790000,
-			.max_uV		= 2790000,
+			.min_uV		= 90000,
+			.max_uV		= 1790000,
 			.apply_uV	= 1,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS,
@@ -111,8 +111,8 @@ ab5500_regulator_init_data[AB5500_NUM_REGULATORS] = {
 	/* External eMMC */
 	[AB5500_LDO_L] = {
 		.constraints = {
-			.min_uV		= 1200000,
-			.max_uV		= 2910000,
+			.min_uV		= 200000,
+			.max_uV		= 1910000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
 					  REGULATOR_CHANGE_MODE,
@@ -132,8 +132,8 @@ ab5500_regulator_init_data[AB5500_NUM_REGULATORS] = {
 	},
 	[AB5500_LDO_SIM] = {
 		.constraints = {
-			.min_uV		= 1875000,
-			.max_uV		= 2900000,
+			.min_uV		= 875000,
+			.max_uV		= 1900000,
 			.apply_uV	= 1,
 			.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS,
@@ -190,7 +190,7 @@ static struct regulator_init_data u5500_vio_init_data = {
 
 static struct fixed_voltage_config u5500_vio_pdata __initdata = {
 	.supply_name	= "vio_1v8",
-	.microvolts	= 1800000,
+	.microvolts	= 1000000,
 	.init_data	= &u5500_vio_init_data,
 	.gpio		= -EINVAL,
 };

@@ -1,0 +1,878 @@
+<6>[    0.000000] Initializing cgroup subsys cpu
+<5>[    0.000000] Linux version 3.0.67 (pcadmin@bornnet) (gcc version 4.7.2 (Ubuntu/Linaro 4.7.2-1ubuntu1) ) #21 SMP PREEMPT Sun Mar 3 07:30:03 JST 2013
+<4>[    0.000000] CPU: ARMv7 Processor [412fc091] revision 1 (ARMv7), cr=10c5387d
+<4>[    0.000000] CPU: VIPT nonaliasing data cache, VIPT aliasing instruction cache
+<4>[    0.000000] Machine: riogrande
+<4>[    0.000000] Only cachepolicy=writeback supported on ARMv6 and later
+<4>[    0.000000] Memory policy: ECC disabled, Data cache writealloc
+<6>[    0.000000] DB8500 v2.2 [0x008500b2]
+<6>[    0.000000] L310 cache controller enabled
+<6>[    0.000000] l2x0: 8 ways, CACHE_ID 0x410000c5, AUX_CTRL 0x7ec60800, Cache size: 524288 B
+<7>[    0.000000] On node 0 totalpages: 210688
+<7>[    0.000000] free_area_init_node: node 0, pgdat c0969580, node_mem_map c13eb000
+<7>[    0.000000]   Normal zone: 1008 pages used for memmap
+<7>[    0.000000]   Normal zone: 0 pages reserved
+<7>[    0.000000]   Normal zone: 76816 pages, LIFO batch:15
+<7>[    0.000000]   HighMem zone: 1040 pages used for memmap
+<7>[    0.000000]   HighMem zone: 131824 pages, LIFO batch:31
+<6>[    0.000000] PERCPU: Embedded 7 pages/cpu @c1bf4000 s7840 r8192 d12640 u32768
+<7>[    0.000000] pcpu-alloc: s7840 r8192 d12640 u32768 alloc=8*4096
+<7>[    0.000000] pcpu-alloc: [0] 0 [0] 1 
+<4>[    0.000000] Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 208640
+<5>[    0.000000] Kernel command line: startup=0x4 warmboot=0x77665501 ta_info=9,4,256 androidboot.bootloader=s1 androidboot.serialno=CB512036GX cachepolicy=writealloc noinitrd init=init board_id=1 logo.nologo root=/dev/ram0 rw rootwait mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=32M@128M mem_issw=1M@160M hwmem=167M@161M mem=696M@328M vmalloc=384M console=ttyAMA2,115200n8 androidboot.console=ttyAMA2 androidboot.hardware=st-ericsson  semcandroidboot.babe1324=43423531323033364758
+<6>[    0.000000] startup_reason_setup: 0x4
+<6>[    0.000000] PID hash table entries: 2048 (order: 1, 8192 bytes)
+<6>[    0.000000] Dentry cache hash table entries: 65536 (order: 6, 262144 bytes)
+<6>[    0.000000] Inode-cache hash table entries: 32768 (order: 5, 131072 bytes)
+<6>[    0.000000] Memory: 96MB 32MB 183MB 512MB = 823MB total
+<5>[    0.000000] Memory: 816100k/816100k available, 27676k reserved, 531456K highmem
+<5>[    0.000000] Virtual kernel memory layout:
+<5>[    0.000000]     vector  : 0xffff0000 - 0xffff1000   (   4 kB)
+<5>[    0.000000]     fixmap  : 0xfff00000 - 0xfffe0000   ( 896 kB)
+<5>[    0.000000]     DMA     : 0xfee00000 - 0xffe00000   (  16 MB)
+<5>[    0.000000]     vmalloc : 0xe0000000 - 0xf7800000   ( 376 MB)
+<5>[    0.000000]     lowmem  : 0xc0000000 - 0xdf800000   ( 504 MB)
+<5>[    0.000000]     pkmap   : 0xbfe00000 - 0xc0000000   (   2 MB)
+<5>[    0.000000]     modules : 0xbf000000 - 0xbfe00000   (  14 MB)
+<5>[    0.000000]       .init : 0xc0008000 - 0xc005b000   ( 332 kB)
+<5>[    0.000000]       .text : 0xc005b000 - 0xc08fdd88   (8844 kB)
+<5>[    0.000000]       .data : 0xc08fe000 - 0xc0982348   ( 529 kB)
+<5>[    0.000000]        .bss : 0xc098236c - 0xc0f2c068   (5800 kB)
+<6>[    0.000000] Preemptible hierarchical RCU implementation.
+<6>[    0.000000] NR_IRQS:646
+<6>[    0.000000] PRCMU firmware: U8500, version 3.63.5
+<6>[    0.000000] sched_clock: 32 bits at 32kHz, resolution 30517ns, wraps every 131071999ms
+<6>[    0.149993] Calibrating delay using timer specific routine.. 4.80 BogoMIPS (lpj=24021)
+<6>[    0.150024] pid_max: default: 32768 minimum: 301
+<6>[    0.150268] Mount-cache hash table entries: 512
+<6>[    0.150848] Initializing cgroup subsys cpuacct
+<6>[    0.150909] Initializing cgroup subsys freezer
+<6>[    0.150970] CPU: Testing write buffer coherency: ok
+<6>[    0.151000] ftrace: allocating 21927 entries in 65 pages
+<6>[    0.170562] CPU0: thread -1, cpu 0, socket 3, mpidr 80000300
+<6>[    0.170654] hw perfevents: enabled with ARMv7 Cortex-A9 PMU driver, 7 counters available
+<4>[    0.309448] CPU1: Booted secondary processor
+<6>[    0.309478] CPU1: thread -1, cpu 1, socket 3, mpidr 80000301
+<6>[    0.331909] Brought up 2 CPUs
+<6>[    0.331909] SMP: Total of 2 processors activated (9.60 BogoMIPS).
+<6>[    0.338134] print_constraints: dummy: 
+<6>[    0.338409] NET: Registered protocol family 16
+<6>[    0.341430] gpio gpio.0: Bits 0-31 at address f812e000
+<6>[    0.341918] gpio gpio.1: Bits 32-63 at address f812e080
+<6>[    0.342468] gpio gpio.2: Bits 64-95 at address f800e000
+<6>[    0.342834] gpio gpio.3: Bits 96-127 at address f800e080
+<6>[    0.343444] gpio gpio.4: Bits 128-159 at address f800e100
+<6>[    0.343902] gpio gpio.5: Bits 160-191 at address f800e180
+<6>[    0.344512] gpio gpio.6: Bits 192-223 at address f811e000
+<6>[    0.344940] gpio gpio.7: Bits 224-255 at address f811e080
+<6>[    0.345397] gpio gpio.8: Bits 256-287 at address fa3fe000
+<3>[    0.350067] amba msp2: failed to register amba device msp2
+<6>[    0.352081] hw-breakpoint: found 6 breakpoint and 1 watchpoint registers.
+<6>[    0.352081] hw-breakpoint: 1 breakpoint(s) reserved for watchpoint single-step.
+<4>[    0.352111] hw-breakpoint: CPU 1 debug is powered down!
+<4>[    0.352111] hw-breakpoint: CPU 0 debug is powered down!
+<6>[    0.352233] dbx500_dump: driver initialized
+<4>[    0.353912] stm stm: STM-Trace IC not compatible
+<4>[    0.353942] stm stm: periph_id=eaeaeaea
+<4>[    0.353942] stm stm: pcell_id=eaeaeaea
+<6>[    0.354309] stm stm: STM-Trace driver probed successfully
+<6>[    0.355133] print_constraints: db8500-vape: 
+<7>[    0.355224] regulator regulator.1: regulator-db8500-vape-probed
+<6>[    0.355407] print_constraints: db8500-varm: 
+<7>[    0.355438] regulator regulator.2: regulator-db8500-varm-probed
+<6>[    0.355621] print_constraints: db8500-vmodem: 
+<7>[    0.355682] regulator regulator.3: regulator-db8500-vmodem-probed
+<6>[    0.355834] print_constraints: db8500-vpll: 
+<7>[    0.355895] regulator regulator.4: regulator-db8500-vpll-probed
+<6>[    0.356079] print_constraints: db8500-vsmps1: 
+<7>[    0.356109] regulator regulator.5: regulator-db8500-vsmps1-probed
+<6>[    0.356292] print_constraints: db8500-vsmps2: 
+<7>[    0.356353] regulator regulator.6: regulator-db8500-vsmps2-probed
+<6>[    0.356536] print_constraints: db8500-vsmps3: 
+<7>[    0.356567] regulator regulator.7: regulator-db8500-vsmps3-probed
+<6>[    0.356719] print_constraints: db8500-vrf1: 
+<7>[    0.356781] regulator regulator.8: regulator-db8500-vrf1-probed
+<6>[    0.356964] print_constraints: db8500-sva-mmdsp: 
+<7>[    0.356994] regulator regulator.9: regulator-db8500-sva-mmdsp-probed
+<6>[    0.357177] print_constraints: db8500-sva-mmdsp-ret: 
+<7>[    0.357208] regulator regulator.10: regulator-db8500-sva-mmdsp-ret-probed
+<6>[    0.357391] print_constraints: db8500-sva-pipe: 
+<7>[    0.357452] regulator regulator.11: regulator-db8500-sva-pipe-probed
+<6>[    0.357666] print_constraints: db8500-sia-mmdsp: 
+<7>[    0.357696] regulator regulator.12: regulator-db8500-sia-mmdsp-probed
+<6>[    0.357879] print_constraints: db8500-sia-mmdsp-ret: 
+<7>[    0.357910] regulator regulator.13: regulator-db8500-sia-mmdsp-ret-probed
+<6>[    0.358093] print_constraints: db8500-sia-pipe: 
+<7>[    0.358123] regulator regulator.14: regulator-db8500-sia-pipe-probed
+<6>[    0.358337] print_constraints: db8500-sga: 
+<6>[    0.358337] set_supply: db8500-sga: supplied by db8500-vape
+<7>[    0.358398] regulator regulator.15: regulator-db8500-sga-probed
+<6>[    0.358581] print_constraints: db8500-b2r2-mcde: 
+<6>[    0.358581] set_supply: db8500-b2r2-mcde: supplied by db8500-vape
+<7>[    0.358642] regulator regulator.16: regulator-db8500-b2r2-mcde-probed
+<6>[    0.358825] print_constraints: db8500-esram12: 
+<7>[    0.358856] regulator regulator.17: regulator-db8500-esram12-probed
+<6>[    0.359039] print_constraints: db8500-esram12-ret: 
+<7>[    0.359100] regulator regulator.18: regulator-db8500-esram12-ret-probed
+<6>[    0.359283] print_constraints: db8500-esram34: 
+<7>[    0.359313] regulator regulator.19: regulator-db8500-esram34-probed
+<6>[    0.359497] print_constraints: db8500-esram34-ret: 
+<7>[    0.359527] regulator regulator.20: regulator-db8500-esram34-ret-probed
+<6>[    0.359954] DB8500 PRCMU initialized
+<6>[    0.360260] ab8500-i2c ab8500-i2c.0: detected chip, AB8500 rev. 3.3
+<6>[    0.360290] ab8500-i2c ab8500-i2c.0: switch off reason(s) (0x1): "Swoff bit programming" 
+<6>[    0.360534] ab8500_extra_init - Successfully registered extra AB8500 MFD devices
+<6>[    0.393615] bio: create slab <bio-0> at 0
+<6>[    0.394378] dma40 dma40.0: managed by runtime pm: regulator 
+<6>[    0.394470] dma40 dma40.0: hardware revision: 3 @ 0x801c0000
+<6>[    0.394531] dma40 dma40.0: 6 of 8 physical DMA channels available
+<6>[    0.394561] dma40 dma40.0: [d40_phy_res_init] INFO: channel 4 is misconfigured (0)
+<6>[    0.394561] dma40 dma40.0: [d40_phy_res_init] INFO: channel 5 is misconfigured (0)
+<6>[    0.394561] dma40 dma40.0: [d40_phy_res_init] INFO: channel 6 is misconfigured (0)
+<6>[    0.405212] dma40 dma40.0: initialized
+<7>[    0.407287] ab8500-regulator ab8500-regulator.0: Board profile is 0x6d
+<7>[    0.408477] regulator regulator.21: VEXTSUPPLY1-enable (bank, reg, mask, value): 0x04, 0x08, 0x03, 0x03
+<6>[    0.408477] print_constraints: ab8500-ext-supply1: 800 <--> 1800 mV at 1800 mV 
+<7>[    0.408569] regulator regulator.21: VEXTSUPPLY1-probed
+<6>[    0.408752] print_constraints: ab8500-ext-supply2: 360 <--> 1360 mV at 1360 mV 
+<7>[    0.408813] regulator regulator.22: VEXTSUPPLY2-probed
+<7>[    0.409057] regulator regulator.23: VEXTSUPPLY3-enable (bank, reg, mask, value): 0x04, 0x08, 0x30, 0x10
+<6>[    0.409088] print_constraints: ab8500-ext-supply3: 1000 <--> 3400 mV at 3400 mV 
+<7>[    0.409149] regulator regulator.23: VEXTSUPPLY3-probed
+<6>[    0.409393] print_constraints: V-DISPLAY: 800 <--> 2600 mV at 2800 mV 
+<6>[    0.409423] set_supply: V-DISPLAY: supplied by ab8500-ext-supply3
+<6>[    0.409759] print_constraints: V-eMMC1: 1100 <--> 2600 mV at 2900 mV normal idle 
+<6>[    0.409790] set_supply: V-eMMC1: supplied by ab8500-ext-supply3
+<6>[    0.410034] print_constraints: V-MMC-SD: 1100 <--> 2600 mV at 2910 mV normal idle 
+<6>[    0.410064] set_supply: V-MMC-SD: supplied by ab8500-ext-supply3
+<6>[    0.410339] print_constraints: V-INTCORE: 1250 <--> 1350 mV at 1250 mV normal idle 
+<6>[    0.410583] print_constraints: V-TVOUT: 0 <--> 2147483 mV at 2000 mV 
+<6>[    0.410827] print_constraints: V-AUD: 0 <--> 2147483 mV at 2000 mV 
+<6>[    0.411041] print_constraints: V-AMIC1: 0 <--> 2147483 mV at 2050 mV 
+<6>[    0.411285] print_constraints: V-AMIC2: 0 <--> 2147483 mV at 2050 mV 
+<6>[    0.411529] print_constraints: V-DMIC: 0 <--> 2147483 mV at 1800 mV 
+<6>[    0.411743] print_constraints: V-CSI-DSI: 0 <--> 2147483 mV at 1200 mV 
+<6>[    0.411987] print_constraints: V-SYSCLKREQ-2: 0 <--> 2147483 mV at 0 mV 
+<6>[    0.412200] print_constraints: V-SYSCLKREQ-4: 0 <--> 2147483 mV at 0 mV 
+<6>[    0.412414] print_constraints: V-SYSCLKREQ-6: 0 <--> 2147483 mV at 0 mV 
+<6>[    0.412689] Serial: AMBA PL011 UART driver
+<6>[    0.412872] uart0: ttyAMA0 at MMIO 0x80120000 (irq = 43) is a PL011 rev3
+<6>[    0.458770] uart1: ttyAMA1 at MMIO 0x80121000 (irq = 51) is a PL011 rev3
+<6>[    0.493286] uart2: ttyAMA2 at MMIO 0x80007000 (irq = 58) is a PL011 rev3
+<6>[    1.241516] console [ttyAMA2] enabled
+<6>[    1.277252] hwmem hwmem.0: Probed OK
+<5>[    1.283020] SCSI subsystem initialized
+<6>[    1.286834] ssp-pl022 spi3: managed by runtime pm: regulator 
+<6>[    1.292633] ssp-pl022 spi3: ARM PL022 driver, device ID: 0x00080023
+<6>[    1.298950] pl022: mapped registers from 0x80129000 to e0058000
+<3>[    1.305206] prcmu-qos: ERROR: Not possible to request any other OPP/kHz than DEFAULT during boot!
+<4>[    1.314117] [<c006acd8>] (unwind_backtrace+0x0/0x144) from [<c067d924>] (dump_stack+0x20/0x24)
+<4>[    1.322753] [<c067d924>] (dump_stack+0x20/0x24) from [<c0076750>] (prcmu_qos_add_requirement+0xcc/0x124)
+<4>[    1.332244] [<c0076750>] (prcmu_qos_add_requirement+0xcc/0x124) from [<c0356398>] (pl022_setup+0x3f8/0xa64)
+<4>[    1.341979] [<c0356398>] (pl022_setup+0x3f8/0xa64) from [<c0353bc4>] (spi_setup+0x4c/0x118)
+<4>[    1.350341] [<c0353bc4>] (spi_setup+0x4c/0x118) from [<c0353f70>] (spi_add_device+0xa4/0x170)
+<4>[    1.358886] [<c0353f70>] (spi_add_device+0xa4/0x170) from [<c03540c0>] (spi_new_device+0x84/0xbc)
+<4>[    1.367767] [<c03540c0>] (spi_new_device+0x84/0xbc) from [<c035441c>] (spi_match_master_to_boardinfo+0x34/0x54)
+<4>[    1.377868] [<c035441c>] (spi_match_master_to_boardinfo+0x34/0x54) from [<c0354520>] (spi_register_master+0xe4/0x1a4)
+<4>[    1.388488] [<c0354520>] (spi_register_master+0xe4/0x1a4) from [<c066ceac>] (pl022_probe+0x4a0/0x624)
+<4>[    1.397705] [<c066ceac>] (pl022_probe+0x4a0/0x624) from [<c02c8f94>] (amba_probe+0x104/0x194)
+<4>[    1.406250] [<c02c8f94>] (amba_probe+0x104/0x194) from [<c0317a00>] (driver_probe_device+0xbc/0x298)
+<4>[    1.415405] [<c0317a00>] (driver_probe_device+0xbc/0x298) from [<c0317c78>] (__driver_attach+0x9c/0xa0)
+<4>[    1.424804] [<c0317c78>] (__driver_attach+0x9c/0xa0) from [<c0316664>] (bus_for_each_dev+0x5c/0xa4)
+<4>[    1.433837] [<c0316664>] (bus_for_each_dev+0x5c/0xa4) from [<c03175f0>] (driver_attach+0x2c/0x30)
+<4>[    1.442718] [<c03175f0>] (driver_attach+0x2c/0x30) from [<c031720c>] (bus_add_driver+0x194/0x27c)
+<4>[    1.451599] [<c031720c>] (bus_add_driver+0x194/0x27c) from [<c03181f4>] (driver_register+0x88/0x158)
+<4>[    1.460754] [<c03181f4>] (driver_register+0x88/0x158) from [<c02c8d58>] (amba_driver_register+0x50/0x64)
+<4>[    1.470245] [<c02c8d58>] (amba_driver_register+0x50/0x64) from [<c0024774>] (pl022_init+0x14/0x1c)
+<4>[    1.479217] [<c0024774>] (pl022_init+0x14/0x1c) from [<c005b840>] (do_one_initcall+0x130/0x198)
+<4>[    1.487915] [<c005b840>] (do_one_initcall+0x130/0x198) from [<c0008a9c>] (kernel_init+0xa8/0x158)
+<4>[    1.496795] [<c0008a9c>] (kernel_init+0xa8/0x158) from [<c0063c0c>] (kernel_thread_exit+0x0/0x8)
+<6>[    1.509460] usbcore: registered new interface driver usbfs
+<6>[    1.515075] usbcore: registered new interface driver hub
+<6>[    1.520568] usbcore: registered new device driver usb
+<6>[    1.525695] musb-ux500 musb-ux500.0: managed by runtime pm: pins 
+<6>[    1.533020] ab8500-usb ab8500-usb.0: revision 0x33 driver initialized
+<6>[    1.540435] nmk-i2c nmk-i2c.0: managed by runtime pm: pins 
+<6>[    1.546142] nmk-i2c nmk-i2c.0: initialize Nomadik I2C0 at 80004000 on virtual base e005a000
+<6>[    1.554901] nmk-i2c nmk-i2c.1: managed by runtime pm: pins 
+<6>[    1.560546] nmk-i2c nmk-i2c.1: initialize Nomadik I2C1 at 80122000 on virtual base e005c000
+<6>[    1.569458] nmk-i2c nmk-i2c.2: managed by runtime pm: pins 
+<6>[    1.575103] nmk-i2c nmk-i2c.2: initialize Nomadik I2C2 at 80128000 on virtual base e005e000
+<6>[    1.584747] nmk-i2c nmk-i2c.3: managed by runtime pm: pins 
+<6>[    1.590423] nmk-i2c nmk-i2c.3: initialize Nomadik I2C3 at 80110000 on virtual base e0060000
+<6>[    1.600341] Advanced Linux Sound Architecture Driver Version 1.0.24.
+<6>[    1.607666] Bluetooth: Core ver 2.16
+<6>[    1.611389] NET: Registered protocol family 31
+<6>[    1.615844] Bluetooth: HCI device and connection manager initialized
+<6>[    1.622222] Bluetooth: HCI socket layer initialized
+<6>[    1.627075] Bluetooth: L2CAP socket layer initialized
+<6>[    1.632141] Bluetooth: SCO socket layer initialized
+<6>[    1.637542] cfg80211: Calling CRDA to update world regulatory domain
+<6>[    1.659942] ab8500-fg ab8500-fg.0: Updated unusable permille to 1. dV = 50 mV
+<6>[    1.669799] Switching to clocksource dbx500-prcmu-timer
+<6>[    1.679595] Switched to NOHz mode on CPU #0
+<6>[    1.680206] Switched to NOHz mode on CPU #1
+<6>[    1.697174] MCDE subsystem init begin
+<6>[    1.701049] mcde mcde: MCDE iomap: 0xA0350000->0xE0062000
+<6>[    1.706634] mcde mcde: Probe HW
+<6>[    1.709899] mcde mcde: MCDE HW revision 0x03000800
+<6>[    1.714752] mcde mcde: db8500 V2 HW
+<6>[    1.718292] mcde mcde: MCDE DSI0 iomap: 0xA0351000->0xE0064000
+<6>[    1.724121] mcde mcde: MCDE DSI1 iomap: 0xA0352000->0xE0066000
+<6>[    1.729980] mcde mcde: MCDE DSI2 iomap: 0xA0353000->0xE0068000
+<6>[    1.736328] mcde mcde: MCDE_CLK is 159744000 Hz
+<6>[    1.742706] MCDE subsystem init done
+<6>[    1.746368] dsilink dsilink.0: iomap: 0xA0351000->0xE006A000
+<6>[    1.752288] dsilink dsilink.0: hw revision 0x02327457
+<6>[    1.757568] dsilink dsilink.1: iomap: 0xA0352000->0xE006C000
+<6>[    1.763397] dsilink dsilink.1: hw revision 0x02327457
+<6>[    1.768707] dsilink dsilink.2: iomap: 0xA0353000->0xE006E000
+<6>[    1.774566] dsilink dsilink.2: hw revision 0x02327457
+<6>[    1.782775] musb-hdrc: version 6.0, ux500-dma, otg (peripheral+host)
+<6>[    1.789428] dma dma0chan0: allocated logical channel (phy 4)
+<6>[    1.795349] dma dma0chan1: allocated logical channel (phy 4)
+<6>[    1.801025] dma dma0chan2: allocated logical channel (phy 4)
+<6>[    1.806732] dma dma0chan3: allocated logical channel (phy 3)
+<6>[    1.812408] dma dma0chan4: allocated logical channel (phy 3)
+<6>[    1.818115] dma dma0chan5: allocated logical channel (phy 3)
+<6>[    1.823791] dma dma0chan6: allocated logical channel (phy 3)
+<6>[    1.829498] dma dma0chan7: allocated logical channel (phy 4)
+<6>[    1.835174] dma dma0chan8: allocated logical channel (phy 5)
+<6>[    1.840850] dma dma0chan9: allocated logical channel (phy 5)
+<6>[    1.846557] dma dma0chan10: allocated logical channel (phy 5)
+<6>[    1.852294] dma dma0chan11: allocated logical channel (phy 3)
+<6>[    1.858062] dma dma0chan12: allocated logical channel (phy 3)
+<6>[    1.863800] dma dma0chan13: allocated logical channel (phy 3)
+<6>[    1.869567] dma dma0chan14: allocated logical channel (phy 3)
+<6>[    1.875335] dma dma0chan15: allocated logical channel (phy 5)
+<7>[    1.881072] musb-hdrc: ConfigData=0xde (UTMI-8, dyn FIFOs, bulk combine, bulk split, HB-ISO Rx, HB-ISO Tx, SoftConn)
+<7>[    1.881103] musb-hdrc: MHDRC RTL version 2.0 
+<7>[    1.881134] musb-hdrc: 28/31 max ep, 9216/262144 memory
+<6>[    1.881347] musb-hdrc musb-hdrc: USB OTG mode controller at e0080000 using DMA, IRQ 55
+<6>[    1.889831] NET: Registered protocol family 2
+<6>[    1.894409] IP route cache hash table entries: 16384 (order: 4, 65536 bytes)
+<6>[    1.902282] TCP established hash table entries: 65536 (order: 7, 524288 bytes)
+<6>[    1.910400] TCP bind hash table entries: 65536 (order: 7, 786432 bytes)
+<6>[    1.918121] TCP: Hash tables configured (established 65536 bind 65536)
+<6>[    1.924652] TCP reno registered
+<6>[    1.927825] UDP hash table entries: 256 (order: 1, 8192 bytes)
+<6>[    1.933654] UDP-Lite hash table entries: 256 (order: 1, 8192 bytes)
+<6>[    1.940368] NET: Registered protocol family 1
+<6>[    1.944976] Trying to unpack rootfs image as initramfs...
+<6>[    1.962005] ab8500-fg ab8500-fg.0: capacity=92 (92)
+<6>[    2.179199] Freeing initrd memory: 4008K
+<6>[    2.183288] PMU: registered new PMU device of type 0
+<6>[    2.190734] input: simdetect as /devices/virtual/input/input0
+<6>[    2.197021] ux500-product: u8500 detected
+<6>[    2.201049] ux500-product: JTAG is disabled
+<6>[    2.205230] hwreg: cpu is U8500
+<4>[    2.208801] ------------[ cut here ]------------
+<4>[    2.213439] WARNING: at arch/arm/mm/ioremap.c:207 __arm_ioremap_pfn_caller+0xe4/0x108()
+<4>[    2.221466] Modules linked in:
+<4>[    2.224578] [<c006acd8>] (unwind_backtrace+0x0/0x144) from [<c067d924>] (dump_stack+0x20/0x24)
+<4>[    2.233215] [<c067d924>] (dump_stack+0x20/0x24) from [<c009f09c>] (warn_slowpath_common+0x5c/0x74)
+<4>[    2.242279] [<c009f09c>] (warn_slowpath_common+0x5c/0x74) from [<c009f0e0>] (warn_slowpath_null+0x2c/0x34)
+<4>[    2.251983] [<c009f0e0>] (warn_slowpath_null+0x2c/0x34) from [<c00705f8>] (__arm_ioremap_pfn_caller+0xe4/0x108)
+<4>[    2.262115] [<c00705f8>] (__arm_ioremap_pfn_caller+0xe4/0x108) from [<c00706a0>] (__arm_ioremap_caller+0x5c/0x64)
+<4>[    2.272399] [<c00706a0>] (__arm_ioremap_caller+0x5c/0x64) from [<c00706c4>] (__arm_ioremap+0x1c/0x20)
+<4>[    2.281646] [<c00706c4>] (__arm_ioremap+0x1c/0x20) from [<c00119fc>] (hwreg_initialize+0x64/0x1e4)
+<4>[    2.290832] [<c00119fc>] (hwreg_initialize+0x64/0x1e4) from [<c005b840>] (do_one_initcall+0x130/0x198)
+<4>[    2.300201] [<c005b840>] (do_one_initcall+0x130/0x198) from [<c0008a9c>] (kernel_init+0xa8/0x158)
+<4>[    2.309082] [<c0008a9c>] (kernel_init+0xa8/0x158) from [<c0063c0c>] (kernel_thread_exit+0x0/0x8)
+<4>[    2.317932] ---[ end trace 60cf385c234beff0 ]---
+<4>[    2.322570] hwreg_io_init: ioremap for 22 (17c40000) failed
+<4>[    2.328155] ------------[ cut here ]------------
+<4>[    2.332794] WARNING: at arch/arm/mm/ioremap.c:207 __arm_ioremap_pfn_caller+0xe4/0x108()
+<4>[    2.340820] Modules linked in:
+<4>[    2.343902] [<c006acd8>] (unwind_backtrace+0x0/0x144) from [<c067d924>] (dump_stack+0x20/0x24)
+<4>[    2.352569] [<c067d924>] (dump_stack+0x20/0x24) from [<c009f09c>] (warn_slowpath_common+0x5c/0x74)
+<4>[    2.361541] [<c009f09c>] (warn_slowpath_common+0x5c/0x74) from [<c009f0e0>] (warn_slowpath_null+0x2c/0x34)
+<4>[    2.371246] [<c009f0e0>] (warn_slowpath_null+0x2c/0x34) from [<c00705f8>] (__arm_ioremap_pfn_caller+0xe4/0x108)
+<4>[    2.381378] [<c00705f8>] (__arm_ioremap_pfn_caller+0xe4/0x108) from [<c00706a0>] (__arm_ioremap_caller+0x5c/0x64)
+<4>[    2.391662] [<c00706a0>] (__arm_ioremap_caller+0x5c/0x64) from [<c00706c4>] (__arm_ioremap+0x1c/0x20)
+<4>[    2.400909] [<c00706c4>] (__arm_ioremap+0x1c/0x20) from [<c00119fc>] (hwreg_initialize+0x64/0x1e4)
+<4>[    2.409881] [<c00119fc>] (hwreg_initialize+0x64/0x1e4) from [<c005b840>] (do_one_initcall+0x130/0x198)
+<4>[    2.419219] [<c005b840>] (do_one_initcall+0x130/0x198) from [<c0008a9c>] (kernel_init+0xa8/0x158)
+<4>[    2.428131] [<c0008a9c>] (kernel_init+0xa8/0x158) from [<c0063c0c>] (kernel_thread_exit+0x0/0x8)
+<4>[    2.436920] ---[ end trace 60cf385c234beff1 ]---
+<4>[    2.441528] hwreg_io_init: ioremap for 23 (17d40000) failed
+<4>[    2.447143] ------------[ cut here ]------------
+<4>[    2.451751] WARNING: at arch/arm/mm/ioremap.c:207 __arm_ioremap_pfn_caller+0xe4/0x108()
+<4>[    2.459777] Modules linked in:
+<4>[    2.462829] [<c006acd8>] (unwind_backtrace+0x0/0x144) from [<c067d924>] (dump_stack+0x20/0x24)
+<4>[    2.471466] [<c067d924>] (dump_stack+0x20/0x24) from [<c009f09c>] (warn_slowpath_common+0x5c/0x74)
+<4>[    2.480438] [<c009f09c>] (warn_slowpath_common+0x5c/0x74) from [<c009f0e0>] (warn_slowpath_null+0x2c/0x34)
+<4>[    2.490112] [<c009f0e0>] (warn_slowpath_null+0x2c/0x34) from [<c00705f8>] (__arm_ioremap_pfn_caller+0xe4/0x108)
+<4>[    2.500213] [<c00705f8>] (__arm_ioremap_pfn_caller+0xe4/0x108) from [<c00706a0>] (__arm_ioremap_caller+0x5c/0x64)
+<4>[    2.510498] [<c00706a0>] (__arm_ioremap_caller+0x5c/0x64) from [<c00706c4>] (__arm_ioremap+0x1c/0x20)
+<4>[    2.519744] [<c00706c4>] (__arm_ioremap+0x1c/0x20) from [<c00119fc>] (hwreg_initialize+0x64/0x1e4)
+<4>[    2.528717] [<c00119fc>] (hwreg_initialize+0x64/0x1e4) from [<c005b840>] (do_one_initcall+0x130/0x198)
+<4>[    2.538055] [<c005b840>] (do_one_initcall+0x130/0x198) from [<c0008a9c>] (kernel_init+0xa8/0x158)
+<4>[    2.546936] [<c0008a9c>] (kernel_init+0xa8/0x158) from [<c0063c0c>] (kernel_thread_exit+0x0/0x8)
+<4>[    2.555725] ---[ end trace 60cf385c234beff2 ]---
+<4>[    2.560363] hwreg_io_init: ioremap for 24 (17e02000) failed
+<6>[    2.566497] simple_remote_pf simple_remote_pf.0: Successfully registered
+<4>[    2.575805] highmem bounce pool size: 64 pages
+<6>[    2.580657] ashmem: initialized
+<5>[    2.584136] VFS: Disk quotas dquot_6.5.2
+<4>[    2.588256] Dquot-cache hash table entries: 1024 (order 0, 4096 bytes)
+<6>[    2.595336] fuse init (API version 7.16)
+<6>[    2.599578] msgmni has been set to 563
+<6>[    2.604431] io scheduler noop registered
+<6>[    2.608489] io scheduler deadline registered
+<6>[    2.612823] io scheduler cfq registered
+<6>[    2.616668] io scheduler sio registered (default)
+<6>[    2.621368] io scheduler vr registered
+<6>[    2.625152] io scheduler fiops registered
+<6>[    2.629241] mcde_display_generic_init
+<6>[    2.633087] panel_init: Sony Ericsson MIPI/DSI display driver, mcde_display_panel. (Built Mar  3 2013 @ 03:29:34)
+<6>[    2.643432] mcde_display_panel mcde_display_panel.0: panel_probe
+<7>[    2.649536] regulator regulator.23: VEXTSUPPLY3-is_enabled (bank, reg, mask, value): 0x04, 0x08, 0x30, 0x13
+<6>[    2.707214] mcde_display_panel mcde_display_panel.0: panel_probe: Found display: Sony ACX438AKM MIPI/DSI 2384 no rev
+<6>[    2.718963] mcde_display_panel mcde_display_panel.0: panel_probe: probe success
+<6>[    2.730682] mcde_display_panel mcde_display_panel.0: Framebuffer created (mcde_display_panel)
+<6>[    2.739624] mcde_display_panel mcde_display_panel.0: compdev created for (mcde_display_panel)
+<3>[    2.750762] prcmu-qos: ERROR: Not possible to request any other OPP/kHz than DEFAULT during boot!
+<4>[    2.759674] [<c006acd8>] (unwind_backtrace+0x0/0x144) from [<c067d924>] (dump_stack+0x20/0x24)
+<4>[    2.768341] [<c067d924>] (dump_stack+0x20/0x24) from [<c0076750>] (prcmu_qos_add_requirement+0xcc/0x124)
+<4>[    2.777832] [<c0076750>] (prcmu_qos_add_requirement+0xcc/0x124) from [<c007fa54>] (setup_performance+0xb4/0x194)
+<4>[    2.788024] [<c007fa54>] (setup_performance+0xb4/0x194) from [<c007fcb4>] (extern_te_update+0x20/0x158)
+<4>[    2.797424] [<c007fcb4>] (extern_te_update+0x20/0x158) from [<c029d03c>] (mcde_dss_update_overlay+0x7c/0x8c)
+<4>[    2.807281] [<c029d03c>] (mcde_dss_update_overlay+0x7c/0x8c) from [<c029eb40>] (apply_var+0x2d0/0x34c)
+<4>[    2.816589] [<c029eb40>] (apply_var+0x2d0/0x34c) from [<c029ec3c>] (mcde_fb_pan_display+0x80/0xa4)
+<4>[    2.825561] [<c029ec3c>] (mcde_fb_pan_display+0x80/0xa4) from [<c02a6dc8>] (draw_logo+0x9c/0x120)
+<4>[    2.834442] [<c02a6dc8>] (draw_logo+0x9c/0x120) from [<c02a704c>] (mcde_logo_init+0x200/0x374)
+<4>[    2.843078] [<c02a704c>] (mcde_logo_init+0x200/0x374) from [<c007ffc0>] (display_postregistered_callback+0x10c/0x154)
+<4>[    2.853729] [<c007ffc0>] (display_postregistered_callback+0x10c/0x154) from [<c00c7224>] (notifier_call_chain+0xb0/0xe0)
+<4>[    2.864624] [<c00c7224>] (notifier_call_chain+0xb0/0xe0) from [<c00c7478>] (__blocking_notifier_call_chain+0x58/0x70)
+<4>[    2.875244] [<c00c7478>] (__blocking_notifier_call_chain+0x58/0x70) from [<c00c74b8>] (blocking_notifier_call_chain+0x28/0x30)
+<4>[    2.886627] [<c00c74b8>] (blocking_notifier_call_chain+0x28/0x30) from [<c029e33c>] (bus_notify_callback+0x58/0x60)
+<4>[    2.897094] [<c029e33c>] (bus_notify_callback+0x58/0x60) from [<c00c7224>] (notifier_call_chain+0xb0/0xe0)
+<4>[    2.906738] [<c00c7224>] (notifier_call_chain+0xb0/0xe0) from [<c00c7478>] (__blocking_notifier_call_chain+0x58/0x70)
+<4>[    2.917358] [<c00c7478>] (__blocking_notifier_call_chain+0x58/0x70) from [<c00c74b8>] (blocking_notifier_call_chain+0x28/0x30)
+<4>[    2.928771] [<c00c74b8>] (blocking_notifier_call_chain+0x28/0x30) from [<c0317704>] (driver_bound+0x78/0xd0)
+<4>[    2.938629] [<c0317704>] (driver_bound+0x78/0xd0) from [<c0317a10>] (driver_probe_device+0xcc/0x298)
+<4>[    2.947784] [<c0317a10>] (driver_probe_device+0xcc/0x298) from [<c0317c78>] (__driver_attach+0x9c/0xa0)
+<4>[    2.957214] [<c0317c78>] (__driver_attach+0x9c/0xa0) from [<c0316664>] (bus_for_each_dev+0x5c/0xa4)
+<4>[    2.966247] [<c0316664>] (bus_for_each_dev+0x5c/0xa4) from [<c03175f0>] (driver_attach+0x2c/0x30)
+<4>[    2.975128] [<c03175f0>] (driver_attach+0x2c/0x30) from [<c031720c>] (bus_add_driver+0x194/0x27c)
+<4>[    2.984039] [<c031720c>] (bus_add_driver+0x194/0x27c) from [<c03181f4>] (driver_register+0x88/0x158)
+<4>[    2.993164] [<c03181f4>] (driver_register+0x88/0x158) from [<c029e2c8>] (mcde_display_driver_register+0x68/0x84)
+<4>[    3.003356] [<c029e2c8>] (mcde_display_driver_register+0x68/0x84) from [<c001fffc>] (panel_init+0x38/0x54)
+<4>[    3.013061] [<c001fffc>] (panel_init+0x38/0x54) from [<c005b840>] (do_one_initcall+0x130/0x198)
+<4>[    3.021759] [<c005b840>] (do_one_initcall+0x130/0x198) from [<c0008a9c>] (kernel_init+0xa8/0x158)
+<4>[    3.030670] [<c0008a9c>] (kernel_init+0xa8/0x158) from [<c0063c0c>] (kernel_thread_exit+0x0/0x8)
+<6>[    3.176635] mcde_display_panel mcde_display_panel.0: panel_set_power_mode_internal: Display on
+<6>[    3.185272] Drawing splash screen
+<6>[    3.190887] av8100 0-0070: chip version:2
+<6>[    3.195251] b2r2_blt_init
+<6>[    3.197967] b2r2_blt b2r2_blt_init: b2r2_blt_probe start.
+<6>[    3.203613] b2r2_blt b2r2_blt_init: b2r2_blt_probe done.
+<6>[    3.209136] b2r2_init
+<6>[    3.211486] b2r2 b2r2_core: init started.
+<6>[    3.218139] b2r2 b2r2_core: b2r2_mem_init: Creating heap for size 16384 bytes
+<6>[    3.225433] b2r2 b2r2_core: b2r2_probe done.
+<6>[    3.230133] lm3533 2-0036: lm3533_probe
+<6>[    3.264923] lm3533 2-0036: New led 'lcd-backlight'
+<6>[    3.269714] lm3533 2-0036: New led 'not-connected'
+<6>[    3.274505] lm3533 2-0036: New led 'red'
+<6>[    3.278472] lm3533 2-0036: New led 'green'
+<6>[    3.282562] lm3533 2-0036: New led 'blue'
+<7>[    3.286773] Registered led device: lcd-backlight
+<7>[    3.286956] Registered led device: not-connected
+<7>[    3.287139] Registered led device: red
+<7>[    3.287322] Registered led device: green
+<7>[    3.287506] Registered led device: blue
+<6>[    3.287506] lm3533 2-0036: lcd-backlight: 255 on startup
+<6>[    3.293029] lm3533 2-0036: lm3533_probe: completed.
+<6>[    3.298065] lm3533_init: lm3533 LMU IC driver, built Mar  3 2013 @ 03:25:34
+<6>[    3.305633] uart-pl011 uart0: no DMA platform data
+<6>[    3.310455] uart-pl011 uart1: no DMA platform data
+<6>[    3.315216] uart-pl011 uart2: no DMA platform data
+<4>[    3.320129] Mali<1>: This function should not be called since we are not using run time pm
+<4>[    3.329437] Mali<2>: 
+<4>[    3.331695] Mali<2>: Inserting Mali v10 device driver. 
+<4>[    3.336975] Mali<2>: Compiled: Mar  3 2013, time: 04:34:15.
+<4>[    3.342529] Mali<2>: Svn revision: 
+<4>[    3.346038] Mali<2>: MMU memory system initializing
+<4>[    3.350921] Mali<2>: Rendercore: subsystem global mutex initialized
+<4>[    3.357238] Mali<2>: Core: subsystem_init: Mali-400 PP
+<4>[    3.362365] Mali<2>: Core: subsystem_init: Mali-400 GP
+<4>[    3.367523] Mali<2>: Mali L2 cache system initializing
+<4>[    3.372985] Mali<2>: MMU registered
+<4>[    3.376495] Mali<2>: MMU registered
+<4>[    3.380035] Mali<2>: Mali OS memory allocator created with max allocation size of 0x7FF00000 bytes, cpu_usage_adjust 0x00000000
+<4>[    3.391510] Mali<2>: Memory Validator 'Framebuffer' installed for Mali physical address base==0x00000000, size==0x7FF00000, cpu_adjust==0x00000000
+<4>[    3.404663] Mali<2>: Creating Mali L2 cache: Mali-400 L2 cache
+<4>[    3.410522] Mali<1>: Mali memory allocators will be used in this order of preference (lowest numbered first) :
+<4>[    3.420562] Mali<1>: 	5: Linux kernel memory
+<4>[    3.425506] Mali<2>: Attach mmu: 0xde96d660 to core: Mali-400 PP in subsystem: Mali-400 PP
+<4>[    3.433807] Mali<2>: Attach mmu: 0xde96d6c0 to core: Mali-400 GP in subsystem: Mali-400 GP
+<4>[    3.442169] Mali<2>: Mali L2 cache system load complete
+<4>[    3.447418] Mali: Mali device driver  loaded
+<4>[    3.451690] Mali<2>: malidrv:  CONFIG=ux500 USING_OS_MEMORY=1 API_VERSION=10 REPO_URL= REVISION= CHANGED_REVISION= CHANGE_DATE= BUILD_DATE=2013年  3月  2日 土曜日 17:16:19 JST BUILD=DEBUG CPU=ux500 USING_UMP=1 USING_HWMEM=1 USING_PMM=1 USING_MALI200=0 USING_MALI400=3 USING_MALI400_L2_CACHE=1 USING_GP2=0 KDIR= MALI_PLATFORM_FILE=platform/ux500/mali_platform.c OS_MEMORY_KERNEL_BUFFER_SIZE_IN_MB=6 USING_PROFILING=0 USING_GPU_UTILIZATION=1 USING_MALI_RUN_TIME_PM=0
+<5>[    3.493011] DPM timeout function changed to [<c0321374>]: semc_dpm_drv_timeout+0x0/0x84
+<6>[    3.509826] brd: module loaded
+<6>[    3.517425] loop: module loaded
+<6>[    3.521850] lm3560 2-0053: lm3560_resume: Reinit lm3560 chip.
+<6>[    3.527648] lm3560 2-0053: lm3560_resume: Resumed lm3560 driver.
+<6>[    3.535552] lm3560 2-0053: lm3560_probe: loaded
+<6>[    3.540496] lm3560 2-0053: lm3560_suspend: Suspended lm3560 driver.
+<6>[    3.547302] dbx500_mloader_fw dbx500_mloader_fw: mloader device register
+<6>[    3.554168] compdev_init
+<6>[    3.556732] clonedev_init
+<6>[    3.561737] PPP generic driver version 2.4.2
+<6>[    3.566406] PPP Deflate Compression module registered
+<6>[    3.571502] PPP BSD Compression module registered
+<6>[    3.578094] PPP MPPE Compression module registered
+<6>[    3.582916] NET: Registered protocol family 24
+<6>[    3.587402] tun: Universal TUN/TAP device driver, 1.6
+<6>[    3.592468] tun: (C) 1999-2004 Max Krasnyansky <maxk@qualcomm.com>
+<6>[    3.600433] usb_host_ext_event has been registered!
+<6>[    3.605346] usbcore: registered new interface driver cdc_acm
+<6>[    3.611206] cdc_acm: USB Abstract Control Model driver for USB modems and ISDN adapters
+<6>[    3.619232] Initializing USB Mass Storage driver...
+<6>[    3.624267] usbcore: registered new interface driver usb-storage
+<6>[    3.630279] USB Mass Storage support registered.
+<6>[    3.635070] usbcore: registered new interface driver libusual
+<6>[    3.644561] android_usb gadget: Mass Storage Function, version: 2009/09/11
+<6>[    3.651458] android_usb gadget: Number of LUNs=2
+<6>[    3.656066]  lun0: LUN: removable file: (no medium)
+<6>[    3.660980]  lun1: LUN: removable read only CD-ROM file: (no medium)
+<6>[    3.668060] android_usb gadget: android_usb ready
+<6>[    3.672760] musb-hdrc musb-hdrc: MUSB HDRC host driver
+<6>[    3.678222] musb-hdrc musb-hdrc: new USB bus registered, assigned bus number 1
+<6>[    3.686157] hub 1-0:1.0: USB hub found
+<6>[    3.689910] hub 1-0:1.0: 1 port detected
+<6>[    3.695037] input: ux500-ske-keypad as /devices/platform/nmk-ske-keypad/input/input1
+<6>[    3.704833] usbcore: registered new interface driver xpad
+<6>[    3.710693] input: AB8500 POn(PowerOn) Key as /devices/platform/ab8500-i2c.0/ab8500-poweron-key.0/input/input2
+<6>[    3.721618] lsm303dlh_mag 2-001e: lsm303dlh_mag_probe
+<6>[    3.727447] input: lsm303dlh_mag as /devices/virtual/input/input3
+<6>[    3.733947] lsm303dlh_mag 2-001e: lsm303dlh_mag_probe completed.
+<6>[    3.740234] lsm303dlhc_acc_lt 2-0019: lsm303dlhc_acc_lt_probe
+<3>[    3.946990] nmk-i2c nmk-i2c.2: Write to slave 0x19 timed out
+<3>[    3.952667] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[    4.168640] nmk-i2c nmk-i2c.2: Write to slave 0x19 timed out
+<3>[    4.174316] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[    4.404449] nmk-i2c nmk-i2c.2: Write to slave 0x19 timed out
+<3>[    4.410125] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[    4.416992] lsm303dlhc_acc_lt 2-0019: lsm303dlhc_acc_lt_i2c_write: i2c write error -110 (reg 0x20)
+<3>[    4.644500] nmk-i2c nmk-i2c.2: Write to slave 0x19 timed out
+<3>[    4.650146] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[    4.885894] nmk-i2c nmk-i2c.2: Write to slave 0x19 timed out
+<3>[    4.891540] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[    5.114166] nmk-i2c nmk-i2c.2: Write to slave 0x19 timed out
+<3>[    5.119842] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[    5.126678] lsm303dlhc_acc_lt 2-0019: lsm303dlhc_acc_lt_i2c_write: i2c write error -110 (reg 0x20)
+<3>[    5.135681] lsm303dlhc_acc_lt 2-0019: lsm303dlhc_acc_lt_probe: device not responding
+<3>[    5.143493] lsm303dlhc_acc_lt 2-0019: lsm303dlhc_acc_lt_probe failed.
+<4>[    5.149932] lsm303dlhc_acc_lt: probe of 2-0019 failed with error -5
+<6>[    5.156402] lsm303dlhc_acc_lt_init: LSM303DLHC Accelerometer driver, built Mar  3 2013 @ 03:25:29
+<6>[    5.165435] simple_remote simple_remote.0: **** Registering (headset) driver
+<3>[    5.173034] simple_remote simple_remote.0: Failed to set default values in HW components.
+<6>[    5.181335] input: simple_remote as /devices/virtual/input/input4
+<6>[    5.188323] input: simple_remote_appkey as /devices/virtual/input/input5
+<6>[    5.195312] simple_remote simple_remote.0: ***** Successfully registered
+<6>[    5.202362] l3g4200d_gyr 1-0068: l3g4200d_probe
+<3>[    5.432800] nmk-i2c nmk-i2c.1: Write to slave 0x68 timed out
+<3>[    5.438476] nmk-i2c nmk-i2c.1: no ack received after address transmission
+<3>[    5.664611] nmk-i2c nmk-i2c.1: Write to slave 0x68 timed out
+<3>[    5.670257] nmk-i2c nmk-i2c.1: no ack received after address transmission
+<3>[    5.878265] nmk-i2c nmk-i2c.1: Write to slave 0x68 timed out
+<3>[    5.883911] nmk-i2c nmk-i2c.1: no ack received after address transmission
+<3>[    5.890777] l3g4200d_gyr 1-0068: write transfer error
+<3>[    5.895843] l3g4200d_gyr 1-0068: device config failed: -5
+<3>[    5.901245] l3g4200d_gyr 1-0068: power on failed: -5
+<4>[    5.906219] l3g4200d_gyr: probe of 1-0068 failed with error -5
+<3>[    6.135040] nmk-i2c nmk-i2c.2: Write to slave 0x37 timed out
+<3>[    6.140716] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[    6.369995] nmk-i2c nmk-i2c.2: Write to slave 0x37 timed out
+<3>[    6.375640] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[    6.605041] nmk-i2c nmk-i2c.2: Write to slave 0x37 timed out
+<3>[    6.610717] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[    6.617553] noa3402 2-0037: NOA3402 not responding
+<3>[    6.622344] noa3402 2-0037: noa3402_probe: device not responding ret = -110
+<3>[    6.629333] noa3402 2-0037: noa3402_probe: Probing NOA3402 failed
+<6>[    6.635650] so340010 2-002c: so34_probe
+<6>[    6.640045] so340010 2-002c: New led 'so34-led0': hw leds 0x1
+<6>[    6.645812] so340010 2-002c: New led 'so34-led1': hw leds 0x2
+<6>[    6.651550] so340010 2-002c: New led 'so34-led2': hw leds 0x4
+<6>[    6.660125] so340010 2-002c: so34_probe: HW started in sleep mode
+<7>[    6.666442] Registered led device: so34-led0
+<7>[    6.666625] Registered led device: so34-led1
+<7>[    6.666809] Registered led device: so34-led2
+<6>[    6.667083] input: so34-buttons as /devices/virtual/input/input6
+<6>[    6.673522] so340010 2-002c: so34_probe: setting irq mode
+<6>[    6.679992] so340010 2-002c: so34_probe: completed.
+<6>[    6.685028] so34_init: so340010-16qnf sensing IC driver, built Mar  3 2013 @ 03:25:31
+<6>[    6.696258] ab8500-rtc ab8500-rtc.0: rtc core: registered ab8500-rtc as rtc0
+<6>[    6.704406] using rtc device, pl031, for alarms
+<6>[    6.708770] rtc-pl031 rtc-pl031: rtc core: registered pl031 as rtc1
+<6>[    6.715393] i2c /dev entries driver
+<6>[    6.720642] lirc_dev: IR Remote Control driver registered, major 249 
+<6>[    6.727111] IR NEC protocol handler initialized
+<6>[    6.731658] IR RC5(x) protocol handler initialized
+<6>[    6.736450] IR RC6 protocol handler initialized
+<6>[    6.740997] IR JVC protocol handler initialized
+<6>[    6.745513] IR Sony protocol handler initialized
+<6>[    6.750152] IR RC5 (streamzap) protocol handler initialized
+<6>[    6.755706] IR LIRC bridge handler initialized
+<6>[    6.760162] Linux video capture interface: v2.00
+<6>[    6.768676] ux500_wdt ux500_wdt: initialized
+<6>[    6.773345] device-mapper: uevent: version 1.0.3
+<6>[    6.778381] device-mapper: ioctl: 4.20.0-ioctl (2011-02-02) initialised: dm-devel@redhat.com
+<6>[    6.778411] ab8500-charger ab8500-charger.0: Enable USB: 4200mV 1500mA
+<6>[    6.793395] ab8500-charger ab8500-charger.0: VBUS input current limit set to 450 mA
+<6>[    6.801055] Bluetooth: HCI UART driver ver 2.2
+<6>[    6.805572] dbx500-cpufreq : Available frequencies:
+<6>[    6.810455]   150 Mhz
+<6>[    6.812713]   400 Mhz
+<6>[    6.814971]   800 Mhz
+<6>[    6.817260]   1150 Mhz
+<6>[    6.819946] cpuidle: using governor ladder
+<6>[    6.824035] cpuidle: using governor menu
+<6>[    6.828369] mmci-pl18x sdi2: mmc0: PL180 manf 80 rev4 at 0x80005000 irq 73,-1 (pio)
+<6>[    6.836059] dma dma0chan16: allocated logical channel (phy 3)
+<6>[    6.841857] dma dma0chan17: allocated logical channel (phy 3)
+<6>[    6.847625] mmci-pl18x sdi2: DMA channels RX dma0chan16, TX dma0chan17
+<6>[    6.855407] mmci-pl18x sdi4: managed by runtime pm: pins 
+<6>[    6.861175] mmci-pl18x sdi4: mmc1: PL180 manf 80 rev4 at 0x80114000 irq 131,-1 (pio)
+<6>[    6.868957] dma dma0chan18: allocated logical channel (phy 5, fixed)
+<6>[    6.875305] dma dma0chan19: allocated logical channel (phy 5, fixed)
+<6>[    6.881683] mmci-pl18x sdi4: DMA channels RX dma0chan18, TX dma0chan19
+<6>[    6.889587] mmci-pl18x sdi1: managed by runtime pm: pins 
+<6>[    6.895172] mmci-pl18x sdi1: mmc2: PL180 manf 80 rev4 at 0x80118000 irq 82,-1 (pio)
+<6>[    6.902893] dma dma0chan20: allocated logical channel (phy 0, fixed)
+<6>[    6.909301] dma dma0chan21: allocated logical channel (phy 0, fixed)
+<6>[    6.915649] mmci-pl18x sdi1: DMA channels RX dma0chan20, TX dma0chan21
+<6>[    6.923736] hash1 hash1: managed by runtime pm: regulator 
+<6>[    6.929687] hash1 hash1: [ux500_hash_probe] successfully probed
+<6>[    6.935882] cryp1 cryp1: managed by runtime pm: regulator 
+<6>[    6.943542] usbcore: registered new interface driver usbhid
+<6>[    6.949157] usbhid: USB HID core driver
+<6>[    6.954162] platform cg2900.0: CG2900 initialized
+<6>[    6.959259] cg2900 cg2900.0: CG2900 Core driver started
+<6>[    6.965118] cg2900-test cg2900-test.0: CG2900 test char device driver started
+<6>[    6.972564] cg2900-chip cg2900-chip.0: CG2900 chip driver started
+<6>[    6.978942] stlc2690-chip stlc2690-chip.0: STLC2690 chip driver started
+<6>[    6.986877] Bluetooth: HCI UART driver ver 2.3
+<6>[    6.992095] logger: created 256K log 'log_main'
+<6>[    6.996795] logger: created 256K log 'log_events'
+<6>[    7.001708] logger: created 256K log 'log_radio'
+<6>[    7.006530] logger: created 256K log 'log_system'
+<6>[    7.011749] ste_timed_output_vibra ste_timed_output_vibra.0: Rotary Type Vibrators
+<6>[    7.019866] zram: num_devices not specified. Using default: 1
+<6>[    7.025604] zram: Creating 1 devices ...
+<6>[    7.032043] mmio_init
+<6>[    7.034393] mmio_probe
+<6>[    7.037261] mmio_camera mmio_camera: MMIO driver initialized with minor=43
+<7>[    7.044342] Adp1653 flash driver: getting I2C adaptor 2
+<7>[    7.044372] Adp1653 flash driver: trying to register adp1653 at position 0
+<7>[    7.044555] Adp1653 flash driver: Initialized adp1653
+<7>[    7.044799] Adp1653 flash driver: > adp1653_probe
+<3>[    7.044799] adp1653 2-0030: adp1653_probe: No platform data supplied.
+<7>[    7.051269] Adp1653 flash driver: < adp1653_probe (-22)
+<4>[    7.051269] adp1653: probe of 2-0030 failed with error -22
+<6>[    7.057098] camera_flash driver initialized with minor=42
+<6>[    7.075683] Initialize NMF 2.10.123 Component Manager......
+<6>[    7.081329] [ CM Linux Driver 2.10.122 ]
+<6>[    7.086120] tsl2772 2-0039: taos_probe
+<6>[    7.116302] mmc1: new high speed MMC card at address 0001
+<6>[    7.122192] mmcblk0: mmc1:0001 MAG2GA 14.5 GiB 
+<6>[    7.126892] mmcblk0boot0: mmc1:0001 MAG2GA partition 1 2.00 MiB
+<6>[    7.132904] mmcblk0boot1: mmc1:0001 MAG2GA partition 2 2.00 MiB
+<6>[    7.140411]  mmcblk0: p1 p2 p3 p4 < p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 >
+<6>[    7.151275]  mmcblk0boot1: unknown partition table
+<6>[    7.157257]  mmcblk0boot0: unknown partition table
+<3>[    7.305725] nmk-i2c nmk-i2c.2: Write to slave 0x39 timed out
+<3>[    7.311401] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<6>[    7.328765] mmc2: new SDIO card at address 0001
+<3>[    7.515777] nmk-i2c nmk-i2c.2: Write to slave 0x39 timed out
+<3>[    7.521484] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[    7.725799] nmk-i2c nmk-i2c.2: Write to slave 0x39 timed out
+<3>[    7.731506] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[    7.738586] tsl2772 2-0039: taos_i2c_read: failed to write register 11
+<3>[    7.745178] tsl2772 2-0039: Probe failed.
+<4>[    7.749328] tsl2772: probe of 2-0039 failed with error -110
+<6>[    7.762390] u8500_shrm shrm_bus: IPC_ISA BOOT_INIT
+<6>[    7.770782] u8500_shrm shrm_bus: BOOT_INFO_SYNC
+<6>[    7.775573] u8500_shrm shrm_bus: IPC_ISA BOOT_DONE
+<6>[    7.783050] u8500_shrm shrm_bus: Registered shrm netdev
+<6>[    7.789764] rmi4_bus_init - Successfully created RMI4 class
+<6>[    7.796203] rmi4_bus_init: successfully registered RMI4 bus.
+<3>[    7.802673] prcmu-qos: ERROR: Not possible to request any other OPP/kHz than DEFAULT during boot!
+<4>[    7.811859] [<c006acd8>] (unwind_backtrace+0x0/0x144) from [<c067d924>] (dump_stack+0x20/0x24)
+<4>[    7.820648] [<c067d924>] (dump_stack+0x20/0x24) from [<c0076750>] (prcmu_qos_add_requirement+0xcc/0x124)
+<4>[    7.830291] [<c0076750>] (prcmu_qos_add_requirement+0xcc/0x124) from [<c0356398>] (pl022_setup+0x3f8/0xa64)
+<4>[    7.840240] [<c0356398>] (pl022_setup+0x3f8/0xa64) from [<c0353bc4>] (spi_setup+0x4c/0x118)
+<4>[    7.849060] [<c0353bc4>] (spi_setup+0x4c/0x118) from [<c0676344>] (rmi4_spi_adapter_probe+0xb0/0x440)
+<4>[    7.858428] [<c0676344>] (rmi4_spi_adapter_probe+0xb0/0x440) from [<c0353484>] (spi_drv_probe+0x28/0x2c)
+<4>[    7.868072] [<c0353484>] (spi_drv_probe+0x28/0x2c) from [<c0317a00>] (driver_probe_device+0xbc/0x298)
+<4>[    7.877441] [<c0317a00>] (driver_probe_device+0xbc/0x298) from [<c0317c78>] (__driver_attach+0x9c/0xa0)
+<4>[    7.886962] [<c0317c78>] (__driver_attach+0x9c/0xa0) from [<c0316664>] (bus_for_each_dev+0x5c/0xa4)
+<4>[    7.896118] [<c0316664>] (bus_for_each_dev+0x5c/0xa4) from [<c03175f0>] (driver_attach+0x2c/0x30)
+<4>[    7.905059] [<c03175f0>] (driver_attach+0x2c/0x30) from [<c031720c>] (bus_add_driver+0x194/0x27c)
+<4>[    7.914062] [<c031720c>] (bus_add_driver+0x194/0x27c) from [<c03181f4>] (driver_register+0x88/0x158)
+<4>[    7.923889] [<c03181f4>] (driver_register+0x88/0x158) from [<c035414c>] (spi_register_driver+0x54/0x68)
+<4>[    7.933471] [<c035414c>] (spi_register_driver+0x54/0x68) from [<c067628c>] (rmi4_spi_adapter_init+0x14/0x1c)
+<4>[    7.943450] [<c067628c>] (rmi4_spi_adapter_init+0x14/0x1c) from [<c005b840>] (do_one_initcall+0x130/0x198)
+<4>[    7.953247] [<c005b840>] (do_one_initcall+0x130/0x198) from [<c0008a9c>] (kernel_init+0xa8/0x158)
+<4>[    7.962249] [<c0008a9c>] (kernel_init+0xa8/0x158) from [<c0063c0c>] (kernel_thread_exit+0x0/0x8)
+<6>[    8.397491] rmi4-spi-adapter spi9.0: rmi4_spi_adapter_setup_comms - SPI Version 1
+<6>[    8.407775] rmi4-core-driver sensor00: Chip supports function F34
+<6>[    8.414459] rmi4-core-driver sensor00: Chip supports function F01
+<6>[    8.421142] rmi4-core-driver sensor00: Chip supports function F11
+<6>[    8.427764] rmi4-core-driver sensor00: Chip supports function F54
+<6>[    8.434387] rmi4-core-driver sensor00: Chip supports function F09
+<6>[    8.533386] rmi4-core-driver sensor00: Successfully probed rmi4_core-driver
+<6>[    8.541229] rmi4-spi-adapter spi9.0: rmi4_spi_adapter_probe - Successfully registered RMI4 SPI adapter
+<6>[    8.551269] rmi4_f01_init Registering function f01
+<6>[    8.559051] f01 sensor00.f01: Product type: TM1886-001
+<6>[    8.564239] f01 sensor00.f01: Version ID : = 0x20 0x09 (32.9)
+<6>[    8.570159] f01 sensor00.f01: Production date: 2000-00-00
+<6>[    8.575622] f01 sensor00.f01: Successfully initialized sensor00.f01
+<6>[    8.582550] rmi4_f11_init - Registering device function f11
+<6>[    8.592102] input: sensor00.f11_sensor0 as /devices/spi3/spi_master/spi9/spi9.0/sensor00/sensor00.f11/input/input7
+<6>[    8.604156] f11 sensor00.f11: Successfully started
+<6>[    8.609619] rmi4_f34_init - Registering device function f34
+<6>[    8.616027] f34 sensor00.f34: rmi4_f34_start - BootloaderID = 13142 (0x3356)
+<6>[    8.623565] f34 sensor00.f34: rmi4_f34_start - Block size = 16 (0x10)
+<6>[    8.630462] f34 sensor00.f34: rmi4_f34_start - Image block count = 2912 (0xB60)
+<6>[    8.638214] f34 sensor00.f34: rmi4_f34_start - Config block count = 32 (0x20)
+<6>[    8.646057] f34 sensor00.f34: Chip doesn't have config ID
+<6>[    8.651611] f34 sensor00.f34: Successfully initialized RMI4 F34 Driver
+<6>[    8.658813] Physically loading driver rmi4_3250_early_suspend
+<6>[    8.664703] rmi4_3250_early_suspend sensor00.rmi4_3250_early_suspend: Successfully probed rmi4_3250_early_suspend
+<6>[    8.677459] ab5500_init called.
+<6>[    8.680816] ab8500_codec_platform_driver_init: Enter.
+<6>[    8.685943] ab8500_codec_driver_probe: Register codec.
+<6>[    8.691925] ux500_msp_init: Register ux500-msp-dai platform driver.
+<3>[    8.698364] ux500_msp_drv_probe: Enter (pdev->name = ux500-msp-i2s).
+<6>[    8.704803] ux500_msp_drv_probe: Registering ux500-msp-dai SoC CPU-DAI.
+<3>[    8.711456] ux500_msp_drv_probe: Enter (pdev->name = ux500-msp-i2s).
+<6>[    8.717834] ux500_msp_drv_probe: Registering ux500-msp-dai SoC CPU-DAI.
+<3>[    8.724487] ux500_msp_drv_probe: Enter (pdev->name = ux500-msp-i2s).
+<6>[    8.730865] ux500_msp_drv_probe: Registering ux500-msp-dai SoC CPU-DAI.
+<3>[    8.737518] ux500_msp_drv_probe: Enter (pdev->name = ux500-msp-i2s).
+<6>[    8.743865] ux500_msp_drv_probe: Registering ux500-msp-dai SoC CPU-DAI.
+<6>[    8.751037] av8100_codec_drv_probe: Init codec private data..
+<6>[    8.756805] av8100_codec_drv_probe: Register codec.
+<6>[    8.761962] cg29xx_codec_driver_probe: Init codec private data..
+<6>[    8.767974] cg29xx_codec_driver_probe: Register codec.
+<6>[    8.773406] ux500_pcm_drv_probe: Register ux500-pcm SoC platform driver.
+<6>[    8.780853] asoc: av8100-codec-dai <-> ux500-msp-i2s.2 mapping ok
+<6>[    8.794219] asoc: ab8500-codec-dai.0 <-> ux500-msp-i2s.1 mapping ok
+<6>[    8.801177] asoc: ab8500-codec-dai.1 <-> ux500-msp-i2s.3 mapping ok
+<6>[    8.808227] asoc: cg29xx-codec-dai.1 <-> ux500-msp-i2s.0 mapping ok
+<6>[    8.815948] input: U8500-card AB8500 Hs Status as /devices/platform/soc-audio/sound/card0/input8
+<6>[    8.825439] ALSA device list:
+<6>[    8.828399]   #0: U8500-card
+<6>[    8.831451] GACT probability NOT on
+<6>[    8.834930] Mirror/redirect action on
+<6>[    8.838623] u32 classifier
+<6>[    8.841339]     Actions configured
+<6>[    8.844757] Netfilter messages via NETLINK v0.30.
+<6>[    8.849578] nf_conntrack version 0.5.0 (12814 buckets, 51256 max)
+<6>[    8.856079] ctnetlink v0.93: registering with nfnetlink.
+<6>[    8.861419] NF_TPROXY: Transparent proxy support initialized, version 4.1.0
+<6>[    8.868408] NF_TPROXY: Copyright (c) 2006-2007 BalaBit IT Ltd.
+<6>[    8.874847] xt_time: kernel timezone is -0000
+<6>[    8.880645] ip_tables: (C) 2000-2006 Netfilter Core Team
+<6>[    8.886169] arp_tables: (C) 2002 David S. Miller
+<6>[    8.890869] TCP cubic registered
+<6>[    8.894256] NET: Registered protocol family 10
+<6>[    8.902038] Mobile IPv6
+<6>[    8.904510] ip6_tables: (C) 2000-2006 Netfilter Core Team
+<6>[    8.912475] NET: Registered protocol family 17
+<6>[    8.916992] NET: Registered protocol family 15
+<6>[    8.921600] Bluetooth: RFCOMM TTY layer initialized
+<6>[    8.926513] Bluetooth: RFCOMM socket layer initialized
+<6>[    8.931640] Bluetooth: RFCOMM ver 1.11
+<6>[    8.935394] Bluetooth: BNEP (Ethernet Emulation) ver 1.3
+<6>[    8.940734] Bluetooth: BNEP filters: protocol multicast
+<6>[    8.945953] Bluetooth: HIDP (Human Interface Emulation) ver 1.2
+<6>[    8.952178] NET: Registered protocol family 35
+<6>[    8.956787] Compat-wireless backport release: 
+<6>[    8.961212] Backport based on  
+<6>[    8.964477] NET: Registered protocol family 37
+<6>[    8.969024] VFP support v0.3: implementor 41 architecture 3 part 30 variant 9 rev 2
+<5>[    8.976745] Registering SWP/SWPB emulation handler
+<6>[    8.985565] Use-case governor initialized
+<6>[    8.990264] l2x0-prefetch: initialized.
+<6>[    8.996215] registered taskstats version 1
+<6>[   11.919128] UKSM: relative memcmp_cost = 1966 hash=1721621229 cmp_ret=0.
+<6>[   11.929992] mcde_display_hdmi_init
+<6>[   11.933502] av8100_hdmi av8100_hdmi.3: HDMI display probed
+<7>[   11.940338] regulator regulator.22: VEXTSUPPLY2-is_enabled (bank, reg, mask, value): 0x04, 0x08, 0x0c, 0x13
+<6>[   11.940368] regulator_init_complete: db8500-esram12: disabling
+<6>[   11.947692] ab8500-rtc ab8500-rtc.0: setting system clock to 2013-03-02 22:30:28 UTC (1362263428)
+<6>[   11.958160] cpuidle: initiated for CPU0.
+<6>[   11.963439] cpuidle: initiated for CPU1.
+<6>[   11.967926] Freeing init memory: 332K
+<4>[   11.976257] init (1): /proc/1/oom_adj is deprecated, please use /proc/1/oom_score_adj instead.
+<3>[   12.308258] init: property (null) has no value for writing to /sys/class/android_usb/android0/iManufacturer
+<3>[   12.318084] init: property (null) has no value for writing to /sys/class/android_usb/android0/iProduct
+<6>[   12.359802] EXT4-fs (mmcblk0p10): recovery complete
+<6>[   12.365783] EXT4-fs (mmcblk0p10): mounted filesystem with ordered data mode. Opts: (null)
+<6>[   16.640106] EXT4-fs (mmcblk0p11): mounted filesystem with ordered data mode. Opts: noauto_da_alloc
+<6>[   16.664001] EXT4-fs (mmcblk0p12): recovery complete
+<6>[   16.669677] EXT4-fs (mmcblk0p12): mounted filesystem with ordered data mode. Opts: (null)
+<6>[   16.692260] EXT4-fs (mmcblk0p6): recovery complete
+<6>[   16.698883] EXT4-fs (mmcblk0p6): mounted filesystem with ordered data mode. Opts: (null)
+<6>[   17.200805] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   17.207122] android_work: sent uevent USB_STATE=DISCONNECTED
+<6>[   17.315093] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   17.321411] android_work: sent uevent USB_STATE=DISCONNECTED
+<6>[   17.417816] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   17.424041] android_work: sent uevent USB_STATE=DISCONNECTED
+<6>[   17.531982] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   17.538269] android_work: sent uevent USB_STATE=DISCONNECTED
+<5>[   17.560302] CPU1: shutdown
+<6>[   17.647094] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   17.653381] android_work: sent uevent USB_STATE=DISCONNECTED
+<6>[   17.761962] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   18.123046] android_work: sent uevent USB_STATE=DISCONNECTED
+<6>[   18.222961] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   18.229309] android_work: sent uevent USB_STATE=DISCONNECTED
+<6>[   18.342926] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   18.356018] android_work: sent uevent USB_STATE=DISCONNECTED
+<6>[   18.455932] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   18.462554] android_work: sent uevent USB_STATE=DISCONNECTED
+<6>[   18.575927] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   18.589019] android_work: sent uevent USB_STATE=DISCONNECTED
+<6>[   18.703918] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   18.721008] android_work: sent uevent USB_STATE=DISCONNECTED
+<6>[   18.835906] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   19.367492] ab8500-charger ab8500-charger.0: VBUS input current limit set to 0 mA
+<6>[   19.377075] ab8500-charger ab8500-charger.0: VBUS input current limit set to 0 mA
+<6>[   19.500091] ab8500-charger ab8500-charger.0: Enable USB: 4200mV 1500mA
+<6>[   19.507324] ab8500-charger ab8500-charger.0: VBUS input current limit set to 500 mA
+<6>[   19.627136] ab8500-charger ab8500-charger.0: VBUS input current limit set to 500 mA
+<3>[   20.288360] init: untracked pid 1495 exited
+<6>[   20.402587] u8500_shrm shrm_bus: Open SECURITY_MESSAGING Device
+<3>[   20.444152] init: cannot execve('/system/etc/install-recovery.sh'): Permission denied
+<3>[   20.472473] init: cannot find '/system/bin/hdmid', disabling 'hdmid'
+<6>[   20.490356] ADDRCONF(NETDEV_UP): upnlink0: link is not ready
+<3>[   20.498992] init: warning: service 'admsrv' non-root user ignored as capabilities are specified
+<6>[   20.507720] warning: `init' uses 32-bit capabilities (legacy support in use)
+<3>[   20.530609] init: cannot find '/system/bin/avahi-autoipd', disabling 'avahi-autoipd'
+<6>[   20.584320] warning: `rild' uses 32-bit capabilities (legacy support in use)
+<3>[   20.591583] init: cannot find '/system/bin/avahi-daemon', disabling 'avahi-daemon'
+<6>[   20.664886] cg2900-uart cg2900-uart.0: UART opened
+<3>[   20.677673] init: cannot find '/system/bin/avahi-publish', disabling 'avahi-publish'
+<6>[   20.699615] cg2900-uart cg2900-uart.0: Transport connected
+<6>[   20.705139] cg2900-uart cg2900-uart.0: Set chip power: ENABLE
+<6>[   20.715637] u8500_shrm shrm_bus: Open RPC_MESSAGING Device
+<4>[   20.738159] CPU1: Booted secondary processor
+<6>[   20.747650] Switched to NOHz mode on CPU #1
+<3>[   20.770568] init: cannot find '/system/xbin/kexec.dyn', disabling 'kexec'
+<3>[   20.781311] init: cannot find '/system/bin/semcwall', disabling 'semcwall'
+<6>[   20.798278] u8500_shrm shrm_bus: mod-query-state from user-space
+<6>[   20.798309] u8500_shrm shrm_bus: Sending unicast message
+<3>[   20.863861] init: cannot find '/system/bin/rtc_calibration', disabling 'rtc_calibration'
+<6>[   20.930664] Adding 147676k swap on /dev/block/zram0.  Priority:-1 extents:1 across:147676k SS
+<6>[   20.986968] cg2900-uart cg2900-uart.0: Received Read Local Version Information with:
+<6>[   20.986968] 	hci_version:  0x06
+<6>[   20.986968] 	hci_revision: 0x0200
+<6>[   20.986968] 	lmp_pal_version: 0x06
+<6>[   20.986968] 	manufacturer: 0x0030
+<6>[   20.986999] 	hci_sub_version: 0x0000
+<6>[   21.100006] cg2900-uart cg2900-uart.0: Chip supported by the CG2900 driver
+<6>[   21.107177] cg2900-uart cg2900-uart.0: Chip handler found
+<3>[   21.316986] elevator: type null not found
+<3>[   21.323638] elevator: switch to null
+<3>[   21.323638]  failed
+<3>[   21.338134] elevator: type null not found
+<3>[   21.343109] elevator: switch to null
+<3>[   21.343109]  failed
+<3>[   21.370727] android_usb: already disabled
+<6>[   21.432983] adb_open
+<7>[   21.436340] Probe called, function 1
+<7>[   21.467132] ieee80211 phy0: Selected rate control algorithm 'minstrel_ht'
+<6>[   21.550262] adb_bind_config
+<6>[   21.597839] cg2900-uart cg2900-uart.0: Set chip power: DISABLE
+<7>[   21.619201] is registered as 'phy0'
+<7>[   21.659851] cw1200 module loaded, ret 0
+<3>[   21.708557] u8500_shrm shrm_bus: failed to get index
+<3>[   21.713623] u8500_shrm shrm_bus: common receive with l2 header 210 failed
+<6>[   21.742736] android_work: sent uevent USB_STATE=DISCONNECTED
+<6>[   21.832183] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   21.837829] mmci-pl18x sdi4: unhandled irq (mmci_status: 00000040)
+<6>[   21.844024] mmci-pl18x sdi4: [MMC]base value = e00d800008u
+<6>[   21.849517] mmci-pl18x sdi4: Registers of MMCI at 0x80114000
+<6>[   21.855163] mmci-pl18x sdi4: mmci_power          :0x00000003
+<6>[   21.860809] mmci-pl18x sdi4: mmci_clock          :0x00007500
+<6>[   21.866485] mmci-pl18x sdi4: mmci_arg            :0x00000000
+<6>[   21.872131] mmci-pl18x sdi4: mmci_cmd            :0x00000000
+<6>[   21.877807] mmci-pl18x sdi4: mmci_respcmd        :0x0000000c
+<6>[   21.883453] mmci-pl18x sdi4: mmci_resp0          :0x00000b00
+<6>[   21.889129] mmci-pl18x sdi4: mmci_resp1          :0x00000000
+<6>[   21.894805] mmci-pl18x sdi4: mmci_resp2          :0x00000000
+<6>[   21.900451] mmci-pl18x sdi4: mmci_resp3          :0x00000000
+<6>[   21.906097] mmci-pl18x sdi4: mmci_datatimer      :0x007245e8
+<6>[   21.911773] mmci-pl18x sdi4: mmci_datalen        :0x00007000
+<6>[   21.917449] mmci-pl18x sdi4: mmci_datactrl       :0x00000000
+<6>[   21.923095] mmci-pl18x sdi4: mmci_datacnt        :0x00000000
+<6>[   21.928771] mmci-pl18x sdi4: mmci_status         :0x00000400
+<6>[   21.934417] mmci-pl18x sdi4: mmci_iclear         :0x00000000
+<6>[   21.940093] mmci-pl18x sdi4: mmci_imask0         :0x000003ff
+<6>[   21.945739] mmci-pl18x sdi4: mmci_imask1         :0x00000000
+<6>[   21.951416] mmci-pl18x sdi4: mmci_fifocnt        :0x00000000
+<6>[   21.957061] mmci-pl18x sdi4: mmci_fifo           :0x000265f4
+<6>[   21.966003] android_work: sent uevent USB_STATE=DISCONNECTED
+<6>[   21.975982] android_usb gadget: high speed config #1: android
+<6>[   21.998107] android_work: sent uevent USB_STATE=CONNECTED
+<6>[   22.004364] Bluetooth: CG2900 registered
+<6>[   22.004669] Bluetooth: Open ST-Ericsson CG2900 driver
+<6>[   22.004669] cg2900-uart cg2900-uart.0: Set chip power: ENABLE
+<6>[   22.030426] android_work: sent uevent USB_STATE=CONFIGURED
+<6>[   22.059326] cg2900-audiobt cg2900-audiobt.0: CG2900 device added
+<6>[   22.067016] cg2900-audiofm cg2900-audiofm.0: CG2900 Audio driver started
+<6>[   22.388488] cg2900-uart cg2900-uart.0: Baud rate changed to 3250000 baud
+<4>[   22.561859] Mali<2>: MMU session begin
+<4>[   22.565643] Mali<2>: Page directory for session 0xdc0c4dc0 placed at physical address 0x1ECC4000
+<4>[   22.574584] Mali<2>: MMU session begin: success
+<4>[   22.579132] Mali<2>: Core: session_begin: for Mali-400 PP
+<4>[   22.584533] Mali<2>: Core: session_begin: for Mali-400 GP
+<4>[   22.815338] Mali<2>: MMU session begin
+<4>[   22.819183] Mali<2>: Page directory for session 0xdc0d5700 placed at physical address 0x1ECC7000
+<4>[   22.828033] Mali<2>: MMU session begin: success
+<4>[   22.832580] Mali<2>: Core: session_begin: for Mali-400 PP
+<4>[   22.838012] Mali<2>: Core: session_begin: for Mali-400 GP
+<6>[   23.099151] sim_detect_semc: attr_simstatus_store called, sim status 1
+<6>[   23.119110] ab8500-charger ab8500-charger.0: VBUS input current limit set to 500 mA
+<6>[   24.764953] u8500_shrm shrm_bus: mod-query-state from user-space
+<6>[   24.771026] u8500_shrm shrm_bus: Sending unicast message
+<6>[   24.776519] u8500_shrm shrm_bus: Open AUDIO_MESSAGING Device
+<6>[   25.250061] lm3560 2-0053: lm3560_resume: Reinit lm3560 chip.
+<6>[   25.256408] lm3560 2-0053: lm3560_resume: Resumed lm3560 driver.
+<6>[   25.686553] cg2900-uart cg2900-uart.0: Set chip power: DISABLE
+<6>[   26.878448] lm3560 2-0053: lm3560_suspend: Suspended lm3560 driver.
+<3>[   29.286956] nmk-i2c nmk-i2c.2: Write to slave 0x1e timed out
+<3>[   29.292633] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[   29.496948] nmk-i2c nmk-i2c.2: Write to slave 0x1e timed out
+<3>[   29.502624] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[   29.707000] nmk-i2c nmk-i2c.2: Write to slave 0x1e timed out
+<3>[   29.712677] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[   29.916992] nmk-i2c nmk-i2c.2: Write to slave 0x1e timed out
+<3>[   29.922790] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[   30.126617] nmk-i2c nmk-i2c.2: Write to slave 0x1e timed out
+<3>[   30.132324] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[   30.336700] nmk-i2c nmk-i2c.2: Write to slave 0x1e timed out
+<3>[   30.342437] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[   30.547027] nmk-i2c nmk-i2c.2: Write to slave 0x1e timed out
+<3>[   30.552703] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[   30.756591] nmk-i2c nmk-i2c.2: Write to slave 0x1e timed out
+<3>[   30.762268] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[   30.966613] nmk-i2c nmk-i2c.2: Write to slave 0x1e timed out
+<3>[   30.972320] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[   30.979553] lsm303dlh_mag 2-001e: lsm303dlh_mag_device_power_on: smbus err -110
+<3>[   31.236724] nmk-i2c nmk-i2c.2: Write to slave 0x1e timed out
+<3>[   31.242431] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[   31.446624] nmk-i2c nmk-i2c.2: Write to slave 0x1e timed out
+<3>[   31.452301] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<3>[   31.657165] nmk-i2c nmk-i2c.2: Write to slave 0x1e timed out
+<3>[   31.663726] nmk-i2c nmk-i2c.2: no ack received after address transmission
+<5>[   31.674987] CPU1: shutdown
+<3>[   31.681549] lsm303dlh_mag 2-001e: lsm303dlh_mag_device_power_off: smbus err -110

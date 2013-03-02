@@ -364,7 +364,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 		.constraints = {
 			.name = "V-DISPLAY",
 			.min_uV = 800000,
-			.max_uV = 2600000,
+			.max_uV = 2800000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS,
 			.boot_on = 1, /* display is on at boot */
@@ -378,7 +378,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 		.constraints = {
 			.name = "V-eMMC1",
 			.min_uV = 1100000,
-			.max_uV = 2600000,
+			.max_uV = 2900000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
 					  REGULATOR_CHANGE_MODE,
@@ -394,8 +394,8 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 		.supply_regulator = "ab8500-ext-supply3",
 		.constraints = {
 			.name = "V-MMC-SD",
-			.min_uV = 1100000,
-			.max_uV = 2600000,
+			.min_uV = 1000000,
+			.max_uV = 1200000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
 					  REGULATOR_CHANGE_MODE,
@@ -454,7 +454,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 	[AB8500_LDO_INTCORE] = {
 		.constraints = {
 			.name = "V-INTCORE",
-			.min_uV = 1250000,
+			.min_uV = 1200000,
 			.max_uV = 1350000,
 			.input_uV = 1800000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
@@ -566,7 +566,7 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 		.constraints = {
 			.name = "V-DISPLAY",
 			.min_uV = 1800000,
-			.max_uV = 2600000,
+			.max_uV = 2800000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS,
 			.boot_on = 1, /* display is on at boot */
@@ -580,7 +580,7 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 		.constraints = {
 			.name = "V-eMMC1",
 			.min_uV = 900000,
-			.max_uV = 2600000,
+			.max_uV = 2900000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
 					  REGULATOR_CHANGE_MODE,
@@ -596,7 +596,7 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 		.constraints = {
 			.name = "V-MMC-SD",
 			.min_uV = 900000,
-			.max_uV = 2600000,
+			.max_uV = 1200000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
 					  REGULATOR_CHANGE_MODE,
@@ -611,7 +611,7 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 		.constraints = {
 			.name = "V-NFC-SE",
 			.min_uV = 900000,
-			.max_uV = 2600000,
+			.max_uV = 1200000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
 					  REGULATOR_CHANGE_MODE,
@@ -670,7 +670,7 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 	[AB9540_LDO_INTCORE] = {
 		.constraints = {
 			.name = "V-INTCORE",
-			.min_uV = 1250000,
+			.min_uV = 1200000,
 			.max_uV = 1350000,
 			.input_uV = 1800000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
