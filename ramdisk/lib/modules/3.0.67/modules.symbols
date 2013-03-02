@@ -1,0 +1,9 @@
+# Aliases for symbols, used by symbol_request().
+alias symbol:cw1200_free_common cw1200_core
+alias symbol:hwrng_register rng_core
+alias symbol:cw1200_register_common cw1200_core
+alias symbol:cw1200_core_probe cw1200_core
+alias symbol:hwrng_unregister rng_core
+alias symbol:cw1200_unregister_common cw1200_core
+alias symbol:cw1200_can_suspend cw1200_core
+alias symbol:cw1200_core_release cw1200_core
