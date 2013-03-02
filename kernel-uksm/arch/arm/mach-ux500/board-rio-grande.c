@@ -500,7 +500,7 @@ static int platform_power_config(struct device *dev, bool enable,
 				return rc;
 			}
 		}
-		rc = regulator_set_voltage(*regulator, 2800000, 2800000);
+		rc = regulator_set_voltage(*regulator, 900000, 2800000);
 		if (rc) {
 			dev_err(dev, "%s: unable to set voltage "
 						"rc = %d!\n", __func__, rc);
@@ -1530,7 +1530,7 @@ static int cyttsp_init(int on, struct device *dev)
 			ret = -ENODEV;
 			goto regulator_get_failed;
 		}
-		ret = regulator_set_voltage(cyttsp_reg, CYTTSP_VOLTAGE,
+		ret = regulator_set_voltage(cyttsp_reg, 900000,
 				CYTTSP_VOLTAGE);
 		if (ret < 0) {
 			dev_err(dev, "Failed to set voltage on '%s'\n",
@@ -1786,7 +1786,7 @@ static int rmi4_reg_init(struct device *dev, int on)
 	}
 
 	if (on) {
-		regulator_set_voltage(rmi4_vdd, RMI4_SPI_VDD_VOLTAGE,
+		regulator_set_voltage(rmi4_vdd, 900000,
 				      RMI4_SPI_VDD_VOLTAGE);
 		ret = regulator_enable_handler(rmi4_vdd, __func__);
 		if (ret < 0) {

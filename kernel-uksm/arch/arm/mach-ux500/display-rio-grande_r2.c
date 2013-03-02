@@ -59,7 +59,7 @@ struct panel_platform_data panel_display0_pdata = {
 	.ddr_is_requested = false,
 #ifdef CONFIG_REGULATOR
 	.regulator_id = "v-display",
-	.min_supply_voltage = 2800000, /* 2.8V */
+	.min_supply_voltage = 900000, /* 2.8V */
 	.max_supply_voltage = 2800000, /* 2.8V */
 	.io_regulator_id = "vio-display",
 #endif
