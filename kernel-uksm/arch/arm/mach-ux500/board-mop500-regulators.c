@@ -378,7 +378,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 		.constraints = {
 			.name = "V-eMMC1",
 			.min_uV = 1100000,
-			.max_uV = 2900000,
+			.max_uV = 2800000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
 					  REGULATOR_CHANGE_DRMS |
@@ -396,9 +396,10 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 		.constraints = {
 			.name = "V-MMC-SD",
 			.min_uV = 1800000,
-			.max_uV = 1800000,
+			.max_uV = 2800000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
+					  REGULATOR_CHANGE_DRMS |
 					  REGULATOR_CHANGE_MODE,
 			.valid_modes_mask = REGULATOR_MODE_NORMAL |
 					    REGULATOR_MODE_IDLE,
@@ -455,7 +456,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 	[AB8500_LDO_INTCORE] = {
 		.constraints = {
 			.name = "V-INTCORE",
-			.min_uV = 1250000,
+			.min_uV = 1200000,
 			.max_uV = 1350000,
 			.input_uV = 1800000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |

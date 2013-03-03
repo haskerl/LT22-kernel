@@ -56,8 +56,8 @@ obj-$(CONFIG_COMPAT_BLUETOOTH_MODULES) += drivers/bluetooth/
 else
 
 export PWD :=	$(shell pwd)
-CFLAGS += \
-        -DCOMPAT_BASE_TREE="\"$(shell cat compat_base_tree)\"" \
+#CFLAGS += \
+#        -DCOMPAT_BASE_TREE="\"$(shell cat compat_base_tree)\"" \
         -DCOMPAT_BASE_TREE_VERSION="\"$(shell cat compat_base_tree_version)\"" \
         -DCOMPAT_PROJECT="\"Compat-wireless\"" \
         -DCOMPAT_VERSION="\"$(shell cat compat_version)\""
@@ -71,7 +71,7 @@ export CREL=$(shell cat $(PWD)/compat_version)
 export CREL_PRE:=.compat_autoconf_
 export CREL_CHECK:=$(CREL_PRE)$(CREL)
 
-include $(PWD)/$(COMPAT_CONFIG)
+#include $(PWD)/$(COMPAT_CONFIG)
 
 all: modules
 
