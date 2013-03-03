@@ -1,0 +1,178 @@
+diff --git a/kernel-uksm/arch/arm/mach-ux500/board-mop500-regulators.c b/kernel-uksm/arch/arm/mach-ux500/board-mop500-regula
+tors.c
+index d4fa968..57f0e6f 100644
+--- a/kernel-uksm/arch/arm/mach-ux500/board-mop500-regulators.c
++++ b/kernel-uksm/arch/arm/mach-ux500/board-mop500-regulators.c
+@@ -34,8 +34,8 @@ static struct regulator_consumer_supply tps61052_vaudio_consumers[] = {
+ struct regulator_init_data tps61052_regulator = {
+ 	.constraints = {
+ 		.name = "vaudio-hf",
+-		.min_uV = 2000000,
+-		.max_uV = 3400000,
++		.min_uV = 4500000,
++		.max_uV = 4500000,
+ 		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+ 	},
+ 	.num_consumer_supplies = ARRAY_SIZE(tps61052_vaudio_consumers),
+@@ -363,8 +363,8 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
+ 		.supply_regulator = "ab8500-ext-supply3",
+ 		.constraints = {
+ 			.name = "V-DISPLAY",
+-			.min_uV = 800000,
+-			.max_uV = 2800000,
++			.min_uV = 2800000,
++			.max_uV = 3300000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS,
+ 			.boot_on = 1, /* display is on at boot */
+@@ -378,7 +378,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
+ 		.constraints = {
+ 			.name = "V-eMMC1",
+ 			.min_uV = 1100000,
+-			.max_uV = 2900000,
++			.max_uV = 3300000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS |
+ 					  REGULATOR_CHANGE_MODE,
+@@ -394,8 +394,8 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
+ 		.supply_regulator = "ab8500-ext-supply3",
+ 		.constraints = {
+ 			.name = "V-MMC-SD",
+-			.min_uV = 1000000,
+-			.max_uV = 1200000,
++			.min_uV = 1100000,
++			.max_uV = 3300000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS |
+ 					  REGULATOR_CHANGE_MODE,
+@@ -454,7 +454,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
+ 	[AB8500_LDO_INTCORE] = {
+ 		.constraints = {
+ 			.name = "V-INTCORE",
+-			.min_uV = 1200000,
++			.min_uV = 1250000,
+ 			.max_uV = 1350000,
+ 			.input_uV = 1800000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+@@ -565,8 +565,8 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
+ 		.supply_regulator = "ab8500-ext-supply3",
+ 		.constraints = {
+ 			.name = "V-DISPLAY",
+-			.min_uV = 1800000,
+-			.max_uV = 2800000,
++			.min_uV = 2800000,
++			.max_uV = 3300000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS,
+ 			.boot_on = 1, /* display is on at boot */
+@@ -579,8 +579,8 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
+ 		.supply_regulator = "ab8500-ext-supply3",
+ 		.constraints = {
+ 			.name = "V-eMMC1",
+-			.min_uV = 900000,
+-			.max_uV = 2900000,
++			.min_uV = 1100000,
++			.max_uV = 3300000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS |
+ 					  REGULATOR_CHANGE_MODE,
+@@ -595,8 +595,8 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
+ 		.supply_regulator = "ab8500-ext-supply3",
+ 		.constraints = {
+ 			.name = "V-MMC-SD",
+-			.min_uV = 900000,
+-			.max_uV = 1200000,
++			.min_uV = 1100000,
++			.max_uV = 3300000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS |
+ 					  REGULATOR_CHANGE_MODE,
+@@ -610,8 +610,8 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
+ 	[AB9540_LDO_AUX4] = {
+ 		.constraints = {
+ 			.name = "V-NFC-SE",
+-			.min_uV = 900000,
+-			.max_uV = 1200000,
++			.min_uV = 1100000,
++			.max_uV = 3300000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS |
+ 					  REGULATOR_CHANGE_MODE,
+@@ -670,7 +670,7 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
+ 	[AB9540_LDO_INTCORE] = {
+ 		.constraints = {
+ 			.name = "V-INTCORE",
+-			.min_uV = 1200000,
++			.min_uV = 1250000,
+ 			.max_uV = 1350000,
+ 			.input_uV = 1800000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+diff --git a/kernel-uksm/arch/arm/mach-ux500/board-u5500-regulators.c b/kernel-uksm/arch/arm/mach-ux500/board-u5500-regulato
+rs.c
+index e234e52..b420f6a 100644
+--- a/kernel-uksm/arch/arm/mach-ux500/board-u5500-regulators.c
++++ b/kernel-uksm/arch/arm/mach-ux500/board-u5500-regulators.c
+@@ -72,8 +72,8 @@ ab5500_regulator_init_data[AB5500_NUM_REGULATORS] = {
+ 	/* SD Card */
+ 	[AB5500_LDO_G] = {
+ 		.constraints = {
+-			.min_uV		= 200000,
+-			.max_uV		= 1510000,
++			.min_uV		= 1200000,
++			.max_uV		= 2910000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS |
+ 					  REGULATOR_CHANGE_MODE,
+@@ -86,8 +86,8 @@ ab5500_regulator_init_data[AB5500_NUM_REGULATORS] = {
+ 	/* Display */
+ 	[AB5500_LDO_H] = {
+ 		.constraints = {
+-			.min_uV		= 90000,
+-			.max_uV		= 1790000,
++			.min_uV		= 2790000,
++			.max_uV		= 2790000,
+ 			.apply_uV	= 1,
+ 			.boot_on	= 1, /* display on during boot */
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+@@ -99,8 +99,8 @@ ab5500_regulator_init_data[AB5500_NUM_REGULATORS] = {
+ 	/* Camera */
+ 	[AB5500_LDO_K] = {
+ 		.constraints = {
+-			.min_uV		= 90000,
+-			.max_uV		= 1790000,
++			.min_uV		= 2790000,
++			.max_uV		= 2790000,
+ 			.apply_uV	= 1,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS,
+@@ -111,8 +111,8 @@ ab5500_regulator_init_data[AB5500_NUM_REGULATORS] = {
+ 	/* External eMMC */
+ 	[AB5500_LDO_L] = {
+ 		.constraints = {
+-			.min_uV		= 200000,
+-			.max_uV		= 1910000,
++			.min_uV		= 1200000,
++			.max_uV		= 2910000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS |
+ 					  REGULATOR_CHANGE_MODE,
+@@ -132,8 +132,8 @@ ab5500_regulator_init_data[AB5500_NUM_REGULATORS] = {
+ 	},
+ 	[AB5500_LDO_SIM] = {
+ 		.constraints = {
+-			.min_uV		= 875000,
+-			.max_uV		= 1900000,
++			.min_uV		= 1875000,
++			.max_uV		= 2900000,
+ 			.apply_uV	= 1,
+ 			.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS,
+@@ -190,7 +190,7 @@ static struct regulator_init_data u5500_vio_init_data = {
+ 
+ static struct fixed_voltage_config u5500_vio_pdata __initdata = {
+ 	.supply_name	= "vio_1v8",
+-	.microvolts	= 1000000,
++	.microvolts	= 1800000,
+ 	.init_data	= &u5500_vio_init_data,
+ 	.gpio		= -EINVAL,
+ };
