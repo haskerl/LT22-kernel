@@ -34,9 +34,11 @@ static struct regulator_consumer_supply tps61052_vaudio_consumers[] = {
 struct regulator_init_data tps61052_regulator = {
 	.constraints = {
 		.name = "vaudio-hf",
-		.min_uV = 2000000,
-		.max_uV = 3400000,
-		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+		.min_uV = 3200000,
+		.max_uV = 4800000,
+		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+				  REGULATOR_CHANGE_STATUS |
+				  REGULATOR_CHANGE_DRMS,
 	},
 	.num_consumer_supplies = ARRAY_SIZE(tps61052_vaudio_consumers),
 	.consumer_supplies = tps61052_vaudio_consumers,
@@ -377,7 +379,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 		.supply_regulator = "ab8500-ext-supply3",
 		.constraints = {
 			.name = "V-eMMC1",
-			.min_uV = 1100000,
+			.min_uV = 2800000,
 			.max_uV = 2800000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |

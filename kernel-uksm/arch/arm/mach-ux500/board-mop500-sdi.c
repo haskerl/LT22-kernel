@@ -34,8 +34,8 @@ static int sdi0_vsel = -1;
 static int mop500_sdi0_ios_handler(struct device *dev, struct mmc_ios *ios,
 				   enum rpm_status pm)
 {
-	static unsigned char power_mode = MMC_POWER_ON;
-	static unsigned char signal_voltage = MMC_SIGNAL_VOLTAGE_330;
+	static unsigned char power_mode = MMC_POWER_OFF;
+	static unsigned char signal_voltage = MMC_SIGNAL_VOLTAGE_180;
 
 	if (signal_voltage == ios->signal_voltage)
 		goto do_power;

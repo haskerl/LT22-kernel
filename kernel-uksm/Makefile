@@ -347,11 +347,11 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   = -mtune=cortex-a9 -mfpu=vfpv3 -ftree-vectorize
-AFLAGS_MODULE   = -mtune=cortex-a9 -mfpu=vfpv3 -ftree-vectorize
+CFLAGS_MODULE   = -mtune=cortex-a9 -mfpu=vfpv3 -ftree-vectorize -fno-common
+AFLAGS_MODULE   = -mtune=cortex-a9 -mfpu=vfpv3 -ftree-vectorize -fno-common
 LDFLAGS_MODULE  =
-CFLAGS_KERNEL	= -D__linux__ -mtune=cortex-a9 -mfpu=vfpv3 -ftree-vectorize
-AFLAGS_KERNEL	= -mtune=cortex-a9 -mfpu=vfpv3 -ftree-vectorize
+CFLAGS_KERNEL	= -flto -D__linux__ -mtune=cortex-a9 -mfpu=vfpv3 -ftree-vectorize
+AFLAGS_KERNEL	= -flto -mtune=cortex-a9 -mfpu=vfpv3 -ftree-vectorize
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -364,20 +364,22 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-KBUILD_CFLAGS   := -Wall -O3 -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common \
+KBUILD_CFLAGS   := -Wall -pipe -O3 -Wundef -Wstrict-prototypes -Wno-trigraphs \
+		   -fstrict-aliasing \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
 		   -mtune=cortex-a9 \
 		   -mfpu=vfpv3 \
-		   -marm
+		   -marm \
+		   -mthumb \
+		   -ffast-math 
 
 KBUILD_AFLAGS_KERNEL :=
-KBUILD_CFLAGS_KERNEL := -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mtune=cortex-a9 -march=armv7-a -mfpu=neon -ftree-vectorize -funswitch-loops
+KBUILD_CFLAGS_KERNEL := -flto -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3 -ftree-vectorize -funswitch-loops
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
-KBUILD_CFLAGS_MODULE  := -DMODULE -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mtune=cortex-a9 -march=armv7-a -mfpu=neon -ftree-vectorize -funswitch-loops
+KBUILD_CFLAGS_MODULE  := -DMODULE -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3 -ftree-vectorize -funswitch-loops
 CFLAGS_MODULE   = $(MODFLAGS)
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
