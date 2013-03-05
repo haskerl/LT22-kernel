@@ -347,11 +347,11 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   = -mtune=cortex-a9 -mfpu=vfpv3 -ftree-vectorize -fno-common
-AFLAGS_MODULE   = -mtune=cortex-a9 -mfpu=vfpv3 -ftree-vectorize -fno-common
+CFLAGS_MODULE   = -mtune=cortex-a9 -mfpu=neon -ftree-vectorize -fno-common
+AFLAGS_MODULE   = -mtune=cortex-a9 -mfpu=neon -ftree-vectorize -fno-common
 LDFLAGS_MODULE  =
-CFLAGS_KERNEL	= -flto -D__linux__ -mtune=cortex-a9 -mfpu=vfpv3 -ftree-vectorize
-AFLAGS_KERNEL	= -flto -mtune=cortex-a9 -mfpu=vfpv3 -ftree-vectorize
+CFLAGS_KERNEL	= -flto -D__linux__ -mtune=cortex-a9 -mfpu=neon -ftree-vectorize
+AFLAGS_KERNEL	= -flto -mtune=cortex-a9 -mfpu=neon -ftree-vectorize
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -370,16 +370,19 @@ KBUILD_CFLAGS   := -Wall -pipe -O3 -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
 		   -mtune=cortex-a9 \
-		   -mfpu=vfpv3 \
+		   -mfpu=neon \
 		   -marm \
 		   -mthumb \
-		   -ffast-math 
+		   -ffast-math \
+		   -mfloat-abi=softfp \
+		   -mvectorize-with-neon-quad \
+		   -ftree-vectorize
 
 KBUILD_AFLAGS_KERNEL :=
-KBUILD_CFLAGS_KERNEL := -flto -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3 -ftree-vectorize -funswitch-loops
+KBUILD_CFLAGS_KERNEL := -flto -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mtune=cortex-a9 -march=armv7-a -mfpu=neon -ftree-vectorize -funswitch-loops
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
-KBUILD_CFLAGS_MODULE  := -DMODULE -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3 -ftree-vectorize -funswitch-loops
+KBUILD_CFLAGS_MODULE  := -DMODULE -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mtune=cortex-a9 -march=armv7-a -mfpu=neon -ftree-vectorize -funswitch-loops
 CFLAGS_MODULE   = $(MODFLAGS)
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 

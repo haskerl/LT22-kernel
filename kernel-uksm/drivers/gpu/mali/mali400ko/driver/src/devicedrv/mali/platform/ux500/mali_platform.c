@@ -34,7 +34,7 @@
 #endif
 
 #define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 64
-#define MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT 192
+#define MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT 128
 
 static bool is_running;
 static bool is_initialized;
