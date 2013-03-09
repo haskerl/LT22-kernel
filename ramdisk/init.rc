@@ -1,3 +1,4 @@
+
 on early-init
     # Set init and its forked children's oom_adj.
     write /proc/1/oom_adj -16
@@ -264,7 +265,44 @@ on boot
     setprop system_init.startsurfaceflinger 0
 
 # DooMLoRD: init.d scripts support
-    start sysinitsupport
+#    start sysinitsupport
+
+    start sysinit
+
+    chown system system /sys/block/mmcblk0/queue/scheduler
+    chmod 0664 /sys/block/mmcblk0/queue/scheduler
+
+# allow system to modify ksm control files
+    chown root system /sys/kernel/mm/uksm/pages_to_scan
+    chmod 0664 /sys/kernel/mm/uksm/pages_to_scan
+    chown root system /sys/kernel/mm/uksm/sleep_millisecs
+    chmod 0664 /sys/kernel/mm/uksm/sleep_millisecs
+    chown root system /sys/kernel/mm/uksm/run
+    chmod 0664 /sys/kernel/mm/uksm/run
+    write /sys/kernel/mm/uksm/sleep_millisecs 1500
+    write /sys/kernel/mm/uksm/pages_to_scan 256
+    write /sys/kernel/mm/uksm/run 1
+
+    chown root radio /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/state
+    chmod 0664 /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/state
+    chown root radio /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/persistent
+    chmod 0664 /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/persistent
+    chown root radio /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/claim
+    chmod 0664 /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/claim
+chown root radio /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/hard
+    chmod 0664 /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/hard
+chown root radio /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/index
+    chmod 0664 /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/index
+chown root radio /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/name
+    chmod 0664 /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/name
+chown root radio /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/power/autosuspend_delay_ms
+    chmod 0664 /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/power/autosuspend_delay_ms
+chown root radio /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/power/control
+    chmod 0664 /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/power/control
+chown root radio /sys/devices/platform/cg2900.0/cg2900-uart.0/bluetooth/hci0/rfkill1/power/control
+
+
+
 
     class_start core
     class_start main
@@ -340,6 +378,12 @@ on property:persist.sys.usb.config=*
 
 ## Daemon processes to be run by init.
 ##
+
+# DooMLoRD: new init.d scripts support
+service sysinitsupport /sbin/sysinitsupport.sh
+    class main
+    disabled
+    oneshot
 
 service ueventd /sbin/ueventd
     class core
@@ -482,7 +526,28 @@ service dumpstate /system/bin/dumpstate -s
     oneshot
 
 # DooMLoRD: new init.d scripts support
-service sysinitsupport /sbin/sysinitsupport.sh
-    class main
-    disabled
+#service sysinitsupport /sbin/sysinitsupport.sh
+#    class main
+#    disabled
+#    oneshot
+
+# adb over network
+on property:service.adb.tcp.port=5555
+    stop adbd
+    start adbd
+on property:service.adb.tcp.port=-1
+    stop adbd
+    start adbd
+
+# Compcache - handle at boot
+#service compcache /sbin/handle_compcache
+#    class main
+#    user root
+#    group root
+#    oneshot
+
+# sysinit (/system/etc/init.d)
+service sysinit /sbin/sysinit
+    user root
     oneshot
+
