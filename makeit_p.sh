@@ -5,7 +5,7 @@ rm zImage
 #rm kernel.elf
 rm boot.img
 rm ramdisk.img
-cp kernel/arch/arm/boot/zImage zImage
+cp kernel-uksm/arch/arm/boot/zImage zImage
 
 # lib copy
 #cp ./kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_core.ko ./ramdisk/lib/modules/3.0.8+/kernel/net/compat-wireless/drivers/staging/cw1200/
@@ -13,7 +13,7 @@ cp kernel/arch/arm/boot/zImage zImage
 
 # make ramdisk image
 cd ramdisk
-find . | cpio --quiet -H newc -o | lzop -1 -c > ../ramdisk.img
+find . | cpio --quiet -H newc -o | lzop -9 -c > ../ramdisk.img
 cd ..
 
 # make kernel
