@@ -347,11 +347,19 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
+<<<<<<< HEAD
 CFLAGS_MODULE   =
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
 CFLAGS_KERNEL	= -D__linux__
 AFLAGS_KERNEL	=
+=======
+CFLAGS_MODULE   = -mcpu=cortex-a9 -mfpu=neon -ftree-vectorize
+AFLAGS_MODULE   = -mcpu=cortex-a9 -mfpu=neon -ftree-vectorize
+LDFLAGS_MODULE  =
+CFLAGS_KERNEL	= -D__linux__ -mcpu=cortex-a9 -mfpu=neon -ftree-vectorize
+AFLAGS_KERNEL	= -mcpu=cortex-a9 -mfpu=neon -ftree-vectorize
+>>>>>>> 342cb25edb28ae6ca00b8d7c63e645b64fe059bb
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -364,11 +372,23 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
+<<<<<<< HEAD
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks
+=======
+KBUILD_CFLAGS   := -Wall -O3 -Wundef -Wstrict-prototypes -Wno-trigraphs \
+		   -fno-strict-aliasing -fno-common \
+		   -Werror-implicit-function-declaration \
+		   -Wno-format-security \
+		   -fno-delete-null-pointer-checks \
+		   -mcpu=cortex-a9 \
+		   -mfpu=neon \
+		   -marm
+
+>>>>>>> 342cb25edb28ae6ca00b8d7c63e645b64fe059bb
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL := -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -ffast-math -fsingle-precision-constant -mtune=cortex-a9 -march=armv7-a -mfpu=neon -ftree-vectorize -funswitch-loops
 KBUILD_AFLAGS   := -D__ASSEMBLY__

@@ -377,7 +377,11 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 		.supply_regulator = "ab8500-ext-supply3",
 		.constraints = {
 			.name = "V-eMMC1",
+<<<<<<< HEAD
 			.min_uV = 2800000,
+=======
+			.min_uV = 1100000,
+>>>>>>> 342cb25edb28ae6ca00b8d7c63e645b64fe059bb
 			.max_uV = 3300000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
@@ -394,7 +398,11 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 		.supply_regulator = "ab8500-ext-supply3",
 		.constraints = {
 			.name = "V-MMC-SD",
+<<<<<<< HEAD
 			.min_uV = 2800000,
+=======
+			.min_uV = 1100000,
+>>>>>>> 342cb25edb28ae6ca00b8d7c63e645b64fe059bb
 			.max_uV = 3300000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |

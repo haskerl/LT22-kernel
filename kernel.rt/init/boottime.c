@@ -64,7 +64,11 @@ enum boottime_cpu_load {
 };
 
 static LIST_HEAD(boottime_list);
+<<<<<<< HEAD
 DEFINE_SPINLOCK(boottime_list_lock);
+=======
+static __initdata DEFINE_SPINLOCK(boottime_list_lock);
+>>>>>>> 342cb25edb28ae6ca00b8d7c63e645b64fe059bb
 static __initdata struct boottime_timer boottime_timer;
 static __initdata int num_const_boottime_list;
 static struct boottime_list const_boottime_list[NUM_STATIC_BOOTTIME_ENTRIES];

@@ -1,8 +1,0 @@
-Genesi EfikaMX based on Freescale mx51
-Required root node properties:
-    - compatible = "genesi,efikamx", "fsl,mx51";
-
-Genesi EfikaMX Smartbook based on Freescale mx51
-Required root node properties:
-    - compatible = "genesi,efikasb", "fsl,mx51";
-
