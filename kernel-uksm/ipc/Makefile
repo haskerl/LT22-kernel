@@ -1,7 +1,6 @@
 #
 # Makefile for the linux ipc.
 #
-KBUILD_CFLAGS := ${KBUILD_CFLAGS:%soft-lfoat=%hard-float}
 
 
 obj-$(CONFIG_SYSVIPC_COMPAT) += compat.o

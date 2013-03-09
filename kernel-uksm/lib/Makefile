@@ -2,9 +2,6 @@
 # Makefile for some libs needed in the kernel.
 #
 
-KBUILD_CFLAGS := ${KBUILD_CFLAGS:%soft-lfoat=%hard-float} 
-
-
 ifdef CONFIG_FUNCTION_TRACER
 ORIG_CFLAGS := $(KBUILD_CFLAGS)
 KBUILD_CFLAGS = $(subst -pg,,$(ORIG_CFLAGS))

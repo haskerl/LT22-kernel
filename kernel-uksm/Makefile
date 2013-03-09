@@ -349,9 +349,9 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 CFLAGS_MODULE   = 
 AFLAGS_MODULE   = 
-LDFLAGS_MODULE  = --hash-style=gnu
-CFLAGS_KERNEL	= -D__linux__ -flto
-AFLAGS_KERNEL	= -flto
+LDFLAGS_MODULE  = 
+CFLAGS_KERNEL	= -D__linux__
+AFLAGS_KERNEL	= 
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -369,7 +369,7 @@ KBUILD_CFLAGS   := -O3 -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-                   -ffast-math \
+#-		   -ffast-math \
                    -fgraphite-identity \
                    -fgcse-lm \
 		   -fgcse-sm \
@@ -377,17 +377,15 @@ KBUILD_CFLAGS   := -O3 -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fforce-addr \
 		   -fsingle-precision-constant \
 		   -ftree-vectorize \
-		   -funswitch-loops \
-		   -Bsymbolic-functions \
-		   -fno-math-errno
+		   -funswitch-loops 
 
-KBUILD_AFLAGS_KERNEL := -flto -fwhole-program
-KBUILD_CFLAGS_KERNEL := -flto -fwhole-program
-KBUILD_AFLAGS   := -D__ASSEMBLY__ -flto
+KBUILD_AFLAGS_KERNEL :=
+KBUILD_CFLAGS_KERNEL :=
+KBUILD_AFLAGS   := -D__ASSEMBLY__ 
 KBUILD_AFLAGS_MODULE  := -DMODULE 
 KBUILD_CFLAGS_MODULE  := -DMODULE 
 CFLAGS_MODULE   = $(MODFLAGS)
-KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds --hash-style=gnu
+KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
 KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)

@@ -1,3 +1,3 @@
 #!/bin/sh
 
-ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- make xconfig
+ARCH=arm CROSS_COMPILE=../linaro4.7/bin/arm-eabi- make xconfig

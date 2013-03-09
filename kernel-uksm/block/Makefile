@@ -1,7 +1,6 @@
 #
 # Makefile for the kernel block layer
 #
-KBUILD_CFLAGS := ${KBUILD_CFLAGS:%soft-lfoat=%hard-float}
 
 
 obj-$(CONFIG_BLOCK) := elevator.o blk-core.o blk-tag.o blk-sysfs.o \

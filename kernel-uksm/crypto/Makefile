@@ -2,7 +2,6 @@
 # Cryptographic API
 #
 
-KBUILD_CFLAGS := ${KBUILD_CFLAGS:%soft-lfoat=%hard-float}
 
 
 obj-$(CONFIG_CRYPTO) += crypto.o

@@ -1,7 +1,6 @@
 #
 # Makefile for the linux memory manager.
 #
-KBUILD_CFLAGS := ${KBUILD_CFLAGS:%soft-lfoat=%hard-float}
 
 mmu-y			:= nommu.o
 mmu-$(CONFIG_MMU)	:= fremap.o highmem.o madvise.o memory.o mincore.o \
