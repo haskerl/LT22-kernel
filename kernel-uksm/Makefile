@@ -350,8 +350,8 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 CFLAGS_MODULE   = 
 AFLAGS_MODULE   = 
 LDFLAGS_MODULE  = 
-CFLAGS_KERNEL	= -D__linux__
-AFLAGS_KERNEL	= 
+CFLAGS_KERNEL	= -D__linux__ -flto -fwhole-program
+AFLAGS_KERNEL	= -flto -fwhole-program
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -365,7 +365,7 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 KBUILD_CPPFLAGS := -D__KERNEL__
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common \
+		   -fno-strict-aliasing -fno-common\
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
@@ -379,9 +379,9 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fforce-addr \
 		   -funswitch-loops 
 
-KBUILD_AFLAGS_KERNEL :=
-KBUILD_CFLAGS_KERNEL :=
-KBUILD_AFLAGS   := -D__ASSEMBLY__ 
+KBUILD_AFLAGS_KERNEL := -flto -fwhole-program
+KBUILD_CFLAGS_KERNEL := -flto -fwhole-program
+KBUILD_AFLAGS   := -D__ASSEMBLY__ -flto -fwhole-program
 KBUILD_AFLAGS_MODULE  := -DMODULE 
 KBUILD_CFLAGS_MODULE  := -DMODULE 
 CFLAGS_MODULE   = $(MODFLAGS)

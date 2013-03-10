@@ -53,6 +53,9 @@ kernel/drivers/cpufreq/cpufreq_ondemand.ko
 kernel/drivers/cpufreq/cpufreq_conservative.ko
 kernel/drivers/cpufreq/cpufreq_interactive.ko
 kernel/drivers/cpufreq/cpufreq_hotplug.ko
+kernel/drivers/cpufreq/cpufreq_lulzactiveq.ko
+kernel/drivers/cpufreq/cpufreq_wheatley.ko
+kernel/drivers/cpufreq/cpufreq_pegasusq.ko
 kernel/drivers/cpufreq/freq_table.ko
 kernel/drivers/crypto/ux500/hash/ux500_hash.ko
 kernel/drivers/gpu/mali/mali400ko/driver/src/devicedrv/mali/mali.ko

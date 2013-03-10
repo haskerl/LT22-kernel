@@ -18,7 +18,7 @@ obj-$(CONFIG_CPU_FREQ_GOV_HOTPLUG)	+= cpufreq_hotplug.o
 obj-$(CONFIG_CPU_FREQ_GOV_ADAPTIVE)      += cpufreq_adaptive.o
 obj-$(CONFIG_CPU_FREQ_GOV_ABYSSPLUG)      += cpufreq_abyssplug.o
 obj-$(CONFIG_CPU_FREQ_GOV_KTOONSERVATIVE)      += cpufreq_ktoonservative.o
-obj-$(CONFIG_CPU_FREQ_GOV_LULZACTIVEQ)      += cpufreq_lulzactiveq.o
+obj-$(CONFIG_CPU_FREQ_GOV_LULZACTIVE)      += cpufreq_lulzactiveq.o
 obj-$(CONFIG_CPU_FREQ_GOV_WHEATLEY)      += cpufreq_wheatley.o
 obj-$(CONFIG_CPU_FREQ_GOV_PEGASUSQ)      += cpufreq_pegasusq.o
 
