@@ -1,3 +1,7 @@
+KBUILD_CFLAGS := ${KBUILD_CFLAGS:%O2=%O3}
+KBUILD_AFLAGS := ${KBUILD_AFLAGS:%O2=%O3}
+
+
 # CPUfreq core
 obj-$(CONFIG_CPU_FREQ)			+= cpufreq.o
 # CPUfreq stats

@@ -364,19 +364,19 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-KBUILD_CFLAGS   := -O3 -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-#-		   -ffast-math \
+		   -ffast-math -fsingle-precision-constant \
+		   -funsafe-math-optimizations \
+		   -ftracer \
                    -fgraphite-identity \
                    -fgcse-lm \
 		   -fgcse-sm \
 		   -fsched-spec-load \
 		   -fforce-addr \
-		   -fsingle-precision-constant \
-		   -ftree-vectorize \
 		   -funswitch-loops 
 
 KBUILD_AFLAGS_KERNEL :=
