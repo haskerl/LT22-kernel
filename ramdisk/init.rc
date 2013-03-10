@@ -265,9 +265,7 @@ on boot
     setprop system_init.startsurfaceflinger 0
 
 # DooMLoRD: init.d scripts support
-#    start sysinitsupport
-
-    start sysinit
+    start sysinitsupport
 
     chown system system /sys/block/mmcblk0/queue/scheduler
     chmod 0664 /sys/block/mmcblk0/queue/scheduler
@@ -540,14 +538,8 @@ on property:service.adb.tcp.port=-1
     start adbd
 
 # Compcache - handle at boot
-#service compcache /sbin/handle_compcache
-#    class main
-#    user root
-#    group root
-#    oneshot
-
-# sysinit (/system/etc/init.d)
-service sysinit /sbin/sysinit
+service compcache /sbin/handle_compcache
+    class main
     user root
+    group root
     oneshot
-
