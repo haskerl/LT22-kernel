@@ -1,6 +1,3 @@
-KBUILD_CFLAGS := ${KBUILD_CFLAGS:%O2=%O3}
-KBUILD_AFLAGS := ${KBUILD_AFLAGS:%O2=%O3}
-
 
 #
 # Makefile for cpuidle.

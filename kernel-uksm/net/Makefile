@@ -5,9 +5,6 @@
 # Rewritten to use lists instead of if-statements.
 #
 
-KBUILD_CFLAGS := ${KBUILD_CFLAGS:%O2=%O3}
-KBUILD_AFLAGS := ${KBUILD_AFLAGS:%O2=%O3}
-
 obj-y	:= nonet.o
 
 obj-$(CONFIG_NET)		:= socket.o core/
