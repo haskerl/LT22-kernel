@@ -70,7 +70,7 @@ arch-$(CONFIG_CPU_32v4)		:=-D__LINUX_ARM_ARCH__=4 -march=armv4
 arch-$(CONFIG_CPU_32v3)		:=-D__LINUX_ARM_ARCH__=3 -march=armv3
 
 # This selects how we optimise for the processor.
-tune-$(CONFIG_CPU_CORTEXA9)	:=-mtune=cortex-a9 -mfpu=neon
+tune-$(CONFIG_CPU_CORTEXA9)	:=-mtune=cortex-a9 -mfpu=neon -mvectorize-with-neon-quad -ftree-vectorize
 tune-$(CONFIG_CPU_ARM610)	:=-mtune=arm610
 tune-$(CONFIG_CPU_ARM710)	:=-mtune=arm710
 tune-$(CONFIG_CPU_ARM7TDMI)	:=-mtune=arm7tdmi
