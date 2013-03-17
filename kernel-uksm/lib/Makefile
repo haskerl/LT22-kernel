@@ -2,6 +2,10 @@
 # Makefile for some libs needed in the kernel.
 #
 
+KBUILD_CFLAGS := ${KBUILD_CFLAGS:%O2=%O3}
+KBUILD_AFLAGS := ${KBUILD_AFLAGS:%O2=%O3}
+
+
 ifdef CONFIG_FUNCTION_TRACER
 ORIG_CFLAGS := $(KBUILD_CFLAGS)
 KBUILD_CFLAGS = $(subst -pg,,$(ORIG_CFLAGS))

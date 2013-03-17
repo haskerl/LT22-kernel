@@ -385,7 +385,7 @@ KBUILD_AFLAGS   := -D__ASSEMBLY__ -flto -fwhole-program
 KBUILD_AFLAGS_MODULE  := -DMODULE 
 KBUILD_CFLAGS_MODULE  := -DMODULE 
 CFLAGS_MODULE   = $(MODFLAGS)
-KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
+KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds 
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
 KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
@@ -672,8 +672,8 @@ endif
 # Use --build-id when available.
 LDFLAGS_BUILD_ID = $(patsubst -Wl$(comma)%,%,\
 			      $(call cc-ldoption, -Wl$(comma)--build-id,))
-KBUILD_LDFLAGS_MODULE += $(LDFLAGS_BUILD_ID)
-LDFLAGS_vmlinux += $(LDFLAGS_BUILD_ID)
+KBUILD_LDFLAGS_MODULE += $(LDFLAGS_BUILD_ID) 
+LDFLAGS_vmlinux += $(LDFLAGS_BUILD_ID) 
 
 ifeq ($(CONFIG_STRIP_ASM_SYMS),y)
 LDFLAGS_vmlinux	+= $(call ld-option, -X,)

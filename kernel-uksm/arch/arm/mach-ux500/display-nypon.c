@@ -25,8 +25,8 @@ struct panel_platform_data panel_display0_pdata = {
 	.ddr_is_requested = false,
 #ifdef CONFIG_REGULATOR
 	.regulator_id = "v-display-3v1",
-	.min_supply_voltage = 0, /* To make sure we don't change the voltage */
-	.max_supply_voltage = 0, /* To make sure we don't change the voltage */
+       .min_supply_voltage = 0, /* To make sure we don't change the voltage */
+       .max_supply_voltage = 0, /* To make sure we don't change the voltage */
 	.io_regulator_id = "vio-display",
 #endif
 	.panels = panels,

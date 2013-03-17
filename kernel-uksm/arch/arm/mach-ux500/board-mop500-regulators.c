@@ -34,9 +34,12 @@ static struct regulator_consumer_supply tps61052_vaudio_consumers[] = {
 struct regulator_init_data tps61052_regulator = {
 	.constraints = {
 		.name = "vaudio-hf",
-		.min_uV = 4500000,
+		.min_uV = 3800000,
 		.max_uV = 4500000,
-		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+                        .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+                                          REGULATOR_CHANGE_STATUS |
+					  REGULATOR_CHANGE_DRMS ,
+
 	},
 	.num_consumer_supplies = ARRAY_SIZE(tps61052_vaudio_consumers),
 	.consumer_supplies = tps61052_vaudio_consumers,
@@ -363,10 +366,14 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 		.supply_regulator = "ab8500-ext-supply3",
 		.constraints = {
 			.name = "V-DISPLAY",
-			.min_uV = 2800000,
+			.min_uV = 1100000,
 			.max_uV = 3300000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
-					  REGULATOR_CHANGE_STATUS,
+					  REGULATOR_CHANGE_STATUS |
+					  REGULATOR_CHANGE_MODE |
+					  REGULATOR_CHANGE_DRMS,
+                        .valid_modes_mask = REGULATOR_MODE_NORMAL |
+                                            REGULATOR_MODE_IDLE,
 			.boot_on = 1, /* display is on at boot */
 		},
 		.num_consumer_supplies = ARRAY_SIZE(ab8500_vaux1_consumers),
@@ -381,7 +388,8 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 			.max_uV = 3300000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
-					  REGULATOR_CHANGE_MODE,
+					  REGULATOR_CHANGE_MODE |
+                                          REGULATOR_CHANGE_DRMS,
 			.valid_modes_mask = REGULATOR_MODE_NORMAL |
 					    REGULATOR_MODE_IDLE,
 			.boot_keep = 1, /* eMMC must remain powered from boot */
@@ -398,7 +406,8 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 			.max_uV = 3300000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
-					  REGULATOR_CHANGE_MODE,
+					  REGULATOR_CHANGE_MODE |
+                                          REGULATOR_CHANGE_DRMS,
 			.valid_modes_mask = REGULATOR_MODE_NORMAL |
 					    REGULATOR_MODE_IDLE,
 		},
@@ -454,7 +463,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 	[AB8500_LDO_INTCORE] = {
 		.constraints = {
 			.name = "V-INTCORE",
-			.min_uV = 1250000,
+			.min_uV = 1200000,
 			.max_uV = 1350000,
 			.input_uV = 1800000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
@@ -471,7 +480,14 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 	[AB8500_LDO_ANA] = {
 		.constraints = {
 			.name = "V-CSI-DSI",
-			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+                        .min_uV = 1100000,
+                        .max_uV = 2910000,
+                        .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+                                          REGULATOR_CHANGE_STATUS |
+                                          REGULATOR_CHANGE_MODE |
+                                          REGULATOR_CHANGE_DRMS,
+                        .valid_modes_mask = REGULATOR_MODE_NORMAL |
+                                            REGULATOR_MODE_IDLE,
 		},
 		.num_consumer_supplies = ARRAY_SIZE(ab8500_vana_consumers),
 		.consumer_supplies = ab8500_vana_consumers,
@@ -542,6 +558,7 @@ static struct regulator_init_data ab8500_ext_regulators[] = {
 			.name = "ab8500-ext-supply2",
 			.min_uV = 1360000,
 			.max_uV = 1360000,
+			
 		},
 	},
 	/* fixed Vbat supplies VSMPS3_EXT_3V4 and VSMPS4_EXT_3V4 */
@@ -567,8 +584,12 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 			.name = "V-DISPLAY",
 			.min_uV = 2800000,
 			.max_uV = 3300000,
-			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
-					  REGULATOR_CHANGE_STATUS,
+                        .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+                                          REGULATOR_CHANGE_STATUS |
+                                          REGULATOR_CHANGE_MODE |
+					  REGULATOR_CHANGE_DRMS,
+                        .valid_modes_mask = REGULATOR_MODE_NORMAL |
+                                            REGULATOR_MODE_IDLE,
 			.boot_on = 1, /* display is on at boot */
 		},
 		.num_consumer_supplies = ARRAY_SIZE(ab8500_vaux1_consumers),
@@ -581,11 +602,12 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 			.name = "V-eMMC1",
 			.min_uV = 1100000,
 			.max_uV = 3300000,
-			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
-					  REGULATOR_CHANGE_STATUS |
-					  REGULATOR_CHANGE_MODE,
-			.valid_modes_mask = REGULATOR_MODE_NORMAL |
-					    REGULATOR_MODE_IDLE,
+                        .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+                                          REGULATOR_CHANGE_STATUS |
+                                          REGULATOR_CHANGE_MODE |
+                                          REGULATOR_CHANGE_DRMS,
+                        .valid_modes_mask = REGULATOR_MODE_NORMAL |
+                                            REGULATOR_MODE_IDLE,
 		},
 		.num_consumer_supplies = ARRAY_SIZE(ab8500_vaux2_consumers),
 		.consumer_supplies = ab8500_vaux2_consumers,
@@ -597,11 +619,12 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 			.name = "V-MMC-SD",
 			.min_uV = 1100000,
 			.max_uV = 3300000,
-			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
-					  REGULATOR_CHANGE_STATUS |
-					  REGULATOR_CHANGE_MODE,
-			.valid_modes_mask = REGULATOR_MODE_NORMAL |
-					    REGULATOR_MODE_IDLE,
+                        .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+                                          REGULATOR_CHANGE_STATUS |
+                                          REGULATOR_CHANGE_MODE |
+                                          REGULATOR_CHANGE_DRMS,
+                        .valid_modes_mask = REGULATOR_MODE_NORMAL |
+                                            REGULATOR_MODE_IDLE,
 		},
 		.num_consumer_supplies = ARRAY_SIZE(ab8500_vaux3_consumers),
 		.consumer_supplies = ab8500_vaux3_consumers,
@@ -612,11 +635,12 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 			.name = "V-NFC-SE",
 			.min_uV = 1100000,
 			.max_uV = 3300000,
-			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
-					  REGULATOR_CHANGE_STATUS |
-					  REGULATOR_CHANGE_MODE,
-			.valid_modes_mask = REGULATOR_MODE_NORMAL |
-					    REGULATOR_MODE_IDLE,
+                        .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+                                          REGULATOR_CHANGE_STATUS |
+                                          REGULATOR_CHANGE_MODE |
+                                          REGULATOR_CHANGE_DRMS,
+                        .valid_modes_mask = REGULATOR_MODE_NORMAL |
+                                            REGULATOR_MODE_IDLE,
 		},
 		.num_consumer_supplies = ARRAY_SIZE(ab8505_vaux4_consumers),
 		.consumer_supplies = ab8505_vaux4_consumers,
@@ -670,7 +694,7 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 	[AB9540_LDO_INTCORE] = {
 		.constraints = {
 			.name = "V-INTCORE",
-			.min_uV = 1250000,
+			.min_uV = 1100000,
 			.max_uV = 1350000,
 			.input_uV = 1800000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
@@ -780,7 +804,7 @@ void mop500_regulator_init(void)
 			0x20, 0x20);
 
 		/* VextSupply2 = force HP at initialization */
-		ab8500_modify_reg_init(AB8500_EXTSUPPLYREGU, 0x0c, 0x04);
+		//ab8500_modify_reg_init(AB8500_EXTSUPPLYREGU, 0x0c, 0x04);
 
 		/* enable VextSupply2 during platform active */
 		regulator = &ab8500_ext_regulators[AB8500_EXT_SUPPLY2];
@@ -788,8 +812,8 @@ void mop500_regulator_init(void)
 
 		/* disable VextSupply2 in suspend */
 		regulator = &ab8500_ext_regulators[AB8500_EXT_SUPPLY2];
-		regulator->constraints.state_mem.disabled = 1;
-		regulator->constraints.state_standby.disabled = 1;
+		//regulator->constraints.state_mem.disabled = 1;
+		//regulator->constraints.state_standby.disabled = 1;
 
 		/* enable VextSupply2 HW control (used in suspend) */
 		regulator->driver_data = (void *)&ab8500_ext_supply2;

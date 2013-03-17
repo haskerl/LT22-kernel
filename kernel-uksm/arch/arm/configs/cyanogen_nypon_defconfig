@@ -371,7 +371,7 @@ CONFIG_CPU_CP15_MMU=y
 # Processor Features
 #
 CONFIG_ARM_THUMB=y
-# CONFIG_ARM_THUMBEE is not set
+CONFIG_ARM_THUMBEE=y
 CONFIG_SWP_EMULATE=y
 # CONFIG_CPU_ICACHE_DISABLE is not set
 # CONFIG_CPU_DCACHE_DISABLE is not set
@@ -390,13 +390,13 @@ CONFIG_CPU_HAS_PMU=y
 # CONFIG_ARM_ERRATA_742230 is not set
 # CONFIG_ARM_ERRATA_742231 is not set
 # CONFIG_PL310_ERRATA_588369 is not set
-# CONFIG_ARM_ERRATA_720789 is not set
+CONFIG_ARM_ERRATA_720789=y
 # CONFIG_PL310_ERRATA_727915 is not set
 # CONFIG_ARM_ERRATA_743622 is not set
 # CONFIG_ARM_ERRATA_751472 is not set
 CONFIG_ARM_ERRATA_753970=y
 CONFIG_ARM_ERRATA_754322=y
-# CONFIG_ARM_ERRATA_754327 is not set
+CONFIG_ARM_ERRATA_754327=y
 CONFIG_ARM_ERRATA_764369=y
 # CONFIG_PL310_ERRATA_769419 is not set
 # CONFIG_ARM_ERRATA_775420 is not set
@@ -476,7 +476,7 @@ CONFIG_ARM_FLUSH_CONSOLE_ON_RESTART=y
 # CONFIG_USE_OF is not set
 CONFIG_ZBOOT_ROM_TEXT=0x0
 CONFIG_ZBOOT_ROM_BSS=0x0
-CONFIG_CMDLINE="cachepolicy=writealloc noinitrd init=init board_id=1 logo.nologo root=/dev/ram0 rw rootwait mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mali.mali_mem=32M@128M mem_issw=1M@160M hwmem=167M@161M mem=696M@328M vmalloc=384M console=ttyAMA2,115200n8 androidboot.console=ttyAMA2 androidboot.hardware=st-ericsson"
+CONFIG_CMDLINE="ecc=on cachepolicy=writealloc noinitrd init=init board_id=1 logo.nologo root=/dev/ram0 rw rootwait mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mali.mali_mem=32M@128M mem_issw=1M@160M hwmem=167M@161M mem=696M@328M vmalloc=384M console=ttyAMA2,115200n8 androidboot.console=ttyAMA2 androidboot.hardware=st-ericsson"
 CONFIG_CMDLINE_FROM_BOOTLOADER=y
 # CONFIG_CMDLINE_EXTEND is not set
 # CONFIG_CMDLINE_FORCE is not set
