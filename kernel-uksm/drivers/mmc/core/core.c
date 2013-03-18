@@ -1850,7 +1850,6 @@ static int mmc_do_hw_reset(struct mmc_host *host, int check)
 			mmc_host_clk_release(host);
 			return -ENOSYS;
 		}
-			flush_delayed_work(&host->disable);
 	}
 
 	host->card->state &= ~(MMC_STATE_HIGHSPEED | MMC_STATE_HIGHSPEED_DDR);
