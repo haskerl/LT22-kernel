@@ -4,8 +4,8 @@
 # Copyright (C) 1995-2000 Russell King
 #
 
-KBUILD_CFLAGS := ${KBUILD_CFLAGS:%O2=%O3}
-KBUILD_AFLAGS := ${KBUILD_AFLAGS:%O2=%O3}
+#KBUILD_CFLAGS := ${KBUILD_CFLAGS:%O2=%O3}
+#KBUILD_AFLAGS := ${KBUILD_AFLAGS:%O2=%O3}
 
 lib-y		:= backtrace.o changebit.o csumipv6.o csumpartial.o   \
 		   csumpartialcopy.o csumpartialcopyuser.o clearbit.o \

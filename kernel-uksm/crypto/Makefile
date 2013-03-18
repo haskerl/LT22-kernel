@@ -2,8 +2,8 @@
 # Cryptographic API
 #
 
-KBUILD_CFLAGS := ${KBUILD_CFLAGS:%O2=%O3}
-KBUILD_AFLAGS := ${KBUILD_AFLAGS:%O2=%O3}
+#KBUILD_CFLAGS := ${KBUILD_CFLAGS:%O2=%O3}
+#KBUILD_AFLAGS := ${KBUILD_AFLAGS:%O2=%O3}
 
 obj-$(CONFIG_CRYPTO) += crypto.o
 crypto-y := api.o cipher.o compress.o
