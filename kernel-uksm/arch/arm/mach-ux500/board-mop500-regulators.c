@@ -804,7 +804,7 @@ void mop500_regulator_init(void)
 			0x20, 0x20);
 
 		/* VextSupply2 = force HP at initialization */
-		//ab8500_modify_reg_init(AB8500_EXTSUPPLYREGU, 0x0c, 0x04);
+		ab8500_modify_reg_init(AB8500_EXTSUPPLYREGU, 0x0c, 0x04);
 
 		/* enable VextSupply2 during platform active */
 		regulator = &ab8500_ext_regulators[AB8500_EXT_SUPPLY2];
@@ -812,8 +812,8 @@ void mop500_regulator_init(void)
 
 		/* disable VextSupply2 in suspend */
 		regulator = &ab8500_ext_regulators[AB8500_EXT_SUPPLY2];
-		//regulator->constraints.state_mem.disabled = 1;
-		//regulator->constraints.state_standby.disabled = 1;
+		regulator->constraints.state_mem.disabled = 1;
+		regulator->constraints.state_standby.disabled = 1;
 
 		/* enable VextSupply2 HW control (used in suspend) */
 		regulator->driver_data = (void *)&ab8500_ext_supply2;
