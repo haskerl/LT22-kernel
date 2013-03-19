@@ -1,0 +1,22 @@
+ui_print("");
+ui_print("dist kernel updater");
+ui_print("");
+
+ui_print("Wipe dalvik");
+run_program("/sbin/busybox", "mount", "/system");
+run_program("/sbin/busybox", "mount", "/cache");
+run_program("/sbin/busybox", "rm", "-rf", "/data/dalvik-cache");
+
+ui_print("Flashing...");
+
+package_extract_dir("system","/system");
+run_program("/sbin/busybox", "mv", "/system/lib/modules/3.0.8+","/system/lib/modules/backup");
+symlink("/system/lib/modules/3.0.69","/system/lib/modules/3.0.8+");
+
+# running the flash operation
+assert(package_extract_file("boot.elf", "/cache/boot.elf"),
+       write_raw_image("/cache/boot.elf", "/dev/block/mmcblk0p9"),
+       delete("/cache/boot.elf"));
+
+ui_print("Done! Please, reboot system now!");
+unmount("/system");

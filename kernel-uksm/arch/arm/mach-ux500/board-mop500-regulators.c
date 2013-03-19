@@ -370,8 +370,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 			.max_uV = 3300000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
-					  REGULATOR_CHANGE_MODE |
-					  REGULATOR_CHANGE_DRMS,
+					  REGULATOR_CHANGE_MODE ,
                         .valid_modes_mask = REGULATOR_MODE_NORMAL |
                                             REGULATOR_MODE_IDLE,
 			.boot_on = 1, /* display is on at boot */
@@ -388,8 +387,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 			.max_uV = 3300000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
-					  REGULATOR_CHANGE_MODE |
-                                          REGULATOR_CHANGE_DRMS,
+					  REGULATOR_CHANGE_MODE ,
 			.valid_modes_mask = REGULATOR_MODE_NORMAL |
 					    REGULATOR_MODE_IDLE,
 			.boot_keep = 1, /* eMMC must remain powered from boot */
@@ -406,8 +404,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
 			.max_uV = 3300000,
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
 					  REGULATOR_CHANGE_STATUS |
-					  REGULATOR_CHANGE_MODE |
-                                          REGULATOR_CHANGE_DRMS,
+					  REGULATOR_CHANGE_MODE ,
 			.valid_modes_mask = REGULATOR_MODE_NORMAL |
 					    REGULATOR_MODE_IDLE,
 		},
@@ -484,8 +481,7 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
                         .max_uV = 2910000,
                         .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
                                           REGULATOR_CHANGE_STATUS |
-                                          REGULATOR_CHANGE_MODE |
-                                          REGULATOR_CHANGE_DRMS,
+                                          REGULATOR_CHANGE_MODE ,
                         .valid_modes_mask = REGULATOR_MODE_NORMAL |
                                             REGULATOR_MODE_IDLE,
 		},
@@ -586,8 +582,7 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 			.max_uV = 3300000,
                         .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
                                           REGULATOR_CHANGE_STATUS |
-                                          REGULATOR_CHANGE_MODE |
-					  REGULATOR_CHANGE_DRMS,
+                                          REGULATOR_CHANGE_MODE ,
                         .valid_modes_mask = REGULATOR_MODE_NORMAL |
                                             REGULATOR_MODE_IDLE,
 			.boot_on = 1, /* display is on at boot */
@@ -604,8 +599,7 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 			.max_uV = 3300000,
                         .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
                                           REGULATOR_CHANGE_STATUS |
-                                          REGULATOR_CHANGE_MODE |
-                                          REGULATOR_CHANGE_DRMS,
+                                          REGULATOR_CHANGE_MODE ,
                         .valid_modes_mask = REGULATOR_MODE_NORMAL |
                                             REGULATOR_MODE_IDLE,
 		},
@@ -621,8 +615,7 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 			.max_uV = 3300000,
                         .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
                                           REGULATOR_CHANGE_STATUS |
-                                          REGULATOR_CHANGE_MODE |
-                                          REGULATOR_CHANGE_DRMS,
+                                          REGULATOR_CHANGE_MODE ,
                         .valid_modes_mask = REGULATOR_MODE_NORMAL |
                                             REGULATOR_MODE_IDLE,
 		},
@@ -637,8 +630,7 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
 			.max_uV = 3300000,
                         .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
                                           REGULATOR_CHANGE_STATUS |
-                                          REGULATOR_CHANGE_MODE |
-                                          REGULATOR_CHANGE_DRMS,
+                                          REGULATOR_CHANGE_MODE ,
                         .valid_modes_mask = REGULATOR_MODE_NORMAL |
                                             REGULATOR_MODE_IDLE,
 		},
