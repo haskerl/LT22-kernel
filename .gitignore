@@ -1,6 +1,7 @@
 zImage
-kernel.elf
-kernel-unsigned.elf
+kernel.cwm/boot.elf
 boot.img
 ramdisk.img
 *.ko
+*o
+kernwl.cwm/system/

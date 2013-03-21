@@ -2,7 +2,7 @@
 
 # ready zImage
 rm zImage
-#rm kernel.elf
+rm kernel.cwm/boot.elf
 rm boot.img
 rm ramdisk.img
 cp kernel-uksm/arch/arm/boot/zImage zImage
@@ -12,7 +12,7 @@ cp kernel-uksm/arch/arm/boot/zImage zImage
 #cp ./kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_wlan.ko ./ramdisk/lib/modules/3.0.8+/kernel/net/compat-wireless/drivers/staging/cw1200/
 
 # make ramdisk image
-cd ramdisk
+cd combinedroot
 find . | cpio --quiet -H newc -o | xz -z -9 -c --check=crc32 > ../ramdisk.img
 cd ..
 
