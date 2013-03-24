@@ -1,0 +1,2440 @@
+diff --git a/.gitignore b/.gitignore
+index 906c473..9cbb8f6 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,7 +1,6 @@
+ zImage
+-kernel.cwm/boot.elf
++kernel.elf
++kernel-unsigned.elf
+ boot.img
+ ramdisk.img
+ *.ko
+-*o
+-kernwl.cwm/system/
+diff --git a/boot.img.dist b/boot.img.dist
+new file mode 100644
+index 0000000..e71af4b
+Binary files /dev/null and b/boot.img.dist differ
+diff --git a/cmdline.txt b/cmdline.txt
+deleted file mode 100644
+index 073fa6d..0000000
+--- a/cmdline.txt
++++ /dev/null
+@@ -1 +0,0 @@
+-ecc=on cachepolicy=writealloc noinitrd init=init board_id=1 logo.nologo root=/dev/ram0 rw rootwait console=null androidboot.console=null androidboot.hardware=st-ericsson mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=32M@128M mem_issw=1M@160M hwmem=167M@161M mem=696M@328M vmalloc=384M mpcore_wdt.mpcore_margin=359
+diff --git a/create.sh b/create.sh
+new file mode 100755
+index 0000000..0546a4c
+--- /dev/null
++++ b/create.sh
+@@ -0,0 +1,3 @@
++#!/bin/sh
++
++ARCH=arm CROSS_COMPILE=arm-cortex_a9-linux-gnueabihf- make cyanogen_nypon_defconfig && ARCH=arm CROSS_COMPILE=arm-cortex_a9-linux-gnueabihf- make -j4 oldconfig &&   ARCH=arm CROSS_COMPILE=arm-cortex_a9-linux-gnueabihf- make -j4 && ARCH=arm CROSS_COMPILE=arm-cortex_a9-linux-gnueabihf- make -j4 INSTALL_MOD_PATH=../ramdisk modules_install  && cd ../ && ./makeit_p.sh && fastboot flash boot boot.img && fastboot reboot
+diff --git a/kernel-uksm/Makefile b/kernel-uksm/Makefile
+index 3b458d4..e618398 100644
+--- a/kernel-uksm/Makefile
++++ b/kernel-uksm/Makefile
+@@ -350,8 +350,8 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
+ CFLAGS_MODULE   = 
+ AFLAGS_MODULE   = 
+ LDFLAGS_MODULE  = 
+-CFLAGS_KERNEL	= -D__linux__ # -flto -fwhole-program
+-AFLAGS_KERNEL	= # -flto -fwhole-program
++CFLAGS_KERNEL	= -D__linux__ -flto -fwhole-program
++AFLAGS_KERNEL	= -flto -fwhole-program
+ CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
+ 
+ 
+@@ -372,15 +372,16 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+ 		   -ffast-math -fsingle-precision-constant \
+ 		   -funsafe-math-optimizations \
+ 		   -ftracer \
++                   -fgraphite-identity \
+                    -fgcse-lm \
+ 		   -fgcse-sm \
+ 		   -fsched-spec-load \
+ 		   -fforce-addr \
+ 		   -funswitch-loops 
+ 
+-KBUILD_AFLAGS_KERNEL := # -flto -fwhole-program
+-KBUILD_CFLAGS_KERNEL := # -flto -fwhole-program
+-KBUILD_AFLAGS   := -D__ASSEMBLY__ # -flto -fwhole-program
++KBUILD_AFLAGS_KERNEL := -flto -fwhole-program
++KBUILD_CFLAGS_KERNEL := -flto -fwhole-program
++KBUILD_AFLAGS   := -D__ASSEMBLY__ -flto -fwhole-program
+ KBUILD_AFLAGS_MODULE  := -DMODULE 
+ KBUILD_CFLAGS_MODULE  := -DMODULE 
+ CFLAGS_MODULE   = $(MODFLAGS)
+diff --git a/kernel-uksm/arch/arm/configs/cyanogen_nypon_defconfig b/kernel-uksm/arch/arm/configs/cyanogen_nypon_defconfig
+index 491b58e..2eac381 100644
+--- a/kernel-uksm/arch/arm/configs/cyanogen_nypon_defconfig
++++ b/kernel-uksm/arch/arm/configs/cyanogen_nypon_defconfig
+@@ -42,8 +42,8 @@ CONFIG_HAVE_KERNEL_GZIP=y
+ CONFIG_HAVE_KERNEL_LZMA=y
+ CONFIG_HAVE_KERNEL_LZO=y
+ # CONFIG_KERNEL_GZIP is not set
+-CONFIG_KERNEL_LZMA=y
+-# CONFIG_KERNEL_LZO is not set
++# CONFIG_KERNEL_LZMA is not set
++CONFIG_KERNEL_LZO=y
+ CONFIG_DEFAULT_HOSTNAME="(none)"
+ CONFIG_SWAP=y
+ CONFIG_SYSVIPC=y
+@@ -102,8 +102,8 @@ CONFIG_INITRAMFS_SOURCE=""
+ # CONFIG_RD_GZIP is not set
+ # CONFIG_RD_BZIP2 is not set
+ # CONFIG_RD_LZMA is not set
+-CONFIG_RD_XZ=y
+-# CONFIG_RD_LZO is not set
++# CONFIG_RD_XZ is not set
++CONFIG_RD_LZO=y
+ # CONFIG_CC_OPTIMIZE_FOR_SIZE is not set
+ CONFIG_SYSCTL=y
+ CONFIG_ANON_INODES=y
+@@ -391,13 +391,13 @@ CONFIG_CPU_HAS_PMU=y
+ # CONFIG_ARM_ERRATA_742230 is not set
+ # CONFIG_ARM_ERRATA_742231 is not set
+ # CONFIG_PL310_ERRATA_588369 is not set
+-# CONFIG_ARM_ERRATA_720789 is not set
++CONFIG_ARM_ERRATA_720789=y
+ # CONFIG_PL310_ERRATA_727915 is not set
+ # CONFIG_ARM_ERRATA_743622 is not set
+ # CONFIG_ARM_ERRATA_751472 is not set
+ CONFIG_ARM_ERRATA_753970=y
+ CONFIG_ARM_ERRATA_754322=y
+-# CONFIG_ARM_ERRATA_754327 is not set
++CONFIG_ARM_ERRATA_754327=y
+ CONFIG_ARM_ERRATA_764369=y
+ # CONFIG_PL310_ERRATA_769419 is not set
+ # CONFIG_ARM_ERRATA_775420 is not set
+@@ -528,7 +528,7 @@ CONFIG_CPU_IDLE=y
+ CONFIG_CPU_IDLE_GOV_LADDER=y
+ CONFIG_CPU_IDLE_GOV_MENU=y
+ CONFIG_DBX500_CPUIDLE=y
+-CONFIG_DBX500_CPUIDLE_DEEPEST_STATE=5
++CONFIG_DBX500_CPUIDLE_DEEPEST_STATE=3
+ # CONFIG_DBX500_CPUIDLE_APDEEPIDLE is not set
+ CONFIG_DBX500_CPUIDLE_DEBUG=y
+ 
+@@ -2904,7 +2904,7 @@ CONFIG_XZ_DEC_ARMTHUMB=y
+ CONFIG_XZ_DEC_SPARC=y
+ CONFIG_XZ_DEC_BCJ=y
+ # CONFIG_XZ_DEC_TEST is not set
+-CONFIG_DECOMPRESS_XZ=y
++CONFIG_DECOMPRESS_LZO=y
+ CONFIG_REED_SOLOMON=y
+ CONFIG_REED_SOLOMON_ENC8=y
+ CONFIG_REED_SOLOMON_DEC8=y
+diff --git a/kernel-uksm/arch/arm/kernel/process.c b/kernel-uksm/arch/arm/kernel/process.c
+index 46bc532..fc073a1 100644
+--- a/kernel-uksm/arch/arm/kernel/process.c
++++ b/kernel-uksm/arch/arm/kernel/process.c
+@@ -281,15 +281,6 @@ __setup("reboot=", reboot_setup);
+ void machine_shutdown(void)
+ {
+ #ifdef CONFIG_SMP
+-	/*
+-	 * Disable preemption so we're guaranteed to
+-	 * run to power off or reboot and prevent
+-	 * the possibility of switching to another
+-	 * thread that might wind up blocking on
+-	 * one of the stopped CPUs.
+-	 */
+-	preempt_disable();
+-
+ 	smp_send_stop();
+ #endif
+ }
+diff --git a/kernel-uksm/arch/arm/mach-ux500/board-mop500-regulators.c b/kernel-uksm/arch/arm/mach-ux500/board-mop500-regulators.c
+index a2504d4..3355d50 100644
+--- a/kernel-uksm/arch/arm/mach-ux500/board-mop500-regulators.c
++++ b/kernel-uksm/arch/arm/mach-ux500/board-mop500-regulators.c
+@@ -370,7 +370,8 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
+ 			.max_uV = 3300000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS |
+-					  REGULATOR_CHANGE_MODE ,
++					  REGULATOR_CHANGE_MODE |
++					  REGULATOR_CHANGE_DRMS,
+                         .valid_modes_mask = REGULATOR_MODE_NORMAL |
+                                             REGULATOR_MODE_IDLE,
+ 			.boot_on = 1, /* display is on at boot */
+@@ -387,7 +388,8 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
+ 			.max_uV = 3300000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS |
+-					  REGULATOR_CHANGE_MODE ,
++					  REGULATOR_CHANGE_MODE |
++                                          REGULATOR_CHANGE_DRMS,
+ 			.valid_modes_mask = REGULATOR_MODE_NORMAL |
+ 					    REGULATOR_MODE_IDLE,
+ 			.boot_keep = 1, /* eMMC must remain powered from boot */
+@@ -404,7 +406,8 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
+ 			.max_uV = 3300000,
+ 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+ 					  REGULATOR_CHANGE_STATUS |
+-					  REGULATOR_CHANGE_MODE ,
++					  REGULATOR_CHANGE_MODE |
++                                          REGULATOR_CHANGE_DRMS,
+ 			.valid_modes_mask = REGULATOR_MODE_NORMAL |
+ 					    REGULATOR_MODE_IDLE,
+ 		},
+@@ -481,7 +484,8 @@ static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
+                         .max_uV = 2910000,
+                         .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+                                           REGULATOR_CHANGE_STATUS |
+-                                          REGULATOR_CHANGE_MODE ,
++                                          REGULATOR_CHANGE_MODE |
++                                          REGULATOR_CHANGE_DRMS,
+                         .valid_modes_mask = REGULATOR_MODE_NORMAL |
+                                             REGULATOR_MODE_IDLE,
+ 		},
+@@ -582,7 +586,8 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
+ 			.max_uV = 3300000,
+                         .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+                                           REGULATOR_CHANGE_STATUS |
+-                                          REGULATOR_CHANGE_MODE ,
++                                          REGULATOR_CHANGE_MODE |
++					  REGULATOR_CHANGE_DRMS,
+                         .valid_modes_mask = REGULATOR_MODE_NORMAL |
+                                             REGULATOR_MODE_IDLE,
+ 			.boot_on = 1, /* display is on at boot */
+@@ -599,7 +604,8 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
+ 			.max_uV = 3300000,
+                         .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+                                           REGULATOR_CHANGE_STATUS |
+-                                          REGULATOR_CHANGE_MODE ,
++                                          REGULATOR_CHANGE_MODE |
++                                          REGULATOR_CHANGE_DRMS,
+                         .valid_modes_mask = REGULATOR_MODE_NORMAL |
+                                             REGULATOR_MODE_IDLE,
+ 		},
+@@ -615,7 +621,8 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
+ 			.max_uV = 3300000,
+                         .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+                                           REGULATOR_CHANGE_STATUS |
+-                                          REGULATOR_CHANGE_MODE ,
++                                          REGULATOR_CHANGE_MODE |
++                                          REGULATOR_CHANGE_DRMS,
+                         .valid_modes_mask = REGULATOR_MODE_NORMAL |
+                                             REGULATOR_MODE_IDLE,
+ 		},
+@@ -630,7 +637,8 @@ struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
+ 			.max_uV = 3300000,
+                         .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+                                           REGULATOR_CHANGE_STATUS |
+-                                          REGULATOR_CHANGE_MODE ,
++                                          REGULATOR_CHANGE_MODE |
++                                          REGULATOR_CHANGE_DRMS,
+                         .valid_modes_mask = REGULATOR_MODE_NORMAL |
+                                             REGULATOR_MODE_IDLE,
+ 		},
+diff --git a/kernel-uksm/arch/arm/mach-ux500/board-mop500-regulators.org b/kernel-uksm/arch/arm/mach-ux500/board-mop500-regulators.org
+new file mode 100644
+index 0000000..8de1c61
+--- /dev/null
++++ b/kernel-uksm/arch/arm/mach-ux500/board-mop500-regulators.org
+@@ -0,0 +1,815 @@
++/*
++ * Copyright (C) ST-Ericsson SA 2010
++ *
++ * License Terms: GNU General Public License v2
++ *
++ * Authors: Sundar Iyer <sundar.iyer@stericsson.com>
++ *          Bengt Jonsson <bengt.g.jonsson@stericsson.com>
++ *
++ * MOP500 board specific initialization for regulators
++ */
++#include <linux/kernel.h>
++#include <linux/regulator/machine.h>
++#include <linux/regulator/ab8500.h>
++
++#include <asm/mach-types.h>
++
++#include <mach/hardware.h>
++
++#include "board-mop500-regulators.h"
++
++/*
++ * TPS61052 regulator
++ */
++static struct regulator_consumer_supply tps61052_vaudio_consumers[] = {
++	/*
++	 * Boost converter supply to raise voltage on audio speaker, this
++	 * is actually connected to three pins, VInVhfL (left amplifier)
++	 * VInVhfR (right amplifier) and VIntDClassInt - all three must
++	 * be connected to the same voltage.
++	 */
++	REGULATOR_SUPPLY("vintdclassint", "ab8500-codec.0"),
++};
++
++struct regulator_init_data tps61052_regulator = {
++	.constraints = {
++		.name = "vaudio-hf",
++		.min_uV = 4500000,
++		.max_uV = 4500000,
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies = ARRAY_SIZE(tps61052_vaudio_consumers),
++	.consumer_supplies = tps61052_vaudio_consumers,
++};
++
++static struct regulator_consumer_supply ab8500_vaux1_consumers[] = {
++	REGULATOR_SUPPLY("v-display", NULL),
++#if defined(CONFIG_INPUT_LSM303DLHC_ACCELEROMETER) || \
++	defined(CONFIG_INPUT_LSM303DLHC_ACCELEROMETER_LT)
++	REGULATOR_SUPPLY("v-lsm303dlhc", NULL),
++#endif
++#ifdef CONFIG_INPUT_LSM303DLH_MAGNETOMETER
++	REGULATOR_SUPPLY("v-lsm303dlh", NULL),
++#endif
++#ifdef CONFIG_INPUT_L3G4200D
++	REGULATOR_SUPPLY("v-l3g4200d", NULL),
++#endif
++//#ifdef CONFIG_SENSORS_L3G4200D
++//	REGULATOR_SUPPLY("l3g4200d", NULL),
++//#endif
++#ifdef CONFIG_TOUCHSCREEN_CYTTSP_SPI
++	REGULATOR_SUPPLY("v-touch1", NULL),
++#endif
++#ifdef CONFIG_INPUT_NOA3402
++	REGULATOR_SUPPLY("v-noa3402", NULL),
++#endif
++#ifdef CONFIG_SENSORS_TSL2772
++	REGULATOR_SUPPLY("v-tsl2772", NULL),
++#endif
++	/* SFH7741 proximity sensor */
++	REGULATOR_SUPPLY("vcc", "gpio-keys.0"),
++	/* BH1780GLS ambient light sensor */
++	REGULATOR_SUPPLY("vcc", "2-0029"),
++	/* lsm303dlh accelerometer */
++	REGULATOR_SUPPLY("vdd", "2-0018"),
++	/* lsm303dlhc accelerometer */
++	REGULATOR_SUPPLY("vdd", "2-0019"),
++	/* lsm303dlh magnetometer */
++	REGULATOR_SUPPLY("vdd", "2-001e"),
++	/* Rohm BU21013 Touchscreen devices */
++	REGULATOR_SUPPLY("avdd", "3-005c"),
++	REGULATOR_SUPPLY("avdd", "3-005d"),
++	/* Synaptics RMI4 Touchscreen device */
++	REGULATOR_SUPPLY("vdd", "3-004b"),
++	/* L3G4200D Gyroscope device */
++	REGULATOR_SUPPLY("vdd", "2-0068"),
++	/* Ambient light sensor device */
++	REGULATOR_SUPPLY("vdd", "3-0029"),
++	/* Pressure sensor device */
++	REGULATOR_SUPPLY("vdd", "2-005c"),
++	/* Cypress TrueTouch Touchscreen device */
++	REGULATOR_SUPPLY("vcpin", "spi8.0"),
++	/* Camera device */
++	REGULATOR_SUPPLY("vaux12v5", "mmio_camera"),
++#ifdef CONFIG_TOUCHSCREEN_CYTTSP_SPI
++	REGULATOR_SUPPLY("", "v-touch1"),
++#endif
++};
++
++static struct regulator_consumer_supply ab8500_vaux2_consumers[] = {
++	/* On-board eMMC power */
++	REGULATOR_SUPPLY("vmmc", "sdi4"),
++	/* AB8500 audio codec */
++	REGULATOR_SUPPLY("vcc-N2158", "ab8500-codec.0"),
++	/* AB8500 accessory detect 1 */
++	REGULATOR_SUPPLY("vcc-N2158", "ab8500-acc-det.0"),
++	/* AB8500 Tv-out device */
++	REGULATOR_SUPPLY("vcc-N2158", "mcde_tv_ab8500.4"),
++	/* AV8100 HDMI device */
++	REGULATOR_SUPPLY("vcc-N2158", "av8100_hdmi.3"),
++};
++
++static struct regulator_consumer_supply ab8500_vaux3_consumers[] = {
++	REGULATOR_SUPPLY("v-SD-STM", "stm"),
++	/* External MMC slot power */
++	REGULATOR_SUPPLY("vmmc", "sdi0"),
++	/* External MMC slot power */
++	REGULATOR_SUPPLY("vmmc", "sdi3"),
++};
++
++static struct regulator_consumer_supply ab8505_vaux4_consumers[] = {
++};
++
++static struct regulator_consumer_supply ab8500_vtvout_consumers[] = {
++	/* TV-out DENC supply */
++	REGULATOR_SUPPLY("vtvout", "ab8500-denc.0"),
++	/* Internal general-purpose ADC */
++	REGULATOR_SUPPLY("vddadc", "ab8500-gpadc.0"),
++	/* ADC for charger */
++	REGULATOR_SUPPLY("vddadc", "ab8500-charger.0"),
++	/* AB8500 Tv-out device */
++	REGULATOR_SUPPLY("vtvout", "mcde_tv_ab8500.4"),
++#ifdef CONFIG_SIMPLE_REMOTE_PLATFORM
++	REGULATOR_SUPPLY("vddadc", NULL),
++#endif
++};
++
++static struct regulator_consumer_supply ab8500_vaudio_consumers[] = {
++	/* AB8500 audio codec device */
++	REGULATOR_SUPPLY("v-audio", NULL),
++};
++
++static struct regulator_consumer_supply ab8500_vamic1_consumers[] = {
++	/* AB8500 audio codec device */
++	REGULATOR_SUPPLY("v-amic1", NULL),
++};
++
++static struct regulator_consumer_supply ab8500_vamic2_consumers[] = {
++	/* AB8500 audio codec device */
++	REGULATOR_SUPPLY("v-amic2", NULL),
++};
++
++static struct regulator_consumer_supply ab8500_vdmic_consumers[] = {
++	/* AB8500 audio codec device */
++	REGULATOR_SUPPLY("v-dmic", NULL),
++};
++
++static struct regulator_consumer_supply ab8500_vintcore_consumers[] = {
++	/* SoC core supply, no device */
++	REGULATOR_SUPPLY("v-intcore", NULL),
++	/* USB Transceiver */
++	REGULATOR_SUPPLY("vddulpivio18", "ab8500-usb.0"),
++};
++
++static struct regulator_consumer_supply ab8500_vana_consumers[] = {
++	/* DB8500 DSI */
++	REGULATOR_SUPPLY("vdddsi1v2", "mcde"),
++	REGULATOR_SUPPLY("vdddsi1v2", "dsilink.0"),
++	REGULATOR_SUPPLY("vdddsi1v2", "dsilink.1"),
++	REGULATOR_SUPPLY("vdddsi1v2", "dsilink.2"),
++	/* DB8500 CSI */
++	REGULATOR_SUPPLY("vddcsi1v2", "mmio_camera"),
++};
++
++static struct regulator_consumer_supply ab8500_sysclkreq_2_consumers[] = {
++	/* CG2900 device */
++	REGULATOR_SUPPLY("gbf_1v8", "cg2900-uart.0"),
++};
++
++static struct regulator_consumer_supply ab8500_sysclkreq_4_consumers[] = {
++	/* CW1200 device */
++	REGULATOR_SUPPLY("wlan_1v8", "cw1200_wlan.0"),
++};
++
++static struct regulator_consumer_supply ab8500_sysclkreq_6_consumers[] = {
++	REGULATOR_SUPPLY("nfc_1v8", NULL),
++};
++
++/* ab8500 regulator register initialization */
++static struct ab8500_regulator_reg_init ab8500_reg_init[] = {
++	/*
++	 * VanaRequestCtrl          = HP/LP depending on VxRequest
++	 * VextSupply1RequestCtrl   = HP/LP depending on VxRequest
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUREQUESTCTRL2,       0xf0, 0x00),
++	/*
++	 * VextSupply2RequestCtrl   = HP/LP depending on VxRequest
++	 * VextSupply3RequestCtrl   = HP/LP depending on VxRequest
++	 * Vaux1RequestCtrl         = HP/LP depending on VxRequest
++	 * Vaux2RequestCtrl         = HP/LP depending on VxRequest
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUREQUESTCTRL3,       0xff, 0x00),
++	/*
++	 * Vaux3RequestCtrl         = HP/LP depending on VxRequest
++	 * SwHPReq                  = Control through SWValid disabled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUREQUESTCTRL4,       0x07, 0x00),
++	/*
++	 * VanaSysClkReq1HPValid    = disabled
++	 * Vaux1SysClkReq1HPValid   = disabled
++	 * Vaux2SysClkReq1HPValid   = disabled
++	 * Vaux3SysClkReq1HPValid   = disabled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUSYSCLKREQ1HPVALID1, 0xe8, 0x00),
++	/*
++	 * VextSupply1SysClkReq1HPValid = disabled
++	 * VextSupply2SysClkReq1HPValid = disabled
++	 * VextSupply3SysClkReq1HPValid = SysClkReq1 controlled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUSYSCLKREQ1HPVALID2, 0x70, 0x40),
++	/*
++	 * VanaHwHPReq1Valid        = disabled
++	 * Vaux1HwHPreq1Valid       = disabled
++	 * Vaux2HwHPReq1Valid       = disabled
++	 * Vaux3HwHPReqValid        = disabled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUHWHPREQ1VALID1,     0xe8, 0x00),
++	/*
++	 * VextSupply1HwHPReq1Valid = disabled
++	 * VextSupply2HwHPReq1Valid = disabled
++	 * VextSupply3HwHPReq1Valid = disabled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUHWHPREQ1VALID2,     0x07, 0x00),
++	/*
++	 * VanaHwHPReq2Valid        = disabled
++	 * Vaux1HwHPReq2Valid       = disabled
++	 * Vaux2HwHPReq2Valid       = disabled
++	 * Vaux3HwHPReq2Valid       = disabled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUHWHPREQ2VALID1,     0xe8, 0x00),
++	/*
++	 * VextSupply1HwHPReq2Valid = disabled
++	 * VextSupply2HwHPReq2Valid = disabled
++	 * VextSupply3HwHPReq2Valid = HWReq2 controlled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUHWHPREQ2VALID2,     0x07, 0x04),
++	/*
++	 * VanaSwHPReqValid         = disabled
++	 * Vaux1SwHPReqValid        = disabled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUSWHPREQVALID1,      0xa0, 0x00),
++	/*
++	 * Vaux2SwHPReqValid        = disabled
++	 * Vaux3SwHPReqValid        = disabled
++	 * VextSupply1SwHPReqValid  = disabled
++	 * VextSupply2SwHPReqValid  = disabled
++	 * VextSupply3SwHPReqValid  = disabled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUSWHPREQVALID2,      0x1f, 0x00),
++	/*
++	 * SysClkReq2Valid1         = SysClkReq2 controlled
++	 * SysClkReq3Valid1         = disabled
++	 * SysClkReq4Valid1         = SysClkReq4 controlled
++	 * SysClkReq5Valid1         = disabled
++	 * SysClkReq6Valid1         = SysClkReq6 controlled
++	 * SysClkReq7Valid1         = disabled
++	 * SysClkReq8Valid1         = disabled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUSYSCLKREQVALID1,    0xfe, 0x2a),
++	/*
++	 * SysClkReq2Valid2         = disabled
++	 * SysClkReq3Valid2         = disabled
++	 * SysClkReq4Valid2         = disabled
++	 * SysClkReq5Valid2         = disabled
++	 * SysClkReq6Valid2         = SysClkReq6 controlled
++	 * SysClkReq7Valid2         = disabled
++	 * SysClkReq8Valid2         = disabled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUSYSCLKREQVALID2,    0xfe, 0x20),
++	/*
++	 * VTVoutEna                = disabled
++	 * Vintcore12Ena            = disabled
++	 * Vintcore12Sel            = 1.25 V
++	 * Vintcore12LP             = inactive (HP)
++	 * VTVoutLP                 = inactive (HP)
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUMISC1,              0xfe, 0x10),
++	/*
++	 * VaudioEna                = disabled
++	 * VdmicEna                 = disabled
++	 * Vamic1Ena                = disabled
++	 * Vamic2Ena                = disabled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_VAUDIOSUPPLY,           0x1e, 0x00),
++	/*
++	 * Vamic1_dzout             = high-Z when Vamic1 is disabled
++	 * Vamic2_dzout             = high-Z when Vamic2 is disabled
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUCTRL1VAMIC,         0x03, 0x00),
++	/*
++	 * VPll                     = Hw controlled (NOTE! PRCMU bits)
++	 * VanaRegu                 = force off
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_VPLLVANAREGU,           0x0f, 0x02),
++	/*
++	 * VrefDDREna               = disabled
++	 * VrefDDRSleepMode         = inactive (no pulldown)
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_VREFDDR,                0x03, 0x00),
++	/*
++	 * VextSupply1Regu          = force LP
++	 * VextSupply2Regu          = force OFF
++	 * VextSupply3Regu          = force HP (-> STBB2=LP and TPS=LP)
++	 * ExtSupply2Bypass         = ExtSupply12LPn ball is 0 when Ena is 0
++	 * ExtSupply3Bypass         = ExtSupply3LPn ball is 0 when Ena is 0
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_EXTSUPPLYREGU,          0xff, 0x13),
++	/*
++	 * Vaux1Regu                = force HP
++	 * Vaux2Regu                = force HP
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_VAUX12REGU,             0x0f, 0x05),
++	/*
++	 * Vaux3Regu                = force off
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_VRF1VAUX3REGU,          0x03, 0x00),
++	/*
++	 * Vaux1Sel                 = 2.8 V
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_VAUX1SEL,               0x0f, 0x0C),
++	/*
++	 * Vaux2Sel                 = 2.9 V
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_VAUX2SEL,               0x0f, 0x0d),
++	/*
++	 * Vaux3Sel                 = 2.91 V
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_VRF1VAUX3SEL,           0x07, 0x07),
++	/*
++	 * VextSupply12LP           = disabled (no LP)
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUCTRL2SPARE,         0x01, 0x00),
++	/*
++	 * Vaux1Disch               = short discharge time
++	 * Vaux2Disch               = short discharge time
++	 * Vaux3Disch               = short discharge time
++	 * Vintcore12Disch          = short discharge time
++	 * VTVoutDisch              = short discharge time
++	 * VaudioDisch              = short discharge time
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUCTRLDISCH,          0xfc, 0x00),
++	/*
++	 * VanaDisch                = short discharge time
++	 * VdmicPullDownEna         = pulldown disabled when Vdmic is disabled
++	 * VdmicDisch               = short discharge time
++	 */
++	INIT_REGULATOR_REGISTER(AB8500_REGUCTRLDISCH2,         0x16, 0x00),
++};
++
++/* AB8500 regulators */
++static struct regulator_init_data ab8500_regulators[AB8500_NUM_REGULATORS] = {
++	/* supplies to the display/camera */
++	[AB8500_LDO_AUX1] = {
++		.supply_regulator = "ab8500-ext-supply3",
++		.constraints = {
++			.name = "V-DISPLAY",
++			.min_uV = 1100000,
++			.max_uV = 3300000,
++			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
++					  REGULATOR_CHANGE_STATUS |
++					  REGULATOR_CHANGE_MODE |
++					  REGULATOR_CHANGE_DRMS,
++                        .valid_modes_mask = REGULATOR_MODE_NORMAL |
++                                            REGULATOR_MODE_IDLE,
++			.boot_on = 1, /* display is on at boot */
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vaux1_consumers),
++		.consumer_supplies = ab8500_vaux1_consumers,
++	},
++	/* supplies to the on-board eMMC */
++	[AB8500_LDO_AUX2] = {
++		.supply_regulator = "ab8500-ext-supply3",
++		.constraints = {
++			.name = "V-eMMC1",
++			.min_uV = 1100000,
++			.max_uV = 3300000,
++			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
++					  REGULATOR_CHANGE_STATUS |
++					  REGULATOR_CHANGE_MODE ,
++			.valid_modes_mask = REGULATOR_MODE_NORMAL |
++					    REGULATOR_MODE_IDLE,
++			.boot_keep = 1, /* eMMC must remain powered from boot */
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vaux2_consumers),
++		.consumer_supplies = ab8500_vaux2_consumers,
++	},
++	/* supply for VAUX3, supplies to SDcard slots */
++	[AB8500_LDO_AUX3] = {
++		.supply_regulator = "ab8500-ext-supply3",
++		.constraints = {
++			.name = "V-MMC-SD",
++			.min_uV = 1100000,
++			.max_uV = 3300000,
++			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
++					  REGULATOR_CHANGE_STATUS |
++					  REGULATOR_CHANGE_MODE ,
++			.valid_modes_mask = REGULATOR_MODE_NORMAL |
++					    REGULATOR_MODE_IDLE,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vaux3_consumers),
++		.consumer_supplies = ab8500_vaux3_consumers,
++	},
++	/* supply for tvout, gpadc, TVOUT LDO */
++	[AB8500_LDO_TVOUT] = {
++		.constraints = {
++			.name = "V-TVOUT",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vtvout_consumers),
++		.consumer_supplies = ab8500_vtvout_consumers,
++	},
++	/* supply for ab8500-vaudio, VAUDIO LDO */
++	[AB8500_LDO_AUDIO] = {
++		.constraints = {
++			.name = "V-AUD",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vaudio_consumers),
++		.consumer_supplies = ab8500_vaudio_consumers,
++	},
++	/* supply for v-anamic1 VAMic1-LDO */
++	[AB8500_LDO_ANAMIC1] = {
++		.constraints = {
++			.name = "V-AMIC1",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vamic1_consumers),
++		.consumer_supplies = ab8500_vamic1_consumers,
++	},
++	/* supply for v-amic2, VAMIC2 LDO, reuse constants for AMIC1 */
++	[AB8500_LDO_ANAMIC2] = {
++		.constraints = {
++			.name = "V-AMIC2",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vamic2_consumers),
++		.consumer_supplies = ab8500_vamic2_consumers,
++	},
++	/* supply for v-dmic, VDMIC LDO */
++	[AB8500_LDO_DMIC] = {
++		.constraints = {
++			.name = "V-DMIC",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vdmic_consumers),
++		.consumer_supplies = ab8500_vdmic_consumers,
++	},
++	/* supply for v-intcore12, VINTCORE12 LDO */
++	[AB8500_LDO_INTCORE] = {
++		.constraints = {
++			.name = "V-INTCORE",
++			.min_uV = 1200000,
++			.max_uV = 1350000,
++			.input_uV = 1800000,
++			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
++					  REGULATOR_CHANGE_STATUS |
++					  REGULATOR_CHANGE_MODE |
++					  REGULATOR_CHANGE_DRMS,
++			.valid_modes_mask = REGULATOR_MODE_NORMAL |
++					    REGULATOR_MODE_IDLE,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vintcore_consumers),
++		.consumer_supplies = ab8500_vintcore_consumers,
++	},
++	/* supply for U8500 CSI-DSI, VANA LDO */
++	[AB8500_LDO_ANA] = {
++		.constraints = {
++			.name = "V-CSI-DSI",
++                        .min_uV = 1100000,
++                        .max_uV = 2910000,
++                        .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
++                                          REGULATOR_CHANGE_STATUS |
++                                          REGULATOR_CHANGE_MODE,
++                        .valid_modes_mask = REGULATOR_MODE_NORMAL |
++                                            REGULATOR_MODE_IDLE,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vana_consumers),
++		.consumer_supplies = ab8500_vana_consumers,
++	},
++	/* sysclkreq 2 pin */
++	[AB8500_SYSCLKREQ_2] = {
++		.constraints = {
++			.name = "V-SYSCLKREQ-2",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies =
++			ARRAY_SIZE(ab8500_sysclkreq_2_consumers),
++		.consumer_supplies = ab8500_sysclkreq_2_consumers,
++	},
++	/* sysclkreq 4 pin */
++	[AB8500_SYSCLKREQ_4] = {
++		.constraints = {
++			.name = "V-SYSCLKREQ-4",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies =
++			ARRAY_SIZE(ab8500_sysclkreq_4_consumers),
++		.consumer_supplies = ab8500_sysclkreq_4_consumers,
++	},
++	/* sysclkreq 6 pin */
++	[AB8500_SYSCLKREQ_6] = {
++		.constraints = {
++			.name = "V-SYSCLKREQ-6",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies =
++			ARRAY_SIZE(ab8500_sysclkreq_6_consumers),
++		.consumer_supplies = ab8500_sysclkreq_6_consumers,
++	},
++};
++
++/* supply for VextSupply3 */
++static struct regulator_consumer_supply ab8500_ext_supply3_consumers[] = {
++	/* 3 V Displays */
++	REGULATOR_SUPPLY("v-display-3v1", NULL),
++	/* SIM supply for 3 V SIM cards */
++	REGULATOR_SUPPLY("vinvsim", "sim-detect.0"),
++};
++
++/* extended configuration for VextSupply2, only used for HREFP_V20 boards */
++static struct ab8500_ext_regulator_cfg ab8500_ext_supply2 = {
++	.hwreq = true,
++};
++
++/*
++ * AB8500 external regulators
++ */
++static struct regulator_init_data ab8500_ext_regulators[] = {
++	/* fixed Vbat supplies VSMPS1_EXT_1V8 */
++	[AB8500_EXT_SUPPLY1] = {
++		.constraints = {
++			.name = "ab8500-ext-supply1",
++			.min_uV = 1800000,
++			.max_uV = 1800000,
++			.initial_mode = REGULATOR_MODE_IDLE,
++			.boot_on = 1,
++			.always_on = 1,
++		},
++	},
++	/* fixed Vbat supplies VSMPS2_EXT_1V36 and VSMPS5_EXT_1V15 */
++	[AB8500_EXT_SUPPLY2] = {
++		.constraints = {
++			.name = "ab8500-ext-supply2",
++			.min_uV = 1360000,
++			.max_uV = 1360000,
++			
++		},
++	},
++	/* fixed Vbat supplies VSMPS3_EXT_3V4 and VSMPS4_EXT_3V4 */
++	[AB8500_EXT_SUPPLY3] = {
++		.constraints = {
++			.name = "ab8500-ext-supply3",
++			.min_uV = 3400000,
++			.max_uV = 3400000,
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++			.boot_on = 1,
++		},
++		.num_consumer_supplies =
++			ARRAY_SIZE(ab8500_ext_supply3_consumers),
++		.consumer_supplies = ab8500_ext_supply3_consumers,
++	},
++};
++
++struct regulator_init_data ab8505_regulators[AB9540_NUM_REGULATORS] = {
++	/* supplies to the display/camera */
++	[AB9540_LDO_AUX1] = {
++		.supply_regulator = "ab8500-ext-supply3",
++		.constraints = {
++			.name = "V-DISPLAY",
++			.min_uV = 2800000,
++			.max_uV = 3300000,
++                        .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
++                                          REGULATOR_CHANGE_STATUS |
++                                          REGULATOR_CHANGE_MODE |
++					  REGULATOR_CHANGE_DRMS,
++                        .valid_modes_mask = REGULATOR_MODE_NORMAL |
++                                            REGULATOR_MODE_IDLE,
++			.boot_on = 1, /* display is on at boot */
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vaux1_consumers),
++		.consumer_supplies = ab8500_vaux1_consumers,
++	},
++	/* supplies to the on-board eMMC */
++	[AB9540_LDO_AUX2] = {
++		.supply_regulator = "ab8500-ext-supply3",
++		.constraints = {
++			.name = "V-eMMC1",
++			.min_uV = 1100000,
++			.max_uV = 3300000,
++                        .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
++                                          REGULATOR_CHANGE_STATUS |
++                                          REGULATOR_CHANGE_MODE |
++                                          REGULATOR_CHANGE_DRMS,
++                        .valid_modes_mask = REGULATOR_MODE_NORMAL |
++                                            REGULATOR_MODE_IDLE,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vaux2_consumers),
++		.consumer_supplies = ab8500_vaux2_consumers,
++	},
++	/* supply for VAUX3, supplies to SDcard slots */
++	[AB9540_LDO_AUX3] = {
++		.supply_regulator = "ab8500-ext-supply3",
++		.constraints = {
++			.name = "V-MMC-SD",
++			.min_uV = 1100000,
++			.max_uV = 3300000,
++                        .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
++                                          REGULATOR_CHANGE_STATUS |
++                                          REGULATOR_CHANGE_MODE |
++                                          REGULATOR_CHANGE_DRMS,
++                        .valid_modes_mask = REGULATOR_MODE_NORMAL |
++                                            REGULATOR_MODE_IDLE,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vaux3_consumers),
++		.consumer_supplies = ab8500_vaux3_consumers,
++	},
++	/* supply for VAUX4, supplies to NFC and standalone secure element */
++	[AB9540_LDO_AUX4] = {
++		.constraints = {
++			.name = "V-NFC-SE",
++			.min_uV = 1100000,
++			.max_uV = 3300000,
++                        .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
++                                          REGULATOR_CHANGE_STATUS |
++                                          REGULATOR_CHANGE_MODE |
++                                          REGULATOR_CHANGE_DRMS,
++                        .valid_modes_mask = REGULATOR_MODE_NORMAL |
++                                            REGULATOR_MODE_IDLE,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8505_vaux4_consumers),
++		.consumer_supplies = ab8505_vaux4_consumers,
++	},
++	/* supply for tvout, gpadc, TVOUT LDO */
++	[AB9540_LDO_TVOUT] = {
++		.constraints = {
++			.name = "V-TVOUT",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vtvout_consumers),
++		.consumer_supplies = ab8500_vtvout_consumers,
++	},
++	/* supply for ab8500-vaudio, VAUDIO LDO */
++	[AB9540_LDO_AUDIO] = {
++		.constraints = {
++			.name = "V-AUD",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vaudio_consumers),
++		.consumer_supplies = ab8500_vaudio_consumers,
++	},
++	/* supply for v-anamic1 VAMic1-LDO */
++	[AB9540_LDO_ANAMIC1] = {
++		.constraints = {
++			.name = "V-AMIC1",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vamic1_consumers),
++		.consumer_supplies = ab8500_vamic1_consumers,
++	},
++	/* supply for v-amic2, VAMIC2 LDO, reuse constants for AMIC1 */
++	[AB9540_LDO_ANAMIC2] = {
++		.constraints = {
++			.name = "V-AMIC2",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vamic2_consumers),
++		.consumer_supplies = ab8500_vamic2_consumers,
++	},
++	/* supply for v-dmic, VDMIC LDO */
++	[AB9540_LDO_DMIC] = {
++		.constraints = {
++			.name = "V-DMIC",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vdmic_consumers),
++		.consumer_supplies = ab8500_vdmic_consumers,
++	},
++	/* supply for v-intcore12, VINTCORE12 LDO */
++	[AB9540_LDO_INTCORE] = {
++		.constraints = {
++			.name = "V-INTCORE",
++			.min_uV = 1100000,
++			.max_uV = 1350000,
++			.input_uV = 1800000,
++			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
++					  REGULATOR_CHANGE_STATUS |
++					  REGULATOR_CHANGE_MODE |
++					  REGULATOR_CHANGE_DRMS,
++			.valid_modes_mask = REGULATOR_MODE_NORMAL |
++					    REGULATOR_MODE_IDLE,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vintcore_consumers),
++		.consumer_supplies = ab8500_vintcore_consumers,
++	},
++	/* supply for U8500 CSI-DSI, VANA LDO */
++	[AB9540_LDO_ANA] = {
++		.constraints = {
++			.name = "V-CSI-DSI",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies = ARRAY_SIZE(ab8500_vana_consumers),
++		.consumer_supplies = ab8500_vana_consumers,
++	},
++	/* sysclkreq 2 pin */
++	[AB9540_SYSCLKREQ_2] = {
++		.constraints = {
++			.name = "V-SYSCLKREQ-2",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies =
++			ARRAY_SIZE(ab8500_sysclkreq_2_consumers),
++		.consumer_supplies = ab8500_sysclkreq_2_consumers,
++	},
++	/* sysclkreq 4 pin */
++	[AB9540_SYSCLKREQ_4] = {
++		.constraints = {
++			.name = "V-SYSCLKREQ-4",
++			.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++		},
++		.num_consumer_supplies =
++			ARRAY_SIZE(ab8500_sysclkreq_4_consumers),
++		.consumer_supplies = ab8500_sysclkreq_4_consumers,
++	},
++};
++
++struct ab8500_regulator_platform_data ab8500_regulator_plat_data = {
++	.reg_init               = ab8500_reg_init,
++	.num_reg_init           = ARRAY_SIZE(ab8500_reg_init),
++	.regulator              = ab8500_regulators,
++	.num_regulator          = ARRAY_SIZE(ab8500_regulators),
++	.ext_regulator          = ab8500_ext_regulators,
++	.num_ext_regulator      = ARRAY_SIZE(ab8500_ext_regulators),
++};
++
++/* Use the AB8500 init settings for AB8505 as they are the same right now */
++struct ab8500_regulator_platform_data ab8505_regulator_plat_data = {
++	.reg_init               = ab8500_reg_init,
++	.num_reg_init           = ARRAY_SIZE(ab8500_reg_init),
++	.regulator              = ab8505_regulators,
++	.num_regulator          = ARRAY_SIZE(ab8505_regulators),
++	.ext_regulator          = ab8500_ext_regulators,
++	.num_ext_regulator      = ARRAY_SIZE(ab8500_ext_regulators),
++};
++
++static void ab8500_modify_reg_init(int id, u8 mask, u8 value)
++{
++	int i;
++
++	for (i = ARRAY_SIZE(ab8500_reg_init) - 1; i >= 0; i--) {
++		if (ab8500_reg_init[i].id == id) {
++			u8 initval = ab8500_reg_init[i].value;
++			initval = (initval & ~mask) | (value & mask);
++			ab8500_reg_init[i].value = initval;
++
++			BUG_ON(mask & ~ab8500_reg_init[i].mask);
++			return;
++		}
++	}
++
++	BUG_ON(1);
++}
++
++void mop500_regulator_init(void)
++{
++	struct regulator_init_data *regulator;
++
++	/*
++	 * Temporarily turn on Vaux2 on 8520 machine
++	 */
++	if (machine_is_u8520()) {
++		/* Vaux2 initialized to be on */
++		ab8500_modify_reg_init(AB8500_VAUX12REGU, 0x0f, 0x05);
++
++		/* Vaux2 always on */
++		regulator = &ab8500_ext_regulators[AB8500_LDO_AUX2];
++		regulator->constraints.always_on = 1;
++	}
++
++	/*
++	 * Handle AB8500_EXT_SUPPLY2 on HREFP_V20_V50 boards (do it for
++	 * all HREFP_V20 boards)
++	 */
++	if (cpu_is_u8500v20()) {
++		/* VextSupply2RequestCtrl =  HP/OFF depending on VxRequest */
++		ab8500_modify_reg_init(AB8500_REGUREQUESTCTRL3, 0x01, 0x01);
++
++		/* VextSupply2SysClkReq1HPValid = SysClkReq1 controlled */
++		ab8500_modify_reg_init(AB8500_REGUSYSCLKREQ1HPVALID2,
++			0x20, 0x20);
++
++		/* VextSupply2 = force HP at initialization */
++		ab8500_modify_reg_init(AB8500_EXTSUPPLYREGU, 0x0c, 0x04);
++
++		/* enable VextSupply2 during platform active */
++		regulator = &ab8500_ext_regulators[AB8500_EXT_SUPPLY2];
++		regulator->constraints.always_on = 1;
++
++		/* disable VextSupply2 in suspend */
++		regulator = &ab8500_ext_regulators[AB8500_EXT_SUPPLY2];
++		regulator->constraints.state_mem.disabled = 1;
++		regulator->constraints.state_standby.disabled = 1;
++
++		/* enable VextSupply2 HW control (used in suspend) */
++		regulator->driver_data = (void *)&ab8500_ext_supply2;
++	}
++}
+diff --git a/kernel-uksm/arch/arm/mach-ux500/board-mop500-sdi.c b/kernel-uksm/arch/arm/mach-ux500/board-mop500-sdi.c
+index 0ef6404..d053348 100644
+--- a/kernel-uksm/arch/arm/mach-ux500/board-mop500-sdi.c
++++ b/kernel-uksm/arch/arm/mach-ux500/board-mop500-sdi.c
+@@ -35,7 +35,7 @@ static int mop500_sdi0_ios_handler(struct device *dev, struct mmc_ios *ios,
+ 				   enum rpm_status pm)
+ {
+ 	static unsigned char power_mode = MMC_POWER_ON;
+-	static unsigned char signal_voltage = MMC_SIGNAL_VOLTAGE_330;
++	static unsigned char signal_voltage = MMC_SIGNAL_VOLTAGE_180;
+ 
+ 	if (signal_voltage == ios->signal_voltage)
+ 		goto do_power;
+diff --git a/kernel-uksm/create_release.sh b/kernel-uksm/create_release.sh
+index be6fe30..0feb3fc 100755
+--- a/kernel-uksm/create_release.sh
++++ b/kernel-uksm/create_release.sh
+@@ -1,10 +1,10 @@
+ #!/bin/sh
+ 
+ export ARCH=arm
+-export CROSS_COMPILE=/home/pcadmin/android-misc/ics/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
++export CROSS_COMPILE=arm-cortex_a9-linux-gnueabi-
+ PARA='-j5'
+-MOD_PATH="../kernel.cwm/system/"
+-#IMAGE="boot.img"
++MOD_PATH="../ramdisk"
++IMAGE="boot.img"
+ 
+ make cyanogen_nypon_defconfig && \
+ make $PARA oldconfig && \
+@@ -12,13 +12,5 @@ make $PARA && \
+ make $PARA INSTALL_MOD_PATH=$MOD_PATH modules_install  && \
+ cd ../ && \
+ ./makeit_p.sh && \
+-cd kernel.cwm && \
+-rm *.zip ; \
+-rm system/lib/modules/3.0.69\+/build ; \
+-rm system/lib/modules/3.0.69\+/source ; \
+-zip -r distkernel.zip * && \
+-signapk.jar ~/android-misc/ssl/platform.x509.pem ~/android-misc/ssl/platform.pk8 distkernel.zip distkernel-signed.zip
+-#adb push distkernel-signed.zip /mnt/sdcard
+-
+-#fastboot flash boot $IMAGE && \
+-#fastboot reboot
++fastboot flash boot $IMAGE && \
++fastboot reboot
+diff --git a/kernel-uksm/kernel/power/earlysuspend.c b/kernel-uksm/kernel/power/earlysuspend.c
+index 1af4528..b15f02e 100644
+--- a/kernel-uksm/kernel/power/earlysuspend.c
++++ b/kernel-uksm/kernel/power/earlysuspend.c
+@@ -33,15 +33,10 @@ module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
+ 
+ static DEFINE_MUTEX(early_suspend_lock);
+ static LIST_HEAD(early_suspend_handlers);
+-
+ static void early_suspend(struct work_struct *work);
+-static DECLARE_WORK(early_suspend_work, early_suspend);
+-static DECLARE_COMPLETION(early_suspend_complete);
+-
+ static void late_resume(struct work_struct *work);
++static DECLARE_WORK(early_suspend_work, early_suspend);
+ static DECLARE_WORK(late_resume_work, late_resume);
+-static DECLARE_COMPLETION(late_resume_complete);
+-
+ static DEFINE_SPINLOCK(state_lock);
+ enum {
+ 	SUSPEND_REQUESTED = 0x1,
+@@ -117,8 +112,6 @@ abort:
+ 	if (state == SUSPEND_REQUESTED_AND_SUSPENDED)
+ 		wake_unlock(&main_wake_lock);
+ 	spin_unlock_irqrestore(&state_lock, irqflags);
+-
+-	complete(&early_suspend_complete);
+ }
+ 
+ static void late_resume(struct work_struct *work)
+@@ -154,15 +147,12 @@ static void late_resume(struct work_struct *work)
+ 		pr_info("late_resume: done\n");
+ abort:
+ 	mutex_unlock(&early_suspend_lock);
+-
+-	complete(&late_resume_complete);
+ }
+ 
+ void request_suspend_state(suspend_state_t new_state)
+ {
+ 	unsigned long irqflags;
+ 	int old_sleep;
+-	int suspend = 0, resume = 0;
+ 
+ 	spin_lock_irqsave(&state_lock, irqflags);
+ 	old_sleep = state & SUSPEND_REQUESTED;
+@@ -182,20 +172,13 @@ void request_suspend_state(suspend_state_t new_state)
+ 	if (!old_sleep && new_state != PM_SUSPEND_ON) {
+ 		state |= SUSPEND_REQUESTED;
+ 		queue_work(suspend_work_queue, &early_suspend_work);
+-		suspend = 1;
+ 	} else if (old_sleep && new_state == PM_SUSPEND_ON) {
+ 		state &= ~SUSPEND_REQUESTED;
+ 		wake_lock(&main_wake_lock);
+ 		queue_work(suspend_work_queue, &late_resume_work);
+-		resume = 1;
+ 	}
+ 	requested_suspend_state = new_state;
+ 	spin_unlock_irqrestore(&state_lock, irqflags);
+-
+-	if (suspend)
+-		wait_for_completion(&early_suspend_complete);
+-	if (resume)
+-		wait_for_completion(&late_resume_complete);
+ }
+ 
+ suspend_state_t get_suspend_state(void)
+diff --git a/kernel.cwm/META-INF/com/google/android/update-binary b/kernel.cwm/META-INF/com/google/android/update-binary
+deleted file mode 100644
+index 75d1578..0000000
+Binary files a/kernel.cwm/META-INF/com/google/android/update-binary and /dev/null differ
+diff --git a/kernel.cwm/META-INF/com/google/android/updater-script b/kernel.cwm/META-INF/com/google/android/updater-script
+deleted file mode 100644
+index 1eb7e4c..0000000
+--- a/kernel.cwm/META-INF/com/google/android/updater-script
++++ /dev/null
+@@ -1,26 +0,0 @@
+-ui_print("");
+-ui_print("dist kernel updater");
+-ui_print("");
+-
+-ui_print("Wipe dalvik");
+-run_program("/sbin/busybox", "mount", "/system");
+-run_program("/sbin/busybox", "mount", "/data");
+-run_program("/sbin/busybox", "mount", "/cache");
+-run_program("/sbin/busybox", "rm", "-rf", "/data/dalvik-cache");
+-run_program("/sbin/busybox", "rm", "-rf", "/system/lib/modules/3.0.69+");
+-run_program("/sbin/busybox", "rm", "-rf", "/system/lib/modules/3.0.69");
+-run_program("/sbin/busybox", "rm", "-rf", "/system/lib/modules/3.0.8+");
+-
+-ui_print("Flashing...");
+-
+-package_extract_dir("system","/system");
+-symlink("/system/lib/modules/3.0.69+","/system/lib/modules/3.0.8+");
+-
+-# running the flash operation
+-assert(package_extract_file("boot.elf", "/cache/boot.elf"),
+-       write_raw_image("/cache/boot.elf", "/dev/block/mmcblk0p9"),
+-       delete("/cache/boot.elf"));
+-
+-ui_print("Done! Please, reboot system now!");
+-unmount("/system");
+-unmount("/data");
+diff --git a/kernel.cwm/distkernel-signed.zip b/kernel.cwm/distkernel-signed.zip
+deleted file mode 100644
+index 0233097..0000000
+Binary files a/kernel.cwm/distkernel-signed.zip and /dev/null differ
+diff --git a/kernel.cwm/distkernel.zip b/kernel.cwm/distkernel.zip
+deleted file mode 100644
+index 1894e25..0000000
+Binary files a/kernel.cwm/distkernel.zip and /dev/null differ
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.alias b/kernel.cwm/system/lib/modules/3.0.69+/modules.alias
+deleted file mode 100644
+index 421320e..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.alias
++++ /dev/null
+@@ -1,3 +0,0 @@
+-# Aliases extracted from modules themselves.
+-alias cw1200_core cw1200_core
+-alias cw1200_wlan cw1200_wlan
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.alias.bin b/kernel.cwm/system/lib/modules/3.0.69+/modules.alias.bin
+deleted file mode 100644
+index e76cd34..0000000
+Binary files a/kernel.cwm/system/lib/modules/3.0.69+/modules.alias.bin and /dev/null differ
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.builtin b/kernel.cwm/system/lib/modules/3.0.69+/modules.builtin
+deleted file mode 100644
+index b6707dc..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.builtin
++++ /dev/null
+@@ -1,429 +0,0 @@
+-kernel/kernel/configs.ko
+-kernel/fs/mbcache.ko
+-kernel/fs/ext4/ext4.ko
+-kernel/fs/fat/fat.ko
+-kernel/fs/fat/vfat.ko
+-kernel/fs/fat/msdos.ko
+-kernel/fs/fuse/fuse.ko
+-kernel/fs/jbd2/jbd2.ko
+-kernel/fs/nls/nls_base.ko
+-kernel/fs/nls/nls_cp437.ko
+-kernel/fs/nls/nls_cp932.ko
+-kernel/fs/nls/nls_euc-jp.ko
+-kernel/fs/nls/nls_iso8859-1.ko
+-kernel/fs/nls/nls_utf8.ko
+-kernel/fs/quota/quota_v2.ko
+-kernel/fs/quota/quota_tree.ko
+-kernel/crypto/crypto.ko
+-kernel/crypto/crypto_wq.ko
+-kernel/crypto/crypto_algapi.ko
+-kernel/crypto/aead.ko
+-kernel/crypto/crypto_blkcipher.ko
+-kernel/crypto/chainiv.ko
+-kernel/crypto/eseqiv.ko
+-kernel/crypto/crypto_hash.ko
+-kernel/crypto/pcompress.ko
+-kernel/crypto/cryptomgr.ko
+-kernel/crypto/hmac.ko
+-kernel/crypto/md5.ko
+-kernel/crypto/sha1_generic.ko
+-kernel/crypto/sha256_generic.ko
+-kernel/crypto/ecb.ko
+-kernel/crypto/cbc.ko
+-kernel/crypto/des_generic.ko
+-kernel/crypto/twofish_generic.ko
+-kernel/crypto/twofish_common.ko
+-kernel/crypto/aes_generic.ko
+-kernel/crypto/arc4.ko
+-kernel/crypto/deflate.ko
+-kernel/crypto/authenc.ko
+-kernel/crypto/authencesn.ko
+-kernel/crypto/lzo.ko
+-kernel/crypto/rng.ko
+-kernel/crypto/krng.ko
+-kernel/block/deadline-iosched.ko
+-kernel/block/cfq-iosched.ko
+-kernel/block/sio-iosched.ko
+-kernel/block/vr-iosched.ko
+-kernel/block/fiops-iosched.ko
+-kernel/drivers/base/firmware_class.ko
+-kernel/drivers/block/brd.ko
+-kernel/drivers/block/loop.ko
+-kernel/drivers/bluetooth/hci_uart.ko
+-kernel/drivers/cpufreq/cpufreq_stats.ko
+-kernel/drivers/cpufreq/cpufreq_performance.ko
+-kernel/drivers/cpufreq/cpufreq_powersave.ko
+-kernel/drivers/cpufreq/cpufreq_userspace.ko
+-kernel/drivers/cpufreq/cpufreq_ondemand.ko
+-kernel/drivers/cpufreq/cpufreq_conservative.ko
+-kernel/drivers/cpufreq/cpufreq_interactive.ko
+-kernel/drivers/cpufreq/cpufreq_hotplug.ko
+-kernel/drivers/cpufreq/cpufreq_lulzactiveq.ko
+-kernel/drivers/cpufreq/cpufreq_wheatley.ko
+-kernel/drivers/cpufreq/cpufreq_pegasusq.ko
+-kernel/drivers/cpufreq/freq_table.ko
+-kernel/drivers/crypto/ux500/cryp/ux500_cryp.ko
+-kernel/drivers/crypto/ux500/hash/ux500_hash.ko
+-kernel/drivers/gpu/mali/mali400ko/driver/src/devicedrv/mali/mali.ko
+-kernel/drivers/hid/hid.ko
+-kernel/drivers/hid/hid-logitech.ko
+-kernel/drivers/hid/hid-pl.ko
+-kernel/drivers/hid/hid-sony.ko
+-kernel/drivers/hid/usbhid/usbhid.ko
+-kernel/drivers/hwmon/hwmon.ko
+-kernel/drivers/hwmon/abx500.ko
+-kernel/drivers/hwmon/ab8500.ko
+-kernel/drivers/hwmon/dbx500.ko
+-kernel/drivers/i2c/i2c-core.ko
+-kernel/drivers/i2c/i2c-dev.ko
+-kernel/drivers/i2c/busses/i2c-nomadik.ko
+-kernel/drivers/input/input-core.ko
+-kernel/drivers/input/joydev.ko
+-kernel/drivers/input/evdev.ko
+-kernel/drivers/input/joystick/xpad.ko
+-kernel/drivers/input/keyboard/gpio_keys.ko
+-kernel/drivers/input/keyboard/nomadik-ske-keypad.ko
+-kernel/drivers/input/misc/ab8500-ponkey.ko
+-kernel/drivers/input/misc/uinput.ko
+-kernel/drivers/input/misc/lsm303dlh_mag.ko
+-kernel/drivers/input/misc/lsm303dlhc_acc_lt.ko
+-kernel/drivers/input/misc/so340010.ko
+-kernel/drivers/input/serio/serio.ko
+-kernel/drivers/input/serio/serport.ko
+-kernel/drivers/leds/leds-lm3533_ng.ko
+-kernel/drivers/leds/ledtrig-timer.ko
+-kernel/drivers/md/dm-mod.ko
+-kernel/drivers/md/dm-crypt.ko
+-kernel/drivers/media/common/tuners/tuner-xc2028.ko
+-kernel/drivers/media/common/tuners/tuner-simple.ko
+-kernel/drivers/media/common/tuners/tuner-types.ko
+-kernel/drivers/media/common/tuners/mt20xx.ko
+-kernel/drivers/media/common/tuners/tda8290.ko
+-kernel/drivers/media/common/tuners/tea5767.ko
+-kernel/drivers/media/common/tuners/tea5761.ko
+-kernel/drivers/media/common/tuners/tda9887.ko
+-kernel/drivers/media/common/tuners/tda827x.ko
+-kernel/drivers/media/common/tuners/tda18271.ko
+-kernel/drivers/media/common/tuners/xc5000.ko
+-kernel/drivers/media/common/tuners/mc44s803.ko
+-kernel/drivers/media/radio/CG2900/radio_cg2900.ko
+-kernel/drivers/media/rc/rc-core.ko
+-kernel/drivers/media/rc/lirc_dev.ko
+-kernel/drivers/media/rc/ir-nec-decoder.ko
+-kernel/drivers/media/rc/ir-rc5-decoder.ko
+-kernel/drivers/media/rc/ir-rc6-decoder.ko
+-kernel/drivers/media/rc/ir-jvc-decoder.ko
+-kernel/drivers/media/rc/ir-sony-decoder.ko
+-kernel/drivers/media/rc/ir-rc5-sz-decoder.ko
+-kernel/drivers/media/rc/ir-lirc-codec.ko
+-kernel/drivers/media/rc/keymaps/rc-adstech-dvb-t-pci.ko
+-kernel/drivers/media/rc/keymaps/rc-alink-dtu-m.ko
+-kernel/drivers/media/rc/keymaps/rc-anysee.ko
+-kernel/drivers/media/rc/keymaps/rc-apac-viewcomp.ko
+-kernel/drivers/media/rc/keymaps/rc-asus-pc39.ko
+-kernel/drivers/media/rc/keymaps/rc-ati-tv-wonder-hd-600.ko
+-kernel/drivers/media/rc/keymaps/rc-avermedia-a16d.ko
+-kernel/drivers/media/rc/keymaps/rc-avermedia.ko
+-kernel/drivers/media/rc/keymaps/rc-avermedia-cardbus.ko
+-kernel/drivers/media/rc/keymaps/rc-avermedia-dvbt.ko
+-kernel/drivers/media/rc/keymaps/rc-avermedia-m135a.ko
+-kernel/drivers/media/rc/keymaps/rc-avermedia-m733a-rm-k6.ko
+-kernel/drivers/media/rc/keymaps/rc-avermedia-rm-ks.ko
+-kernel/drivers/media/rc/keymaps/rc-avertv-303.ko
+-kernel/drivers/media/rc/keymaps/rc-azurewave-ad-tu700.ko
+-kernel/drivers/media/rc/keymaps/rc-behold.ko
+-kernel/drivers/media/rc/keymaps/rc-behold-columbus.ko
+-kernel/drivers/media/rc/keymaps/rc-budget-ci-old.ko
+-kernel/drivers/media/rc/keymaps/rc-cinergy-1400.ko
+-kernel/drivers/media/rc/keymaps/rc-cinergy.ko
+-kernel/drivers/media/rc/keymaps/rc-dib0700-nec.ko
+-kernel/drivers/media/rc/keymaps/rc-dib0700-rc5.ko
+-kernel/drivers/media/rc/keymaps/rc-digitalnow-tinytwin.ko
+-kernel/drivers/media/rc/keymaps/rc-digittrade.ko
+-kernel/drivers/media/rc/keymaps/rc-dm1105-nec.ko
+-kernel/drivers/media/rc/keymaps/rc-dntv-live-dvb-t.ko
+-kernel/drivers/media/rc/keymaps/rc-dntv-live-dvbt-pro.ko
+-kernel/drivers/media/rc/keymaps/rc-em-terratec.ko
+-kernel/drivers/media/rc/keymaps/rc-encore-enltv2.ko
+-kernel/drivers/media/rc/keymaps/rc-encore-enltv.ko
+-kernel/drivers/media/rc/keymaps/rc-encore-enltv-fm53.ko
+-kernel/drivers/media/rc/keymaps/rc-evga-indtube.ko
+-kernel/drivers/media/rc/keymaps/rc-eztv.ko
+-kernel/drivers/media/rc/keymaps/rc-flydvb.ko
+-kernel/drivers/media/rc/keymaps/rc-flyvideo.ko
+-kernel/drivers/media/rc/keymaps/rc-fusionhdtv-mce.ko
+-kernel/drivers/media/rc/keymaps/rc-gadmei-rm008z.ko
+-kernel/drivers/media/rc/keymaps/rc-genius-tvgo-a11mce.ko
+-kernel/drivers/media/rc/keymaps/rc-gotview7135.ko
+-kernel/drivers/media/rc/keymaps/rc-imon-mce.ko
+-kernel/drivers/media/rc/keymaps/rc-imon-pad.ko
+-kernel/drivers/media/rc/keymaps/rc-iodata-bctv7e.ko
+-kernel/drivers/media/rc/keymaps/rc-kaiomy.ko
+-kernel/drivers/media/rc/keymaps/rc-kworld-315u.ko
+-kernel/drivers/media/rc/keymaps/rc-kworld-plus-tv-analog.ko
+-kernel/drivers/media/rc/keymaps/rc-leadtek-y04g0051.ko
+-kernel/drivers/media/rc/keymaps/rc-lirc.ko
+-kernel/drivers/media/rc/keymaps/rc-lme2510.ko
+-kernel/drivers/media/rc/keymaps/rc-manli.ko
+-kernel/drivers/media/rc/keymaps/rc-msi-digivox-ii.ko
+-kernel/drivers/media/rc/keymaps/rc-msi-digivox-iii.ko
+-kernel/drivers/media/rc/keymaps/rc-msi-tvanywhere.ko
+-kernel/drivers/media/rc/keymaps/rc-msi-tvanywhere-plus.ko
+-kernel/drivers/media/rc/keymaps/rc-nebula.ko
+-kernel/drivers/media/rc/keymaps/rc-nec-terratec-cinergy-xs.ko
+-kernel/drivers/media/rc/keymaps/rc-norwood.ko
+-kernel/drivers/media/rc/keymaps/rc-npgtech.ko
+-kernel/drivers/media/rc/keymaps/rc-pctv-sedna.ko
+-kernel/drivers/media/rc/keymaps/rc-pinnacle-color.ko
+-kernel/drivers/media/rc/keymaps/rc-pinnacle-grey.ko
+-kernel/drivers/media/rc/keymaps/rc-pinnacle-pctv-hd.ko
+-kernel/drivers/media/rc/keymaps/rc-pixelview.ko
+-kernel/drivers/media/rc/keymaps/rc-pixelview-mk12.ko
+-kernel/drivers/media/rc/keymaps/rc-pixelview-002t.ko
+-kernel/drivers/media/rc/keymaps/rc-pixelview-new.ko
+-kernel/drivers/media/rc/keymaps/rc-powercolor-real-angel.ko
+-kernel/drivers/media/rc/keymaps/rc-proteus-2309.ko
+-kernel/drivers/media/rc/keymaps/rc-purpletv.ko
+-kernel/drivers/media/rc/keymaps/rc-pv951.ko
+-kernel/drivers/media/rc/keymaps/rc-hauppauge.ko
+-kernel/drivers/media/rc/keymaps/rc-rc6-mce.ko
+-kernel/drivers/media/rc/keymaps/rc-real-audio-220-32-keys.ko
+-kernel/drivers/media/rc/keymaps/rc-streamzap.ko
+-kernel/drivers/media/rc/keymaps/rc-tbs-nec.ko
+-kernel/drivers/media/rc/keymaps/rc-technisat-usb2.ko
+-kernel/drivers/media/rc/keymaps/rc-terratec-cinergy-xs.ko
+-kernel/drivers/media/rc/keymaps/rc-terratec-slim.ko
+-kernel/drivers/media/rc/keymaps/rc-terratec-slim-2.ko
+-kernel/drivers/media/rc/keymaps/rc-tevii-nec.ko
+-kernel/drivers/media/rc/keymaps/rc-tivo.ko
+-kernel/drivers/media/rc/keymaps/rc-total-media-in-hand.ko
+-kernel/drivers/media/rc/keymaps/rc-trekstor.ko
+-kernel/drivers/media/rc/keymaps/rc-tt-1500.ko
+-kernel/drivers/media/rc/keymaps/rc-twinhan1027.ko
+-kernel/drivers/media/rc/keymaps/rc-videomate-m1f.ko
+-kernel/drivers/media/rc/keymaps/rc-videomate-s350.ko
+-kernel/drivers/media/rc/keymaps/rc-videomate-tv-pvr.ko
+-kernel/drivers/media/rc/keymaps/rc-winfast.ko
+-kernel/drivers/media/rc/keymaps/rc-winfast-usbii-deluxe.ko
+-kernel/drivers/media/video/videodev.ko
+-kernel/drivers/media/video/v4l2-int-device.ko
+-kernel/drivers/media/video/v4l2-common.ko
+-kernel/drivers/mfd/tps6105x.ko
+-kernel/drivers/mfd/mfd-core.ko
+-kernel/drivers/misc/db8500-modem-trace.ko
+-kernel/drivers/misc/lm3560.ko
+-kernel/drivers/misc/dbx500-mloader.ko
+-kernel/drivers/misc/pn544.ko
+-kernel/drivers/mmc/card/mmc_block.ko
+-kernel/drivers/mmc/core/mmc_core.ko
+-kernel/drivers/mmc/host/mmci.ko
+-kernel/drivers/net/mii.ko
+-kernel/drivers/net/ppp_generic.ko
+-kernel/drivers/net/ppp_async.ko
+-kernel/drivers/net/ppp_deflate.ko
+-kernel/drivers/net/bsd_comp.ko
+-kernel/drivers/net/ppp_mppe.ko
+-kernel/drivers/net/pppox.ko
+-kernel/drivers/net/pppolac.ko
+-kernel/drivers/net/pppopns.ko
+-kernel/drivers/net/slhc.ko
+-kernel/drivers/net/tun.ko
+-kernel/drivers/net/smsc911x.ko
+-kernel/drivers/net/phy/libphy.ko
+-kernel/drivers/net/phy/smsc.ko
+-kernel/drivers/power/power_supply.ko
+-kernel/drivers/regulator/fixed.ko
+-kernel/drivers/regulator/virtual.ko
+-kernel/drivers/regulator/tps6105x-regulator.ko
+-kernel/drivers/rmi4/rmi4_bus.ko
+-kernel/drivers/rmi4/rmi4_driver.ko
+-kernel/drivers/rmi4/rmi4_spi_adaptor.ko
+-kernel/drivers/rmi4/rmi4_function_01.ko
+-kernel/drivers/rmi4/rmi4_function_11.ko
+-kernel/drivers/rmi4/rmi4_function_34.ko
+-kernel/drivers/rmi4/rmi4_3250_e_suspend.ko
+-kernel/drivers/rtc/rtc-ab8500.ko
+-kernel/drivers/rtc/rtc-pl031.ko
+-kernel/drivers/scsi/scsi_mod.ko
+-kernel/drivers/scsi/sd_mod.ko
+-kernel/drivers/spi/spi-pl022.ko
+-kernel/drivers/staging/android/logger.ko
+-kernel/drivers/staging/android/timed_gpio.ko
+-kernel/drivers/staging/cg2900/devices-cg2900.ko
+-kernel/drivers/staging/cg2900/devices-cg2900-ux500.ko
+-kernel/drivers/staging/cg2900/board-ux500-cg2900.ko
+-kernel/drivers/staging/cg2900/clock-cg2900.ko
+-kernel/drivers/staging/cg2900/bluetooth/btcg2900.ko
+-kernel/drivers/staging/cg2900/bluetooth/cg2900_uart.ko
+-kernel/drivers/staging/cg2900/bluetooth/hci_ldisc.ko
+-kernel/drivers/staging/cg2900/mfd/cg2900_core.ko
+-kernel/drivers/staging/cg2900/mfd/cg2900_lib.ko
+-kernel/drivers/staging/cg2900/mfd/cg2900_char_devices.ko
+-kernel/drivers/staging/cg2900/mfd/cg2900_test.ko
+-kernel/drivers/staging/cg2900/mfd/cg2900_chip.ko
+-kernel/drivers/staging/cg2900/mfd/stlc2690_chip.ko
+-kernel/drivers/staging/cg2900/mfd/cg2900_audio.ko
+-kernel/drivers/staging/nmf-cm/cm.ko
+-kernel/drivers/staging/taos/tsl277x.ko
+-kernel/drivers/staging/zram/zram.ko
+-kernel/drivers/switch/switch_class.ko
+-kernel/drivers/tty/serial/serial_core.ko
+-kernel/drivers/tty/serial/amba-pl011.ko
+-kernel/drivers/usb/class/cdc-acm.ko
+-kernel/drivers/usb/core/usbcore.ko
+-kernel/drivers/usb/mon/usbmon.ko
+-kernel/drivers/usb/musb/musb_hdrc.ko
+-kernel/drivers/usb/musb/ux500.ko
+-kernel/drivers/usb/otg/ab8500-usb.ko
+-kernel/drivers/usb/storage/usb-storage.ko
+-kernel/drivers/usb/storage/usb-libusual.ko
+-kernel/drivers/video/fb.ko
+-kernel/drivers/video/sysfillrect.ko
+-kernel/drivers/video/syscopyarea.ko
+-kernel/drivers/video/sysimgblt.ko
+-kernel/drivers/video/fb_sys_fops.ko
+-kernel/drivers/video/av8100/av8100.ko
+-kernel/drivers/video/av8100/hdmi.ko
+-kernel/drivers/video/b2r2/b2r2.ko
+-kernel/drivers/video/mcde/display-generic_dsi.ko
+-kernel/drivers/video/mcde/display-av8100.ko
+-kernel/sound/soundcore.ko
+-kernel/sound/core/snd.ko
+-kernel/sound/core/snd-timer.ko
+-kernel/sound/core/snd-pcm.ko
+-kernel/sound/core/snd-page-alloc.ko
+-kernel/sound/soc/snd-soc-core.ko
+-kernel/sound/soc/codecs/snd-soc-ab5500.ko
+-kernel/sound/soc/codecs/snd-soc-ab8500_audio.ko
+-kernel/sound/soc/codecs/snd-soc-av8100_audio.ko
+-kernel/sound/soc/codecs/snd-soc-cg29xx.ko
+-kernel/net/bluetooth/bluetooth.ko
+-kernel/net/bluetooth/bnep/bnep.ko
+-kernel/net/bluetooth/hidp/hidp.ko
+-kernel/net/bluetooth/rfcomm/rfcomm.ko
+-kernel/net/caif/caif.ko
+-kernel/net/caif/chnl_net.ko
+-kernel/net/caif/caif_socket.ko
+-kernel/net/compat-wireless/net/mac80211/mac80211.ko
+-kernel/net/compat-wireless/net/wireless/cfg80211.ko
+-kernel/net/ipv4/esp4.ko
+-kernel/net/ipv4/ipcomp.ko
+-kernel/net/ipv4/xfrm4_tunnel.ko
+-kernel/net/ipv4/xfrm4_mode_beet.ko
+-kernel/net/ipv4/tunnel4.ko
+-kernel/net/ipv4/xfrm4_mode_transport.ko
+-kernel/net/ipv4/xfrm4_mode_tunnel.ko
+-kernel/net/ipv4/inet_diag.ko
+-kernel/net/ipv4/tcp_diag.ko
+-kernel/net/ipv4/tcp_cubic.ko
+-kernel/net/ipv4/netfilter/nf_conntrack_ipv4.ko
+-kernel/net/ipv4/netfilter/nf_nat.ko
+-kernel/net/ipv4/netfilter/nf_defrag_ipv4.ko
+-kernel/net/ipv4/netfilter/nf_nat_ftp.ko
+-kernel/net/ipv4/netfilter/nf_nat_pptp.ko
+-kernel/net/ipv4/netfilter/nf_nat_tftp.ko
+-kernel/net/ipv4/netfilter/nf_nat_proto_gre.ko
+-kernel/net/ipv4/netfilter/ip_tables.ko
+-kernel/net/ipv4/netfilter/iptable_filter.ko
+-kernel/net/ipv4/netfilter/iptable_mangle.ko
+-kernel/net/ipv4/netfilter/iptable_nat.ko
+-kernel/net/ipv4/netfilter/iptable_raw.ko
+-kernel/net/ipv4/netfilter/ipt_ah.ko
+-kernel/net/ipv4/netfilter/ipt_ecn.ko
+-kernel/net/ipv4/netfilter/ipt_LOG.ko
+-kernel/net/ipv4/netfilter/ipt_MASQUERADE.ko
+-kernel/net/ipv4/netfilter/ipt_NETMAP.ko
+-kernel/net/ipv4/netfilter/ipt_REDIRECT.ko
+-kernel/net/ipv4/netfilter/ipt_REJECT.ko
+-kernel/net/ipv4/netfilter/arp_tables.ko
+-kernel/net/ipv4/netfilter/arpt_mangle.ko
+-kernel/net/ipv4/netfilter/arptable_filter.ko
+-kernel/net/ipv6/ipv6.ko
+-kernel/net/ipv6/ah6.ko
+-kernel/net/ipv6/esp6.ko
+-kernel/net/ipv6/ipcomp6.ko
+-kernel/net/ipv6/xfrm6_tunnel.ko
+-kernel/net/ipv6/tunnel6.ko
+-kernel/net/ipv6/xfrm6_mode_transport.ko
+-kernel/net/ipv6/xfrm6_mode_tunnel.ko
+-kernel/net/ipv6/xfrm6_mode_beet.ko
+-kernel/net/ipv6/mip6.ko
+-kernel/net/ipv6/ip6_tunnel.ko
+-kernel/net/ipv6/inet6_hashtables.ko
+-kernel/net/ipv6/netfilter/ip6_tables.ko
+-kernel/net/ipv6/netfilter/ip6table_filter.ko
+-kernel/net/ipv6/netfilter/ip6table_mangle.ko
+-kernel/net/ipv6/netfilter/ip6table_raw.ko
+-kernel/net/ipv6/netfilter/nf_conntrack_ipv6.ko
+-kernel/net/ipv6/netfilter/nf_defrag_ipv6.ko
+-kernel/net/ipv6/netfilter/ip6t_LOG.ko
+-kernel/net/ipv6/netfilter/ip6t_REJECT.ko
+-kernel/net/key/af_key.ko
+-kernel/net/netfilter/nfnetlink.ko
+-kernel/net/netfilter/nfnetlink_queue.ko
+-kernel/net/netfilter/nfnetlink_log.ko
+-kernel/net/netfilter/nf_conntrack.ko
+-kernel/net/netfilter/nf_conntrack_proto_gre.ko
+-kernel/net/netfilter/nf_conntrack_netlink.ko
+-kernel/net/netfilter/nf_conntrack_ftp.ko
+-kernel/net/netfilter/nf_conntrack_pptp.ko
+-kernel/net/netfilter/nf_conntrack_tftp.ko
+-kernel/net/netfilter/nf_tproxy_core.ko
+-kernel/net/netfilter/x_tables.ko
+-kernel/net/netfilter/xt_tcpudp.ko
+-kernel/net/netfilter/xt_mark.ko
+-kernel/net/netfilter/xt_connmark.ko
+-kernel/net/netfilter/xt_CLASSIFY.ko
+-kernel/net/netfilter/xt_NFLOG.ko
+-kernel/net/netfilter/xt_NFQUEUE.ko
+-kernel/net/netfilter/xt_TPROXY.ko
+-kernel/net/netfilter/xt_TCPMSS.ko
+-kernel/net/netfilter/xt_TRACE.ko
+-kernel/net/netfilter/xt_comment.ko
+-kernel/net/netfilter/xt_connbytes.ko
+-kernel/net/netfilter/xt_connlimit.ko
+-kernel/net/netfilter/xt_conntrack.ko
+-kernel/net/netfilter/xt_hashlimit.ko
+-kernel/net/netfilter/xt_helper.ko
+-kernel/net/netfilter/xt_hl.ko
+-kernel/net/netfilter/xt_iprange.ko
+-kernel/net/netfilter/xt_length.ko
+-kernel/net/netfilter/xt_limit.ko
+-kernel/net/netfilter/xt_mac.ko
+-kernel/net/netfilter/xt_pkttype.ko
+-kernel/net/netfilter/xt_policy.ko
+-kernel/net/netfilter/xt_quota.ko
+-kernel/net/netfilter/xt_quota2.ko
+-kernel/net/netfilter/xt_socket.ko
+-kernel/net/netfilter/xt_state.ko
+-kernel/net/netfilter/xt_statistic.ko
+-kernel/net/netfilter/xt_string.ko
+-kernel/net/netfilter/xt_time.ko
+-kernel/net/netfilter/xt_u32.ko
+-kernel/net/packet/af_packet.ko
+-kernel/net/phonet/phonet.ko
+-kernel/net/phonet/pn_pep.ko
+-kernel/net/rfkill/rfkill.ko
+-kernel/net/sched/act_police.ko
+-kernel/net/sched/act_gact.ko
+-kernel/net/sched/act_mirred.ko
+-kernel/net/sched/sch_htb.ko
+-kernel/net/sched/sch_ingress.ko
+-kernel/net/sched/cls_u32.ko
+-kernel/net/sched/em_u32.ko
+-kernel/net/unix/unix.ko
+-kernel/net/xfrm/xfrm_ipcomp.ko
+-kernel/lib/bitrev.ko
+-kernel/lib/crc-ccitt.ko
+-kernel/lib/crc16.ko
+-kernel/lib/crc32.ko
+-kernel/lib/crc7.ko
+-kernel/lib/ts_kmp.ko
+-kernel/lib/ts_bm.ko
+-kernel/lib/ts_fsm.ko
+-kernel/lib/lzo/lzo_compress.ko
+-kernel/lib/lzo/lzo_decompress.ko
+-kernel/lib/reed_solomon/reed_solomon.ko
+-kernel/lib/xz/xz_dec.ko
+-kernel/lib/zlib_deflate/zlib_deflate.ko
+-kernel/lib/zlib_inflate/zlib_inflate.ko
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.builtin.bin b/kernel.cwm/system/lib/modules/3.0.69+/modules.builtin.bin
+deleted file mode 100644
+index 07b8286..0000000
+Binary files a/kernel.cwm/system/lib/modules/3.0.69+/modules.builtin.bin and /dev/null differ
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.ccwmap b/kernel.cwm/system/lib/modules/3.0.69+/modules.ccwmap
+deleted file mode 100644
+index 7dac036..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.ccwmap
++++ /dev/null
+@@ -1 +0,0 @@
+-# ccw module         match_flags cu_type cu_model dev_type dev_model
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.dep b/kernel.cwm/system/lib/modules/3.0.69+/modules.dep
+deleted file mode 100644
+index 9a518f4..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.dep
++++ /dev/null
+@@ -1,6 +0,0 @@
+-kernel/drivers/char/hw_random/rng-core.ko:
+-kernel/drivers/scsi/scsi_wait_scan.ko:
+-kernel/drivers/mmc/card/mmc_test.ko:
+-kernel/arch/arm/oprofile/oprofile.ko:
+-kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_core.ko:
+-kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_wlan.ko: kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_core.ko
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.dep.bin b/kernel.cwm/system/lib/modules/3.0.69+/modules.dep.bin
+deleted file mode 100644
+index ed4e4f7..0000000
+Binary files a/kernel.cwm/system/lib/modules/3.0.69+/modules.dep.bin and /dev/null differ
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.devname b/kernel.cwm/system/lib/modules/3.0.69+/modules.devname
+deleted file mode 100644
+index 58f6d6d..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.devname
++++ /dev/null
+@@ -1 +0,0 @@
+-# Device nodes to trigger on-demand module loading.
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.ieee1394map b/kernel.cwm/system/lib/modules/3.0.69+/modules.ieee1394map
+deleted file mode 100644
+index d111b942..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.ieee1394map
++++ /dev/null
+@@ -1 +0,0 @@
+-# ieee1394 module    match_flags vendor_id model_id specifier_id version
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.inputmap b/kernel.cwm/system/lib/modules/3.0.69+/modules.inputmap
+deleted file mode 100644
+index 5a9ead2..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.inputmap
++++ /dev/null
+@@ -1 +0,0 @@
+-# module         matchBits bustype vendor product version evBits keyBits relBits absBits mscBits ledBits sndBits ffBits [swBits] driver_info
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.isapnpmap b/kernel.cwm/system/lib/modules/3.0.69+/modules.isapnpmap
+deleted file mode 100644
+index c0d397e..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.isapnpmap
++++ /dev/null
+@@ -1 +0,0 @@
+-# isapnp module      cardvendor carddevice driver_data vendor     function   ...
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.ofmap b/kernel.cwm/system/lib/modules/3.0.69+/modules.ofmap
+deleted file mode 100644
+index 1f389ca..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.ofmap
++++ /dev/null
+@@ -1 +0,0 @@
+-# of module          name                 type                 compatible
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.order b/kernel.cwm/system/lib/modules/3.0.69+/modules.order
+deleted file mode 100644
+index ce510ea..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.order
++++ /dev/null
+@@ -1,6 +0,0 @@
+-kernel/drivers/char/hw_random/rng-core.ko
+-kernel/drivers/scsi/scsi_wait_scan.ko
+-kernel/drivers/mmc/card/mmc_test.ko
+-kernel/arch/arm/oprofile/oprofile.ko
+-kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_core.ko
+-kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_wlan.ko
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.pcimap b/kernel.cwm/system/lib/modules/3.0.69+/modules.pcimap
+deleted file mode 100644
+index 3fd01ca..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.pcimap
++++ /dev/null
+@@ -1 +0,0 @@
+-# pci module         vendor     device     subvendor  subdevice  class      class_mask driver_data
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.seriomap b/kernel.cwm/system/lib/modules/3.0.69+/modules.seriomap
+deleted file mode 100644
+index 407dc20..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.seriomap
++++ /dev/null
+@@ -1 +0,0 @@
+-# serio module       type extra id   proto
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.softdep b/kernel.cwm/system/lib/modules/3.0.69+/modules.softdep
+deleted file mode 100644
+index 3cc0512..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.softdep
++++ /dev/null
+@@ -1,2 +0,0 @@
+-# Soft dependencies extracted from modules themselves.
+-# Copy, with a .conf extension, to /etc/modprobe.d to use it with modprobe.
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.symbols b/kernel.cwm/system/lib/modules/3.0.69+/modules.symbols
+deleted file mode 100644
+index e7dd282..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.symbols
++++ /dev/null
+@@ -1,9 +0,0 @@
+-# Aliases for symbols, used by symbol_request().
+-alias symbol:cw1200_free_common cw1200_core
+-alias symbol:hwrng_register rng_core
+-alias symbol:cw1200_register_common cw1200_core
+-alias symbol:cw1200_core_probe cw1200_core
+-alias symbol:hwrng_unregister rng_core
+-alias symbol:cw1200_unregister_common cw1200_core
+-alias symbol:cw1200_can_suspend cw1200_core
+-alias symbol:cw1200_core_release cw1200_core
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.symbols.bin b/kernel.cwm/system/lib/modules/3.0.69+/modules.symbols.bin
+deleted file mode 100644
+index 55c7ed1..0000000
+Binary files a/kernel.cwm/system/lib/modules/3.0.69+/modules.symbols.bin and /dev/null differ
+diff --git a/kernel.cwm/system/lib/modules/3.0.69+/modules.usbmap b/kernel.cwm/system/lib/modules/3.0.69+/modules.usbmap
+deleted file mode 100644
+index 50eb1c8..0000000
+--- a/kernel.cwm/system/lib/modules/3.0.69+/modules.usbmap
++++ /dev/null
+@@ -1 +0,0 @@
+-# usb module         match_flags idVendor idProduct bcdDevice_lo bcdDevice_hi bDeviceClass bDeviceSubClass bDeviceProtocol bInterfaceClass bInterfaceSubClass bInterfaceProtocol driver_info
+diff --git a/linaro4.7 b/linaro4.7
+new file mode 120000
+index 0000000..eac9b52
+--- /dev/null
++++ b/linaro4.7
+@@ -0,0 +1 @@
++/home/pcadmin/x-tools/linaro4.7/
+\ No newline at end of file
+diff --git a/makeit_p.sh b/makeit_p.sh
+index 26066ba..1b67f27 100755
+--- a/makeit_p.sh
++++ b/makeit_p.sh
+@@ -2,7 +2,7 @@
+ 
+ # ready zImage
+ rm zImage
+-rm kernel.cwm/boot.elf
++#rm kernel.elf
+ rm boot.img
+ rm ramdisk.img
+ cp kernel-uksm/arch/arm/boot/zImage zImage
+@@ -12,13 +12,9 @@ cp kernel-uksm/arch/arm/boot/zImage zImage
+ #cp ./kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_wlan.ko ./ramdisk/lib/modules/3.0.8+/kernel/net/compat-wireless/drivers/staging/cw1200/
+ 
+ # make ramdisk image
+-cd combinedroot
+-find . | cpio --quiet -H newc -o | xz -z -9 -c --check=crc32 > ../ramdisk.img
++cd ramdisk
++find . | cpio --quiet -H newc -o | lzop -9 -c > ../ramdisk.img
+ cd ..
+ 
+ # make kernel
+ ./mkbootimg --cmdline 'ecc=on cachepolicy=writealloc noinitrd init=init board_id=1 logo.nologo root=/dev/ram0 rw rootwait mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=32M@128M mem_issw=1M@160M hwmem=167M@161M mem=696M@328M vmalloc=384M console=ttyAMA2 androidboot.console=ttyAMA2 androidboot.hardware=st-ericsson' --kernel zImage --ramdisk ramdisk.img --base 0x0 --output boot.img
+-
+-python mkelf.py -o kernel.cwm/boot.elf zImage@0x8000 ramdisk.img@0x01000000,ramdisk cmdline.txt@cmdline
+-
+-
+diff --git a/ramdisk/init.st-ericsson.rc b/ramdisk/init.st-ericsson.rc
+index d089d20..f9599a3 100755
+--- a/ramdisk/init.st-ericsson.rc
++++ b/ramdisk/init.st-ericsson.rc
+@@ -21,21 +21,12 @@ on post-fs
+ 
+ 
+ on early-boot
+-    write /sys/class/android_usb/android0/enable 0
+-    write /sys/class/android_usb/android0/idVendor 18d1
+-    write /sys/class/android_usb/android0/idProduct D002
+-    write /sys/class/android_usb/android0/functions adb,acm
+-    write /sys/class/android_usb/android0/enable 1
+-    start adbd
+-
+     # Start the offline charging (This blocks booting further in some cases)
+     exec /system/bin/chargemon
+     # Make sure the crashsms/crashes are writable by crashmonitor
+     exec /sbin/bootrec
+     start recovery
+ 
+-   stop adbd
+-
+ #service iddd /system/bin/iddd
+ #    class main
+ #    user idd
+diff --git a/ramdisk/lib b/ramdisk/lib
+deleted file mode 120000
+index 561e87d..0000000
+--- a/ramdisk/lib
++++ /dev/null
+@@ -1 +0,0 @@
+-/system/lib/
+\ No newline at end of file
+diff --git a/ramdisk/lib/modules/3.0.68/build b/ramdisk/lib/modules/3.0.68/build
+new file mode 120000
+index 0000000..c5065c0
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/build
+@@ -0,0 +1 @@
++/home/pcadmin/android-misc/LT22-kernel/kernel-uksm
+\ No newline at end of file
+diff --git a/ramdisk/lib/modules/3.0.68/modules.alias b/ramdisk/lib/modules/3.0.68/modules.alias
+new file mode 100644
+index 0000000..421320e
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.alias
+@@ -0,0 +1,3 @@
++# Aliases extracted from modules themselves.
++alias cw1200_core cw1200_core
++alias cw1200_wlan cw1200_wlan
+diff --git a/ramdisk/lib/modules/3.0.68/modules.alias.bin b/ramdisk/lib/modules/3.0.68/modules.alias.bin
+new file mode 100644
+index 0000000..e76cd34
+Binary files /dev/null and b/ramdisk/lib/modules/3.0.68/modules.alias.bin differ
+diff --git a/ramdisk/lib/modules/3.0.68/modules.builtin b/ramdisk/lib/modules/3.0.68/modules.builtin
+new file mode 100644
+index 0000000..7d62d26
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.builtin
+@@ -0,0 +1,422 @@
++kernel/kernel/configs.ko
++kernel/fs/mbcache.ko
++kernel/fs/ext4/ext4.ko
++kernel/fs/fat/fat.ko
++kernel/fs/fat/vfat.ko
++kernel/fs/fat/msdos.ko
++kernel/fs/fuse/fuse.ko
++kernel/fs/jbd2/jbd2.ko
++kernel/fs/nls/nls_base.ko
++kernel/fs/nls/nls_cp437.ko
++kernel/fs/nls/nls_iso8859-1.ko
++kernel/fs/quota/quota_v2.ko
++kernel/fs/quota/quota_tree.ko
++kernel/crypto/crypto.ko
++kernel/crypto/crypto_wq.ko
++kernel/crypto/crypto_algapi.ko
++kernel/crypto/aead.ko
++kernel/crypto/crypto_blkcipher.ko
++kernel/crypto/chainiv.ko
++kernel/crypto/eseqiv.ko
++kernel/crypto/crypto_hash.ko
++kernel/crypto/pcompress.ko
++kernel/crypto/cryptomgr.ko
++kernel/crypto/hmac.ko
++kernel/crypto/md5.ko
++kernel/crypto/sha1_generic.ko
++kernel/crypto/sha256_generic.ko
++kernel/crypto/ecb.ko
++kernel/crypto/cbc.ko
++kernel/crypto/des_generic.ko
++kernel/crypto/twofish_generic.ko
++kernel/crypto/twofish_common.ko
++kernel/crypto/aes_generic.ko
++kernel/crypto/arc4.ko
++kernel/crypto/deflate.ko
++kernel/crypto/authenc.ko
++kernel/crypto/authencesn.ko
++kernel/crypto/rng.ko
++kernel/crypto/krng.ko
++kernel/block/deadline-iosched.ko
++kernel/block/sio-iosched.ko
++kernel/block/vr-iosched.ko
++kernel/block/fiops-iosched.ko
++kernel/drivers/base/firmware_class.ko
++kernel/drivers/block/brd.ko
++kernel/drivers/block/loop.ko
++kernel/drivers/bluetooth/hci_uart.ko
++kernel/drivers/cpufreq/cpufreq_stats.ko
++kernel/drivers/cpufreq/cpufreq_performance.ko
++kernel/drivers/cpufreq/cpufreq_powersave.ko
++kernel/drivers/cpufreq/cpufreq_userspace.ko
++kernel/drivers/cpufreq/cpufreq_ondemand.ko
++kernel/drivers/cpufreq/cpufreq_conservative.ko
++kernel/drivers/cpufreq/cpufreq_interactive.ko
++kernel/drivers/cpufreq/cpufreq_hotplug.ko
++kernel/drivers/cpufreq/cpufreq_lulzactiveq.ko
++kernel/drivers/cpufreq/cpufreq_wheatley.ko
++kernel/drivers/cpufreq/cpufreq_pegasusq.ko
++kernel/drivers/cpufreq/freq_table.ko
++kernel/drivers/crypto/ux500/hash/ux500_hash.ko
++kernel/drivers/gpu/mali/mali400ko/driver/src/devicedrv/mali/mali.ko
++kernel/drivers/hid/hid.ko
++kernel/drivers/hid/hid-logitech.ko
++kernel/drivers/hid/hid-pl.ko
++kernel/drivers/hid/hid-sony.ko
++kernel/drivers/hid/usbhid/usbhid.ko
++kernel/drivers/hwmon/hwmon.ko
++kernel/drivers/hwmon/abx500.ko
++kernel/drivers/hwmon/ab8500.ko
++kernel/drivers/hwmon/dbx500.ko
++kernel/drivers/i2c/i2c-core.ko
++kernel/drivers/i2c/i2c-dev.ko
++kernel/drivers/i2c/busses/i2c-nomadik.ko
++kernel/drivers/input/input-core.ko
++kernel/drivers/input/joydev.ko
++kernel/drivers/input/evdev.ko
++kernel/drivers/input/joystick/xpad.ko
++kernel/drivers/input/keyboard/gpio_keys.ko
++kernel/drivers/input/keyboard/nomadik-ske-keypad.ko
++kernel/drivers/input/misc/ab8500-ponkey.ko
++kernel/drivers/input/misc/uinput.ko
++kernel/drivers/input/misc/lsm303dlh_mag.ko
++kernel/drivers/input/misc/lsm303dlhc_acc_lt.ko
++kernel/drivers/input/misc/so340010.ko
++kernel/drivers/input/serio/serio.ko
++kernel/drivers/input/serio/serport.ko
++kernel/drivers/leds/leds-lm3533_ng.ko
++kernel/drivers/leds/ledtrig-timer.ko
++kernel/drivers/md/dm-mod.ko
++kernel/drivers/md/dm-crypt.ko
++kernel/drivers/media/common/tuners/tuner-xc2028.ko
++kernel/drivers/media/common/tuners/tuner-simple.ko
++kernel/drivers/media/common/tuners/tuner-types.ko
++kernel/drivers/media/common/tuners/mt20xx.ko
++kernel/drivers/media/common/tuners/tda8290.ko
++kernel/drivers/media/common/tuners/tea5767.ko
++kernel/drivers/media/common/tuners/tea5761.ko
++kernel/drivers/media/common/tuners/tda9887.ko
++kernel/drivers/media/common/tuners/tda827x.ko
++kernel/drivers/media/common/tuners/tda18271.ko
++kernel/drivers/media/common/tuners/xc5000.ko
++kernel/drivers/media/common/tuners/mc44s803.ko
++kernel/drivers/media/radio/CG2900/radio_cg2900.ko
++kernel/drivers/media/rc/rc-core.ko
++kernel/drivers/media/rc/lirc_dev.ko
++kernel/drivers/media/rc/ir-nec-decoder.ko
++kernel/drivers/media/rc/ir-rc5-decoder.ko
++kernel/drivers/media/rc/ir-rc6-decoder.ko
++kernel/drivers/media/rc/ir-jvc-decoder.ko
++kernel/drivers/media/rc/ir-sony-decoder.ko
++kernel/drivers/media/rc/ir-rc5-sz-decoder.ko
++kernel/drivers/media/rc/ir-lirc-codec.ko
++kernel/drivers/media/rc/keymaps/rc-adstech-dvb-t-pci.ko
++kernel/drivers/media/rc/keymaps/rc-alink-dtu-m.ko
++kernel/drivers/media/rc/keymaps/rc-anysee.ko
++kernel/drivers/media/rc/keymaps/rc-apac-viewcomp.ko
++kernel/drivers/media/rc/keymaps/rc-asus-pc39.ko
++kernel/drivers/media/rc/keymaps/rc-ati-tv-wonder-hd-600.ko
++kernel/drivers/media/rc/keymaps/rc-avermedia-a16d.ko
++kernel/drivers/media/rc/keymaps/rc-avermedia.ko
++kernel/drivers/media/rc/keymaps/rc-avermedia-cardbus.ko
++kernel/drivers/media/rc/keymaps/rc-avermedia-dvbt.ko
++kernel/drivers/media/rc/keymaps/rc-avermedia-m135a.ko
++kernel/drivers/media/rc/keymaps/rc-avermedia-m733a-rm-k6.ko
++kernel/drivers/media/rc/keymaps/rc-avermedia-rm-ks.ko
++kernel/drivers/media/rc/keymaps/rc-avertv-303.ko
++kernel/drivers/media/rc/keymaps/rc-azurewave-ad-tu700.ko
++kernel/drivers/media/rc/keymaps/rc-behold.ko
++kernel/drivers/media/rc/keymaps/rc-behold-columbus.ko
++kernel/drivers/media/rc/keymaps/rc-budget-ci-old.ko
++kernel/drivers/media/rc/keymaps/rc-cinergy-1400.ko
++kernel/drivers/media/rc/keymaps/rc-cinergy.ko
++kernel/drivers/media/rc/keymaps/rc-dib0700-nec.ko
++kernel/drivers/media/rc/keymaps/rc-dib0700-rc5.ko
++kernel/drivers/media/rc/keymaps/rc-digitalnow-tinytwin.ko
++kernel/drivers/media/rc/keymaps/rc-digittrade.ko
++kernel/drivers/media/rc/keymaps/rc-dm1105-nec.ko
++kernel/drivers/media/rc/keymaps/rc-dntv-live-dvb-t.ko
++kernel/drivers/media/rc/keymaps/rc-dntv-live-dvbt-pro.ko
++kernel/drivers/media/rc/keymaps/rc-em-terratec.ko
++kernel/drivers/media/rc/keymaps/rc-encore-enltv2.ko
++kernel/drivers/media/rc/keymaps/rc-encore-enltv.ko
++kernel/drivers/media/rc/keymaps/rc-encore-enltv-fm53.ko
++kernel/drivers/media/rc/keymaps/rc-evga-indtube.ko
++kernel/drivers/media/rc/keymaps/rc-eztv.ko
++kernel/drivers/media/rc/keymaps/rc-flydvb.ko
++kernel/drivers/media/rc/keymaps/rc-flyvideo.ko
++kernel/drivers/media/rc/keymaps/rc-fusionhdtv-mce.ko
++kernel/drivers/media/rc/keymaps/rc-gadmei-rm008z.ko
++kernel/drivers/media/rc/keymaps/rc-genius-tvgo-a11mce.ko
++kernel/drivers/media/rc/keymaps/rc-gotview7135.ko
++kernel/drivers/media/rc/keymaps/rc-imon-mce.ko
++kernel/drivers/media/rc/keymaps/rc-imon-pad.ko
++kernel/drivers/media/rc/keymaps/rc-iodata-bctv7e.ko
++kernel/drivers/media/rc/keymaps/rc-kaiomy.ko
++kernel/drivers/media/rc/keymaps/rc-kworld-315u.ko
++kernel/drivers/media/rc/keymaps/rc-kworld-plus-tv-analog.ko
++kernel/drivers/media/rc/keymaps/rc-leadtek-y04g0051.ko
++kernel/drivers/media/rc/keymaps/rc-lirc.ko
++kernel/drivers/media/rc/keymaps/rc-lme2510.ko
++kernel/drivers/media/rc/keymaps/rc-manli.ko
++kernel/drivers/media/rc/keymaps/rc-msi-digivox-ii.ko
++kernel/drivers/media/rc/keymaps/rc-msi-digivox-iii.ko
++kernel/drivers/media/rc/keymaps/rc-msi-tvanywhere.ko
++kernel/drivers/media/rc/keymaps/rc-msi-tvanywhere-plus.ko
++kernel/drivers/media/rc/keymaps/rc-nebula.ko
++kernel/drivers/media/rc/keymaps/rc-nec-terratec-cinergy-xs.ko
++kernel/drivers/media/rc/keymaps/rc-norwood.ko
++kernel/drivers/media/rc/keymaps/rc-npgtech.ko
++kernel/drivers/media/rc/keymaps/rc-pctv-sedna.ko
++kernel/drivers/media/rc/keymaps/rc-pinnacle-color.ko
++kernel/drivers/media/rc/keymaps/rc-pinnacle-grey.ko
++kernel/drivers/media/rc/keymaps/rc-pinnacle-pctv-hd.ko
++kernel/drivers/media/rc/keymaps/rc-pixelview.ko
++kernel/drivers/media/rc/keymaps/rc-pixelview-mk12.ko
++kernel/drivers/media/rc/keymaps/rc-pixelview-002t.ko
++kernel/drivers/media/rc/keymaps/rc-pixelview-new.ko
++kernel/drivers/media/rc/keymaps/rc-powercolor-real-angel.ko
++kernel/drivers/media/rc/keymaps/rc-proteus-2309.ko
++kernel/drivers/media/rc/keymaps/rc-purpletv.ko
++kernel/drivers/media/rc/keymaps/rc-pv951.ko
++kernel/drivers/media/rc/keymaps/rc-hauppauge.ko
++kernel/drivers/media/rc/keymaps/rc-rc6-mce.ko
++kernel/drivers/media/rc/keymaps/rc-real-audio-220-32-keys.ko
++kernel/drivers/media/rc/keymaps/rc-streamzap.ko
++kernel/drivers/media/rc/keymaps/rc-tbs-nec.ko
++kernel/drivers/media/rc/keymaps/rc-technisat-usb2.ko
++kernel/drivers/media/rc/keymaps/rc-terratec-cinergy-xs.ko
++kernel/drivers/media/rc/keymaps/rc-terratec-slim.ko
++kernel/drivers/media/rc/keymaps/rc-terratec-slim-2.ko
++kernel/drivers/media/rc/keymaps/rc-tevii-nec.ko
++kernel/drivers/media/rc/keymaps/rc-tivo.ko
++kernel/drivers/media/rc/keymaps/rc-total-media-in-hand.ko
++kernel/drivers/media/rc/keymaps/rc-trekstor.ko
++kernel/drivers/media/rc/keymaps/rc-tt-1500.ko
++kernel/drivers/media/rc/keymaps/rc-twinhan1027.ko
++kernel/drivers/media/rc/keymaps/rc-videomate-m1f.ko
++kernel/drivers/media/rc/keymaps/rc-videomate-s350.ko
++kernel/drivers/media/rc/keymaps/rc-videomate-tv-pvr.ko
++kernel/drivers/media/rc/keymaps/rc-winfast.ko
++kernel/drivers/media/rc/keymaps/rc-winfast-usbii-deluxe.ko
++kernel/drivers/media/video/videodev.ko
++kernel/drivers/media/video/v4l2-int-device.ko
++kernel/drivers/media/video/v4l2-common.ko
++kernel/drivers/mfd/tps6105x.ko
++kernel/drivers/mfd/mfd-core.ko
++kernel/drivers/misc/db8500-modem-trace.ko
++kernel/drivers/misc/lm3560.ko
++kernel/drivers/misc/dbx500-mloader.ko
++kernel/drivers/misc/pn544.ko
++kernel/drivers/mmc/card/mmc_block.ko
++kernel/drivers/mmc/core/mmc_core.ko
++kernel/drivers/mmc/host/mmci.ko
++kernel/drivers/net/mii.ko
++kernel/drivers/net/ppp_generic.ko
++kernel/drivers/net/ppp_async.ko
++kernel/drivers/net/ppp_deflate.ko
++kernel/drivers/net/bsd_comp.ko
++kernel/drivers/net/ppp_mppe.ko
++kernel/drivers/net/pppox.ko
++kernel/drivers/net/pppolac.ko
++kernel/drivers/net/pppopns.ko
++kernel/drivers/net/slhc.ko
++kernel/drivers/net/tun.ko
++kernel/drivers/net/smsc911x.ko
++kernel/drivers/net/phy/libphy.ko
++kernel/drivers/net/phy/smsc.ko
++kernel/drivers/power/power_supply.ko
++kernel/drivers/regulator/fixed.ko
++kernel/drivers/regulator/virtual.ko
++kernel/drivers/regulator/tps6105x-regulator.ko
++kernel/drivers/rmi4/rmi4_bus.ko
++kernel/drivers/rmi4/rmi4_driver.ko
++kernel/drivers/rmi4/rmi4_spi_adaptor.ko
++kernel/drivers/rmi4/rmi4_function_01.ko
++kernel/drivers/rmi4/rmi4_function_11.ko
++kernel/drivers/rmi4/rmi4_function_34.ko
++kernel/drivers/rmi4/rmi4_3250_e_suspend.ko
++kernel/drivers/rtc/rtc-ab8500.ko
++kernel/drivers/rtc/rtc-pl031.ko
++kernel/drivers/scsi/scsi_mod.ko
++kernel/drivers/scsi/sd_mod.ko
++kernel/drivers/spi/spi-pl022.ko
++kernel/drivers/staging/android/logger.ko
++kernel/drivers/staging/android/timed_gpio.ko
++kernel/drivers/staging/cg2900/devices-cg2900.ko
++kernel/drivers/staging/cg2900/devices-cg2900-ux500.ko
++kernel/drivers/staging/cg2900/board-ux500-cg2900.ko
++kernel/drivers/staging/cg2900/clock-cg2900.ko
++kernel/drivers/staging/cg2900/bluetooth/btcg2900.ko
++kernel/drivers/staging/cg2900/bluetooth/cg2900_uart.ko
++kernel/drivers/staging/cg2900/bluetooth/hci_ldisc.ko
++kernel/drivers/staging/cg2900/mfd/cg2900_core.ko
++kernel/drivers/staging/cg2900/mfd/cg2900_lib.ko
++kernel/drivers/staging/cg2900/mfd/cg2900_char_devices.ko
++kernel/drivers/staging/cg2900/mfd/cg2900_test.ko
++kernel/drivers/staging/cg2900/mfd/cg2900_chip.ko
++kernel/drivers/staging/cg2900/mfd/stlc2690_chip.ko
++kernel/drivers/staging/cg2900/mfd/cg2900_audio.ko
++kernel/drivers/staging/nmf-cm/cm.ko
++kernel/drivers/staging/taos/tsl277x.ko
++kernel/drivers/staging/zram/zram.ko
++kernel/drivers/switch/switch_class.ko
++kernel/drivers/tty/serial/serial_core.ko
++kernel/drivers/tty/serial/amba-pl011.ko
++kernel/drivers/usb/class/cdc-acm.ko
++kernel/drivers/usb/core/usbcore.ko
++kernel/drivers/usb/mon/usbmon.ko
++kernel/drivers/usb/musb/musb_hdrc.ko
++kernel/drivers/usb/musb/ux500.ko
++kernel/drivers/usb/otg/ab8500-usb.ko
++kernel/drivers/usb/storage/usb-storage.ko
++kernel/drivers/usb/storage/usb-libusual.ko
++kernel/drivers/video/fb.ko
++kernel/drivers/video/sysfillrect.ko
++kernel/drivers/video/syscopyarea.ko
++kernel/drivers/video/sysimgblt.ko
++kernel/drivers/video/fb_sys_fops.ko
++kernel/drivers/video/av8100/av8100.ko
++kernel/drivers/video/av8100/hdmi.ko
++kernel/drivers/video/b2r2/b2r2.ko
++kernel/drivers/video/mcde/display-generic_dsi.ko
++kernel/drivers/video/mcde/display-av8100.ko
++kernel/sound/soundcore.ko
++kernel/sound/core/snd.ko
++kernel/sound/core/snd-timer.ko
++kernel/sound/core/snd-pcm.ko
++kernel/sound/core/snd-page-alloc.ko
++kernel/sound/soc/snd-soc-core.ko
++kernel/sound/soc/codecs/snd-soc-ab5500.ko
++kernel/sound/soc/codecs/snd-soc-ab8500_audio.ko
++kernel/sound/soc/codecs/snd-soc-av8100_audio.ko
++kernel/sound/soc/codecs/snd-soc-cg29xx.ko
++kernel/net/bluetooth/bluetooth.ko
++kernel/net/bluetooth/bnep/bnep.ko
++kernel/net/bluetooth/hidp/hidp.ko
++kernel/net/bluetooth/rfcomm/rfcomm.ko
++kernel/net/caif/caif.ko
++kernel/net/caif/chnl_net.ko
++kernel/net/caif/caif_socket.ko
++kernel/net/compat-wireless/net/mac80211/mac80211.ko
++kernel/net/compat-wireless/net/wireless/cfg80211.ko
++kernel/net/ipv4/esp4.ko
++kernel/net/ipv4/ipcomp.ko
++kernel/net/ipv4/xfrm4_tunnel.ko
++kernel/net/ipv4/xfrm4_mode_beet.ko
++kernel/net/ipv4/tunnel4.ko
++kernel/net/ipv4/xfrm4_mode_transport.ko
++kernel/net/ipv4/xfrm4_mode_tunnel.ko
++kernel/net/ipv4/inet_diag.ko
++kernel/net/ipv4/tcp_diag.ko
++kernel/net/ipv4/tcp_cubic.ko
++kernel/net/ipv4/netfilter/nf_conntrack_ipv4.ko
++kernel/net/ipv4/netfilter/nf_nat.ko
++kernel/net/ipv4/netfilter/nf_defrag_ipv4.ko
++kernel/net/ipv4/netfilter/nf_nat_ftp.ko
++kernel/net/ipv4/netfilter/nf_nat_pptp.ko
++kernel/net/ipv4/netfilter/nf_nat_tftp.ko
++kernel/net/ipv4/netfilter/nf_nat_proto_gre.ko
++kernel/net/ipv4/netfilter/ip_tables.ko
++kernel/net/ipv4/netfilter/iptable_filter.ko
++kernel/net/ipv4/netfilter/iptable_mangle.ko
++kernel/net/ipv4/netfilter/iptable_nat.ko
++kernel/net/ipv4/netfilter/iptable_raw.ko
++kernel/net/ipv4/netfilter/ipt_ah.ko
++kernel/net/ipv4/netfilter/ipt_ecn.ko
++kernel/net/ipv4/netfilter/ipt_LOG.ko
++kernel/net/ipv4/netfilter/ipt_MASQUERADE.ko
++kernel/net/ipv4/netfilter/ipt_NETMAP.ko
++kernel/net/ipv4/netfilter/ipt_REDIRECT.ko
++kernel/net/ipv4/netfilter/ipt_REJECT.ko
++kernel/net/ipv4/netfilter/arp_tables.ko
++kernel/net/ipv4/netfilter/arpt_mangle.ko
++kernel/net/ipv4/netfilter/arptable_filter.ko
++kernel/net/ipv6/ipv6.ko
++kernel/net/ipv6/ah6.ko
++kernel/net/ipv6/esp6.ko
++kernel/net/ipv6/ipcomp6.ko
++kernel/net/ipv6/xfrm6_tunnel.ko
++kernel/net/ipv6/tunnel6.ko
++kernel/net/ipv6/xfrm6_mode_transport.ko
++kernel/net/ipv6/xfrm6_mode_tunnel.ko
++kernel/net/ipv6/xfrm6_mode_beet.ko
++kernel/net/ipv6/mip6.ko
++kernel/net/ipv6/ip6_tunnel.ko
++kernel/net/ipv6/inet6_hashtables.ko
++kernel/net/ipv6/netfilter/ip6_tables.ko
++kernel/net/ipv6/netfilter/ip6table_filter.ko
++kernel/net/ipv6/netfilter/ip6table_mangle.ko
++kernel/net/ipv6/netfilter/ip6table_raw.ko
++kernel/net/ipv6/netfilter/nf_conntrack_ipv6.ko
++kernel/net/ipv6/netfilter/nf_defrag_ipv6.ko
++kernel/net/ipv6/netfilter/ip6t_LOG.ko
++kernel/net/ipv6/netfilter/ip6t_REJECT.ko
++kernel/net/key/af_key.ko
++kernel/net/netfilter/nfnetlink.ko
++kernel/net/netfilter/nfnetlink_queue.ko
++kernel/net/netfilter/nfnetlink_log.ko
++kernel/net/netfilter/nf_conntrack.ko
++kernel/net/netfilter/nf_conntrack_proto_gre.ko
++kernel/net/netfilter/nf_conntrack_netlink.ko
++kernel/net/netfilter/nf_conntrack_ftp.ko
++kernel/net/netfilter/nf_conntrack_pptp.ko
++kernel/net/netfilter/nf_conntrack_tftp.ko
++kernel/net/netfilter/nf_tproxy_core.ko
++kernel/net/netfilter/x_tables.ko
++kernel/net/netfilter/xt_tcpudp.ko
++kernel/net/netfilter/xt_mark.ko
++kernel/net/netfilter/xt_connmark.ko
++kernel/net/netfilter/xt_CLASSIFY.ko
++kernel/net/netfilter/xt_NFLOG.ko
++kernel/net/netfilter/xt_NFQUEUE.ko
++kernel/net/netfilter/xt_TPROXY.ko
++kernel/net/netfilter/xt_TCPMSS.ko
++kernel/net/netfilter/xt_TRACE.ko
++kernel/net/netfilter/xt_comment.ko
++kernel/net/netfilter/xt_connbytes.ko
++kernel/net/netfilter/xt_connlimit.ko
++kernel/net/netfilter/xt_conntrack.ko
++kernel/net/netfilter/xt_hashlimit.ko
++kernel/net/netfilter/xt_helper.ko
++kernel/net/netfilter/xt_hl.ko
++kernel/net/netfilter/xt_iprange.ko
++kernel/net/netfilter/xt_length.ko
++kernel/net/netfilter/xt_limit.ko
++kernel/net/netfilter/xt_mac.ko
++kernel/net/netfilter/xt_pkttype.ko
++kernel/net/netfilter/xt_policy.ko
++kernel/net/netfilter/xt_quota.ko
++kernel/net/netfilter/xt_quota2.ko
++kernel/net/netfilter/xt_socket.ko
++kernel/net/netfilter/xt_state.ko
++kernel/net/netfilter/xt_statistic.ko
++kernel/net/netfilter/xt_string.ko
++kernel/net/netfilter/xt_time.ko
++kernel/net/netfilter/xt_u32.ko
++kernel/net/packet/af_packet.ko
++kernel/net/phonet/phonet.ko
++kernel/net/phonet/pn_pep.ko
++kernel/net/rfkill/rfkill.ko
++kernel/net/sched/act_police.ko
++kernel/net/sched/act_gact.ko
++kernel/net/sched/act_mirred.ko
++kernel/net/sched/sch_htb.ko
++kernel/net/sched/sch_ingress.ko
++kernel/net/sched/cls_u32.ko
++kernel/net/sched/em_u32.ko
++kernel/net/unix/unix.ko
++kernel/net/xfrm/xfrm_ipcomp.ko
++kernel/lib/bitrev.ko
++kernel/lib/crc-ccitt.ko
++kernel/lib/crc16.ko
++kernel/lib/crc32.ko
++kernel/lib/crc7.ko
++kernel/lib/ts_kmp.ko
++kernel/lib/ts_bm.ko
++kernel/lib/ts_fsm.ko
++kernel/lib/lzo/lzo_compress.ko
++kernel/lib/lzo/lzo_decompress.ko
++kernel/lib/reed_solomon/reed_solomon.ko
++kernel/lib/zlib_deflate/zlib_deflate.ko
++kernel/lib/zlib_inflate/zlib_inflate.ko
+diff --git a/ramdisk/lib/modules/3.0.68/modules.builtin.bin b/ramdisk/lib/modules/3.0.68/modules.builtin.bin
+new file mode 100644
+index 0000000..28b881d
+Binary files /dev/null and b/ramdisk/lib/modules/3.0.68/modules.builtin.bin differ
+diff --git a/ramdisk/lib/modules/3.0.68/modules.ccwmap b/ramdisk/lib/modules/3.0.68/modules.ccwmap
+new file mode 100644
+index 0000000..7dac036
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.ccwmap
+@@ -0,0 +1 @@
++# ccw module         match_flags cu_type cu_model dev_type dev_model
+diff --git a/ramdisk/lib/modules/3.0.68/modules.dep b/ramdisk/lib/modules/3.0.68/modules.dep
+new file mode 100644
+index 0000000..9a518f4
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.dep
+@@ -0,0 +1,6 @@
++kernel/drivers/char/hw_random/rng-core.ko:
++kernel/drivers/scsi/scsi_wait_scan.ko:
++kernel/drivers/mmc/card/mmc_test.ko:
++kernel/arch/arm/oprofile/oprofile.ko:
++kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_core.ko:
++kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_wlan.ko: kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_core.ko
+diff --git a/ramdisk/lib/modules/3.0.68/modules.dep.bin b/ramdisk/lib/modules/3.0.68/modules.dep.bin
+new file mode 100644
+index 0000000..ed4e4f7
+Binary files /dev/null and b/ramdisk/lib/modules/3.0.68/modules.dep.bin differ
+diff --git a/ramdisk/lib/modules/3.0.68/modules.devname b/ramdisk/lib/modules/3.0.68/modules.devname
+new file mode 100644
+index 0000000..58f6d6d
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.devname
+@@ -0,0 +1 @@
++# Device nodes to trigger on-demand module loading.
+diff --git a/ramdisk/lib/modules/3.0.68/modules.ieee1394map b/ramdisk/lib/modules/3.0.68/modules.ieee1394map
+new file mode 100644
+index 0000000..d111b942
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.ieee1394map
+@@ -0,0 +1 @@
++# ieee1394 module    match_flags vendor_id model_id specifier_id version
+diff --git a/ramdisk/lib/modules/3.0.68/modules.inputmap b/ramdisk/lib/modules/3.0.68/modules.inputmap
+new file mode 100644
+index 0000000..5a9ead2
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.inputmap
+@@ -0,0 +1 @@
++# module         matchBits bustype vendor product version evBits keyBits relBits absBits mscBits ledBits sndBits ffBits [swBits] driver_info
+diff --git a/ramdisk/lib/modules/3.0.68/modules.isapnpmap b/ramdisk/lib/modules/3.0.68/modules.isapnpmap
+new file mode 100644
+index 0000000..c0d397e
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.isapnpmap
+@@ -0,0 +1 @@
++# isapnp module      cardvendor carddevice driver_data vendor     function   ...
+diff --git a/ramdisk/lib/modules/3.0.68/modules.ofmap b/ramdisk/lib/modules/3.0.68/modules.ofmap
+new file mode 100644
+index 0000000..1f389ca
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.ofmap
+@@ -0,0 +1 @@
++# of module          name                 type                 compatible
+diff --git a/ramdisk/lib/modules/3.0.68/modules.order b/ramdisk/lib/modules/3.0.68/modules.order
+new file mode 100644
+index 0000000..ce510ea
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.order
+@@ -0,0 +1,6 @@
++kernel/drivers/char/hw_random/rng-core.ko
++kernel/drivers/scsi/scsi_wait_scan.ko
++kernel/drivers/mmc/card/mmc_test.ko
++kernel/arch/arm/oprofile/oprofile.ko
++kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_core.ko
++kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_wlan.ko
+diff --git a/ramdisk/lib/modules/3.0.68/modules.pcimap b/ramdisk/lib/modules/3.0.68/modules.pcimap
+new file mode 100644
+index 0000000..3fd01ca
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.pcimap
+@@ -0,0 +1 @@
++# pci module         vendor     device     subvendor  subdevice  class      class_mask driver_data
+diff --git a/ramdisk/lib/modules/3.0.68/modules.seriomap b/ramdisk/lib/modules/3.0.68/modules.seriomap
+new file mode 100644
+index 0000000..407dc20
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.seriomap
+@@ -0,0 +1 @@
++# serio module       type extra id   proto
+diff --git a/ramdisk/lib/modules/3.0.68/modules.softdep b/ramdisk/lib/modules/3.0.68/modules.softdep
+new file mode 100644
+index 0000000..3cc0512
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.softdep
+@@ -0,0 +1,2 @@
++# Soft dependencies extracted from modules themselves.
++# Copy, with a .conf extension, to /etc/modprobe.d to use it with modprobe.
+diff --git a/ramdisk/lib/modules/3.0.68/modules.symbols b/ramdisk/lib/modules/3.0.68/modules.symbols
+new file mode 100644
+index 0000000..e7dd282
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.symbols
+@@ -0,0 +1,9 @@
++# Aliases for symbols, used by symbol_request().
++alias symbol:cw1200_free_common cw1200_core
++alias symbol:hwrng_register rng_core
++alias symbol:cw1200_register_common cw1200_core
++alias symbol:cw1200_core_probe cw1200_core
++alias symbol:hwrng_unregister rng_core
++alias symbol:cw1200_unregister_common cw1200_core
++alias symbol:cw1200_can_suspend cw1200_core
++alias symbol:cw1200_core_release cw1200_core
+diff --git a/ramdisk/lib/modules/3.0.68/modules.symbols.bin b/ramdisk/lib/modules/3.0.68/modules.symbols.bin
+new file mode 100644
+index 0000000..55c7ed1
+Binary files /dev/null and b/ramdisk/lib/modules/3.0.68/modules.symbols.bin differ
+diff --git a/ramdisk/lib/modules/3.0.68/modules.usbmap b/ramdisk/lib/modules/3.0.68/modules.usbmap
+new file mode 100644
+index 0000000..50eb1c8
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/modules.usbmap
+@@ -0,0 +1 @@
++# usb module         match_flags idVendor idProduct bcdDevice_lo bcdDevice_hi bDeviceClass bDeviceSubClass bDeviceProtocol bInterfaceClass bInterfaceSubClass bInterfaceProtocol driver_info
+diff --git a/ramdisk/lib/modules/3.0.68/source b/ramdisk/lib/modules/3.0.68/source
+new file mode 120000
+index 0000000..c5065c0
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.68/source
+@@ -0,0 +1 @@
++/home/pcadmin/android-misc/LT22-kernel/kernel-uksm
+\ No newline at end of file
+diff --git a/ramdisk/lib/modules/3.0.8+ b/ramdisk/lib/modules/3.0.8+
+new file mode 120000
+index 0000000..95cdbf2
+--- /dev/null
++++ b/ramdisk/lib/modules/3.0.8+
+@@ -0,0 +1 @@
++3.0.68/
+\ No newline at end of file

@@ -350,8 +350,8 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 CFLAGS_MODULE   = 
 AFLAGS_MODULE   = 
 LDFLAGS_MODULE  = 
-CFLAGS_KERNEL	= -D__linux__ # -flto -fwhole-program
-AFLAGS_KERNEL	= # -flto -fwhole-program
+CFLAGS_KERNEL	= -D__linux__ -flto -fwhole-program
+AFLAGS_KERNEL	= -flto -fwhole-program
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -372,15 +372,16 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -ffast-math -fsingle-precision-constant \
 		   -funsafe-math-optimizations \
 		   -ftracer \
+                   -fgraphite-identity \
                    -fgcse-lm \
 		   -fgcse-sm \
 		   -fsched-spec-load \
 		   -fforce-addr \
 		   -funswitch-loops 
 
-KBUILD_AFLAGS_KERNEL := # -flto -fwhole-program
-KBUILD_CFLAGS_KERNEL := # -flto -fwhole-program
-KBUILD_AFLAGS   := -D__ASSEMBLY__ # -flto -fwhole-program
+KBUILD_AFLAGS_KERNEL := -flto -fwhole-program
+KBUILD_CFLAGS_KERNEL := -flto -fwhole-program
+KBUILD_AFLAGS   := -D__ASSEMBLY__ -flto -fwhole-program
 KBUILD_AFLAGS_MODULE  := -DMODULE 
 KBUILD_CFLAGS_MODULE  := -DMODULE 
 CFLAGS_MODULE   = $(MODFLAGS)
