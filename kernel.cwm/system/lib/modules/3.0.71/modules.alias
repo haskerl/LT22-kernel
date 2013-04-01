@@ -1,0 +1,3 @@
+# Aliases extracted from modules themselves.
+alias cw1200_core cw1200_core
+alias cw1200_wlan cw1200_wlan

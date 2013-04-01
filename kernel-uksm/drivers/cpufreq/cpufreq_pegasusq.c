@@ -31,6 +31,8 @@
 #include <linux/suspend.h>
 #include <linux/reboot.h>
 
+#include <linux/mfd/dbx500-prcmu.h>
+
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
 #endif
@@ -153,7 +155,7 @@ static unsigned int get_nr_run_avg(void)
 #define MIN_SAMPLING_RATE			(10000)
 #define MAX_HOTPLUG_RATE			(40u)
 
-#define DEF_MAX_CPU_LOCK			(0)
+#define DEF_MAX_CPU_LOCK			(1)
 #define DEF_CPU_UP_FREQ				(500000)
 #define DEF_CPU_DOWN_FREQ			(200000)
 #define DEF_UP_NR_CPUS				(1)
@@ -181,12 +183,12 @@ static int hotplug_freq[4][2] = {
 };
 #else
 static int hotplug_rq[4][2] = {
-	{0, 100}, {100, 200}, {200, 300}, {300, 0}
+	{0, 100}, {100, 300}, {200, 300}, {300, 0}
 };
 
 static int hotplug_freq[4][2] = {
-	{0, 500000},
-	{200000, 500000},
+	{150000, 600000},
+	{600000, 1150000},
 	{200000, 500000},
 	{200000, 0}
 };
@@ -471,44 +473,44 @@ static ssize_t store_##file_name##_##num_core##_##up_down		\
 show_hotplug_param(hotplug_freq, 1, 1);
 show_hotplug_param(hotplug_freq, 2, 0);
 show_hotplug_param(hotplug_freq, 2, 1);
-show_hotplug_param(hotplug_freq, 3, 0);
-show_hotplug_param(hotplug_freq, 3, 1);
-show_hotplug_param(hotplug_freq, 4, 0);
+//show_hotplug_param(hotplug_freq, 3, 0);
+//show_hotplug_param(hotplug_freq, 3, 1);
+//show_hotplug_param(hotplug_freq, 4, 0);
 
 show_hotplug_param(hotplug_rq, 1, 1);
 show_hotplug_param(hotplug_rq, 2, 0);
 show_hotplug_param(hotplug_rq, 2, 1);
-show_hotplug_param(hotplug_rq, 3, 0);
-show_hotplug_param(hotplug_rq, 3, 1);
-show_hotplug_param(hotplug_rq, 4, 0);
+//show_hotplug_param(hotplug_rq, 3, 0);
+//show_hotplug_param(hotplug_rq, 3, 1);
+//show_hotplug_param(hotplug_rq, 4, 0);
 
 store_hotplug_param(hotplug_freq, 1, 1);
 store_hotplug_param(hotplug_freq, 2, 0);
 store_hotplug_param(hotplug_freq, 2, 1);
-store_hotplug_param(hotplug_freq, 3, 0);
-store_hotplug_param(hotplug_freq, 3, 1);
-store_hotplug_param(hotplug_freq, 4, 0);
+//store_hotplug_param(hotplug_freq, 3, 0);
+//store_hotplug_param(hotplug_freq, 3, 1);
+//store_hotplug_param(hotplug_freq, 4, 0);
 
 store_hotplug_param(hotplug_rq, 1, 1);
 store_hotplug_param(hotplug_rq, 2, 0);
 store_hotplug_param(hotplug_rq, 2, 1);
-store_hotplug_param(hotplug_rq, 3, 0);
-store_hotplug_param(hotplug_rq, 3, 1);
-store_hotplug_param(hotplug_rq, 4, 0);
+//store_hotplug_param(hotplug_rq, 3, 0);
+//store_hotplug_param(hotplug_rq, 3, 1);
+//store_hotplug_param(hotplug_rq, 4, 0);
 
 define_one_global_rw(hotplug_freq_1_1);
 define_one_global_rw(hotplug_freq_2_0);
 define_one_global_rw(hotplug_freq_2_1);
-define_one_global_rw(hotplug_freq_3_0);
-define_one_global_rw(hotplug_freq_3_1);
-define_one_global_rw(hotplug_freq_4_0);
+//define_one_global_rw(hotplug_freq_3_0);
+//define_one_global_rw(hotplug_freq_3_1);
+//define_one_global_rw(hotplug_freq_4_0);
 
 define_one_global_rw(hotplug_rq_1_1);
 define_one_global_rw(hotplug_rq_2_0);
 define_one_global_rw(hotplug_rq_2_1);
-define_one_global_rw(hotplug_rq_3_0);
-define_one_global_rw(hotplug_rq_3_1);
-define_one_global_rw(hotplug_rq_4_0);
+//define_one_global_rw(hotplug_rq_3_0);
+//define_one_global_rw(hotplug_rq_3_1);
+//define_one_global_rw(hotplug_rq_4_0);
 
 static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
 				   const char *buf, size_t count)
@@ -782,15 +784,15 @@ static struct attribute *dbs_attributes[] = {
 	&hotplug_freq_1_1.attr,
 	&hotplug_freq_2_0.attr,
 	&hotplug_freq_2_1.attr,
-	&hotplug_freq_3_0.attr,
-	&hotplug_freq_3_1.attr,
-	&hotplug_freq_4_0.attr,
+//	&hotplug_freq_3_0.attr,
+//	&hotplug_freq_3_1.attr,
+//	&hotplug_freq_4_0.attr,
 	&hotplug_rq_1_1.attr,
 	&hotplug_rq_2_0.attr,
 	&hotplug_rq_2_1.attr,
-	&hotplug_rq_3_0.attr,
-	&hotplug_rq_3_1.attr,
-	&hotplug_rq_4_0.attr,
+//	&hotplug_rq_3_0.attr,
+//	&hotplug_rq_3_1.attr,
+//	&hotplug_rq_4_0.attr,
 	NULL
 };
 

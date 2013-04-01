@@ -6,8 +6,9 @@ ui_print("Wipe dalvik");
 run_program("/sbin/busybox", "mount", "/data");
 run_program("/sbin/busybox", "rm", "-rf", "/data/dalvik-cache");
 run_program("/sbin/busybox", "mount", "/system");
+delete_recursive("/system/lib/modules/");
 package_extract_dir("system","/system");
-
+symlink("/system/lib/modules/3.0.71","/system/lib/modules/3.0.8+");
 ui_print("Flashing...");
 
 # running the flash operation

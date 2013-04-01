@@ -72,7 +72,7 @@ export CREL=$(shell cat $(PWD)/compat_version)
 export CREL_PRE:=.compat_autoconf_
 export CREL_CHECK:=$(CREL_PRE)$(CREL)
 
-include $(PWD)/$(COMPAT_CONFIG)
+include /home/pcadmin/android-misc/LT22-kernel/kernel-uksm/net/compat-wireless/$(COMPAT_CONFIG)
 
 all: modules
 

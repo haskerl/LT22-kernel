@@ -25,7 +25,14 @@ on early-boot
     exec /system/bin/chargemon
     # Make sure the crashsms/crashes are writable by crashmonitor
     exec /sbin/bootrec
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 18d1
+    write /sys/class/android_usb/android0/idProduct D002
+    write /sys/class/android_usb/android0/functions adb
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
     start recovery
+    stop adbd
 
 #service iddd /system/bin/iddd
 #    class main

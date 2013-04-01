@@ -1,7 +1,7 @@
 #!/bin/sh
 
 export ARCH=arm
-export CROSS_COMPILE=arm-cortex_a9-linux-gnueabi-
+export CROSS_COMPILE=arm-cortex_a9-linux-uclibcgnueabi-
 PARA='-j5'
 MOD_PATH="../ramdisk"
 IMAGE="boot.img"

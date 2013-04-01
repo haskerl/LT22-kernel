@@ -1,6 +1,6 @@
 VERSION = 3
 PATCHLEVEL = 0
-SUBLEVEL = 69
+SUBLEVEL = 71
 EXTRAVERSION =
 NAME = Sneaky Weasel
 
@@ -329,8 +329,8 @@ include $(srctree)/scripts/Kbuild.include
 # Make variables (CC, etc...)
 
 AS		= $(CROSS_COMPILE)as
-LD		= $(CROSS_COMPILE)ld
-CC		= ccache $(CROSS_COMPILE)gcc
+LD		= $(CROSS_COMPILE)ld.gold
+CC		= $(CROSS_COMPILE)gcc
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
@@ -350,8 +350,8 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 CFLAGS_MODULE   = 
 AFLAGS_MODULE   = 
 LDFLAGS_MODULE  = 
-CFLAGS_KERNEL	= -D__linux__ # -flto -fwhole-program
-AFLAGS_KERNEL	= # -flto -fwhole-program
+CFLAGS_KERNEL	= -D__linux__ -flto -fwhole-program
+AFLAGS_KERNEL	= -flto -fwhole-program
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -369,18 +369,19 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -ffast-math -fsingle-precision-constant \
-		   -funsafe-math-optimizations \
+		   -fsingle-precision-constant \
+		   -fgraphite-identity \
 		   -ftracer \
                    -fgcse-lm \
 		   -fgcse-sm \
 		   -fsched-spec-load \
-		   -fforce-addr \
-		   -funswitch-loops 
+		   -ftree-parallelize-loops=2 \
+		   -pthread \
+		   -floop-parallelize-all
 
-KBUILD_AFLAGS_KERNEL := #-flto -fwhole-program
-KBUILD_CFLAGS_KERNEL := #-flto -fwhole-program
-KBUILD_AFLAGS   := -D__ASSEMBLY__ #-flto -fwhole-program
+KBUILD_AFLAGS_KERNEL := -flto -fwhole-program
+KBUILD_CFLAGS_KERNEL := -flto -fwhole-program
+KBUILD_AFLAGS   := -D__ASSEMBLY__ -flto -fwhole-program
 KBUILD_AFLAGS_MODULE  := -DMODULE 
 KBUILD_CFLAGS_MODULE  := -DMODULE 
 CFLAGS_MODULE   = $(MODFLAGS)
