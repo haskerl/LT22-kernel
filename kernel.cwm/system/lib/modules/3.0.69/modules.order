@@ -1,6 +1,0 @@
-kernel/drivers/char/hw_random/rng-core.ko
-kernel/drivers/scsi/scsi_wait_scan.ko
-kernel/drivers/mmc/card/mmc_test.ko
-kernel/arch/arm/oprofile/oprofile.ko
-kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_core.ko
-kernel/net/compat-wireless/drivers/staging/cw1200/cw1200_wlan.ko

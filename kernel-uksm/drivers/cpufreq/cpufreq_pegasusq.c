@@ -31,8 +31,6 @@
 #include <linux/suspend.h>
 #include <linux/reboot.h>
 
-#include <linux/mfd/dbx500-prcmu.h>
-
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
 #endif
@@ -155,7 +153,7 @@ static unsigned int get_nr_run_avg(void)
 #define MIN_SAMPLING_RATE			(10000)
 #define MAX_HOTPLUG_RATE			(40u)
 
-#define DEF_MAX_CPU_LOCK			(1)
+#define DEF_MAX_CPU_LOCK			(0)
 #define DEF_CPU_UP_FREQ				(500000)
 #define DEF_CPU_DOWN_FREQ			(200000)
 #define DEF_UP_NR_CPUS				(1)
