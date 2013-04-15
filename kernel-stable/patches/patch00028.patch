@@ -1,0 +1,103 @@
+diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
+index 354619a..4bc6838 100644
+--- a/fs/ext4/ext4.h
++++ b/fs/ext4/ext4.h
+@@ -357,8 +357,7 @@ struct flex_groups {
+ 
+ /* Flags that should be inherited by new inodes from their parent. */
+ #define EXT4_FL_INHERITED (EXT4_SECRM_FL | EXT4_UNRM_FL | EXT4_COMPR_FL |\
+-			   EXT4_SYNC_FL | EXT4_IMMUTABLE_FL | EXT4_APPEND_FL |\
+-			   EXT4_NODUMP_FL | EXT4_NOATIME_FL |\
++			   EXT4_SYNC_FL | EXT4_NODUMP_FL | EXT4_NOATIME_FL |\
+ 			   EXT4_NOCOMPR_FL | EXT4_JOURNAL_DATA_FL |\
+ 			   EXT4_NOTAIL_FL | EXT4_DIRSYNC_FL)
+ 
+diff --git a/fs/ext4/namei.c b/fs/ext4/namei.c
+index 458a394..3d36d5a 100644
+--- a/fs/ext4/namei.c
++++ b/fs/ext4/namei.c
+@@ -1589,7 +1589,7 @@ static int ext4_dx_add_entry(handle_t *handle, struct dentry *dentry,
+ 			dxtrace(dx_show_index("node", frames[1].entries));
+ 			dxtrace(dx_show_index("node",
+ 			       ((struct dx_node *) bh2->b_data)->entries));
+-			err = ext4_handle_dirty_metadata(handle, inode, bh2);
++			err = ext4_handle_dirty_metadata(handle, dir, bh2);
+ 			if (err)
+ 				goto journal_error;
+ 			brelse (bh2);
+@@ -1615,7 +1615,7 @@ static int ext4_dx_add_entry(handle_t *handle, struct dentry *dentry,
+ 			if (err)
+ 				goto journal_error;
+ 		}
+-		err = ext4_handle_dirty_metadata(handle, inode, frames[0].bh);
++		err = ext4_handle_dirty_metadata(handle, dir, frames[0].bh);
+ 		if (err) {
+ 			ext4_std_error(inode->i_sb, err);
+ 			goto cleanup;
+@@ -1866,7 +1866,7 @@ retry:
+ 	ext4_set_de_type(dir->i_sb, de, S_IFDIR);
+ 	inode->i_nlink = 2;
+ 	BUFFER_TRACE(dir_block, "call ext4_handle_dirty_metadata");
+-	err = ext4_handle_dirty_metadata(handle, dir, dir_block);
++	err = ext4_handle_dirty_metadata(handle, inode, dir_block);
+ 	if (err)
+ 		goto out_clear_inode;
+ 	err = ext4_mark_inode_dirty(handle, inode);
+@@ -2540,7 +2540,7 @@ static int ext4_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 		PARENT_INO(dir_bh->b_data, new_dir->i_sb->s_blocksize) =
+ 						cpu_to_le32(new_dir->i_ino);
+ 		BUFFER_TRACE(dir_bh, "call ext4_handle_dirty_metadata");
+-		retval = ext4_handle_dirty_metadata(handle, old_dir, dir_bh);
++		retval = ext4_handle_dirty_metadata(handle, old_inode, dir_bh);
+ 		if (retval) {
+ 			ext4_std_error(old_dir->i_sb, retval);
+ 			goto end_rename;
+diff --git a/fs/ext4/xattr.c b/fs/ext4/xattr.c
+index c757adc..19fe4e3 100644
+--- a/fs/ext4/xattr.c
++++ b/fs/ext4/xattr.c
+@@ -820,8 +820,14 @@ inserted:
+ 			if (!(ext4_test_inode_flag(inode, EXT4_INODE_EXTENTS)))
+ 				goal = goal & EXT4_MAX_BLOCK_FILE_PHYS;
+ 
++			/*
++			 * take i_data_sem because we will test
++			 * i_delalloc_reserved_flag in ext4_mb_new_blocks
++			 */
++			down_read((&EXT4_I(inode)->i_data_sem));
+ 			block = ext4_new_meta_blocks(handle, inode, goal, 0,
+ 						     NULL, &error);
++			up_read((&EXT4_I(inode)->i_data_sem));
+ 			if (error)
+ 				goto cleanup;
+ 
+diff --git a/include/linux/ext2_fs.h b/include/linux/ext2_fs.h
+index 2dfa707..0bfcb76 100644
+--- a/include/linux/ext2_fs.h
++++ b/include/linux/ext2_fs.h
+@@ -196,8 +196,8 @@ struct ext2_group_desc
+ 
+ /* Flags that should be inherited by new inodes from their parent. */
+ #define EXT2_FL_INHERITED (EXT2_SECRM_FL | EXT2_UNRM_FL | EXT2_COMPR_FL |\
+-			   EXT2_SYNC_FL | EXT2_IMMUTABLE_FL | EXT2_APPEND_FL |\
+-			   EXT2_NODUMP_FL | EXT2_NOATIME_FL | EXT2_COMPRBLK_FL|\
++			   EXT2_SYNC_FL | EXT2_NODUMP_FL |\
++			   EXT2_NOATIME_FL | EXT2_COMPRBLK_FL |\
+ 			   EXT2_NOCOMP_FL | EXT2_JOURNAL_DATA_FL |\
+ 			   EXT2_NOTAIL_FL | EXT2_DIRSYNC_FL)
+ 
+diff --git a/include/linux/ext3_fs.h b/include/linux/ext3_fs.h
+index 5e06acf..7b14d25 100644
+--- a/include/linux/ext3_fs.h
++++ b/include/linux/ext3_fs.h
+@@ -180,8 +180,8 @@ struct ext3_group_desc
+ 
+ /* Flags that should be inherited by new inodes from their parent. */
+ #define EXT3_FL_INHERITED (EXT3_SECRM_FL | EXT3_UNRM_FL | EXT3_COMPR_FL |\
+-			   EXT3_SYNC_FL | EXT3_IMMUTABLE_FL | EXT3_APPEND_FL |\
+-			   EXT3_NODUMP_FL | EXT3_NOATIME_FL | EXT3_COMPRBLK_FL|\
++			   EXT3_SYNC_FL | EXT3_NODUMP_FL |\
++			   EXT3_NOATIME_FL | EXT3_COMPRBLK_FL |\
+ 			   EXT3_NOCOMPR_FL | EXT3_JOURNAL_DATA_FL |\
+ 			   EXT3_NOTAIL_FL | EXT3_DIRSYNC_FL)
+ 
