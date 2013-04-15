@@ -1,0 +1,37 @@
+diff --git a/net/ipv6/tcp_ipv6.c b/net/ipv6/tcp_ipv6.c
+index af78a16..296510a 100644
+--- a/net/ipv6/tcp_ipv6.c
++++ b/net/ipv6/tcp_ipv6.c
+@@ -1409,6 +1409,8 @@ static struct sock * tcp_v6_syn_recv_sock(struct sock *sk, struct sk_buff *skb,
+ 		newtp->af_specific = &tcp_sock_ipv6_mapped_specific;
+ #endif
+ 
++		newnp->ipv6_ac_list = NULL;
++		newnp->ipv6_fl_list = NULL;
+ 		newnp->pktoptions  = NULL;
+ 		newnp->opt	   = NULL;
+ 		newnp->mcast_oif   = inet6_iif(skb);
+@@ -1473,6 +1475,7 @@ static struct sock * tcp_v6_syn_recv_sock(struct sock *sk, struct sk_buff *skb,
+ 	   First: no IPv4 options.
+ 	 */
+ 	newinet->inet_opt = NULL;
++	newnp->ipv6_ac_list = NULL;
+ 	newnp->ipv6_fl_list = NULL;
+ 
+ 	/* Clone RX bits */
+diff --git a/net/packet/af_packet.c b/net/packet/af_packet.c
+index c0c3cda..fafb968 100644
+--- a/net/packet/af_packet.c
++++ b/net/packet/af_packet.c
+@@ -654,7 +654,10 @@ static int packet_rcv(struct sk_buff *skb, struct net_device *dev,
+ 	return 0;
+ 
+ drop_n_acct:
+-	po->stats.tp_drops = atomic_inc_return(&sk->sk_drops);
++	spin_lock(&sk->sk_receive_queue.lock);
++	po->stats.tp_drops++;
++	atomic_inc(&sk->sk_drops);
++	spin_unlock(&sk->sk_receive_queue.lock);
+ 
+ drop_n_restore:
+ 	if (skb_head != skb->data && skb_shared(skb)) {
