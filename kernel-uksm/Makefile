@@ -1,6 +1,6 @@
 VERSION = 3
 PATCHLEVEL = 0
-SUBLEVEL = 71
+SUBLEVEL = 73
 EXTRAVERSION =
 NAME = Sneaky Weasel
 
@@ -350,8 +350,8 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 CFLAGS_MODULE   = 
 AFLAGS_MODULE   = 
 LDFLAGS_MODULE  = 
-CFLAGS_KERNEL	= -D__linux__ -flto -fwhole-program
-AFLAGS_KERNEL	= -flto -fwhole-program
+CFLAGS_KERNEL	= -D__linux__
+AFLAGS_KERNEL	= 
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -370,18 +370,17 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
 		   -fsingle-precision-constant \
-		   -fgraphite-identity \
-		   -ftracer \
-                   -fgcse-lm \
-		   -fgcse-sm \
-		   -fsched-spec-load \
 		   -ftree-parallelize-loops=2 \
 		   -pthread \
-		   -floop-parallelize-all
+		   -floop-parallelize-all \
+                   -floop-interchange \
+                   -floop-strip-mine \
+                   -floop-block \
 
-KBUILD_AFLAGS_KERNEL := -flto -fwhole-program
-KBUILD_CFLAGS_KERNEL := -flto -fwhole-program
-KBUILD_AFLAGS   := -D__ASSEMBLY__ -flto -fwhole-program
+
+KBUILD_AFLAGS_KERNEL :=
+KBUILD_CFLAGS_KERNEL :=
+KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE 
 KBUILD_CFLAGS_MODULE  := -DMODULE 
 CFLAGS_MODULE   = $(MODFLAGS)

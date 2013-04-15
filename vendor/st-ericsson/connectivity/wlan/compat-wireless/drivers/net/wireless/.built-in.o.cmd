@@ -1,0 +1,1 @@
+cmd_net/compat-wireless/drivers/net/wireless/built-in.o :=  rm -f net/compat-wireless/drivers/net/wireless/built-in.o; arm-cortex_a9-linux-uclibcgnueabi-ar rcsD net/compat-wireless/drivers/net/wireless/built-in.o

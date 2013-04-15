@@ -1,5 +1,0 @@
-obj-$(CONFIG_CLONEDEV) += clonedev.o
-
-ifdef CONFIG_CLONEDEV_DEBUG
-EXTRA_CFLAGS += -DDEBUG
-endif
