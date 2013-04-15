@@ -1,0 +1,13 @@
+diff --git a/kernel/irq/spurious.c b/kernel/irq/spurious.c
+index aa57d5d..b5f4742 100644
+--- a/kernel/irq/spurious.c
++++ b/kernel/irq/spurious.c
+@@ -115,7 +115,7 @@ static int misrouted_irq(int irq)
+ 	struct irq_desc *desc;
+ 	int i, ok = 0;
+ 
+-	if (atomic_inc_return(&irq_poll_active) == 1)
++	if (atomic_inc_return(&irq_poll_active) != 1)
+ 		goto out;
+ 
+ 	irq_poll_cpu = smp_processor_id();
