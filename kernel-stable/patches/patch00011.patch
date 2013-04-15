@@ -1,0 +1,301 @@
+diff --git a/drivers/leds/led-class.c b/drivers/leds/led-class.c
+index dc3d3d8..661b692 100644
+--- a/drivers/leds/led-class.c
++++ b/drivers/leds/led-class.c
+@@ -267,9 +267,14 @@ void led_blink_set(struct led_classdev *led_cdev,
+ 		   unsigned long *delay_on,
+ 		   unsigned long *delay_off)
+ {
++	del_timer_sync(&led_cdev->blink_timer);
++
+ 	if (led_cdev->blink_set &&
+-	    !led_cdev->blink_set(led_cdev, delay_on, delay_off))
++	    !led_cdev->blink_set(led_cdev, delay_on, delay_off)) {
++		led_cdev->blink_delay_on = *delay_on;
++		led_cdev->blink_delay_off = *delay_off;
+ 		return;
++	}
+ 
+ 	/* blink with 1 Hz as default if nothing specified */
+ 	if (!*delay_on && !*delay_off)
+diff --git a/drivers/usb/core/devio.c b/drivers/usb/core/devio.c
+index 37518df..0ca54e2 100644
+--- a/drivers/usb/core/devio.c
++++ b/drivers/usb/core/devio.c
+@@ -407,7 +407,7 @@ static void async_completed(struct urb *urb)
+ 		sinfo.si_errno = as->status;
+ 		sinfo.si_code = SI_ASYNCIO;
+ 		sinfo.si_addr = as->userurb;
+-		pid = as->pid;
++		pid = get_pid(as->pid);
+ 		uid = as->uid;
+ 		euid = as->euid;
+ 		secid = as->secid;
+@@ -422,9 +422,11 @@ static void async_completed(struct urb *urb)
+ 		cancel_bulk_urbs(ps, as->bulk_addr);
+ 	spin_unlock(&ps->lock);
+ 
+-	if (signr)
++	if (signr) {
+ 		kill_pid_info_as_uid(sinfo.si_signo, &sinfo, pid, uid,
+ 				      euid, secid);
++		put_pid(pid);
++	}
+ 
+ 	wake_up(&ps->wait);
+ }
+@@ -607,9 +609,10 @@ static int findintfep(struct usb_device *dev, unsigned int ep)
+ }
+ 
+ static int check_ctrlrecip(struct dev_state *ps, unsigned int requesttype,
+-			   unsigned int index)
++			   unsigned int request, unsigned int index)
+ {
+ 	int ret = 0;
++	struct usb_host_interface *alt_setting;
+ 
+ 	if (ps->dev->state != USB_STATE_UNAUTHENTICATED
+ 	 && ps->dev->state != USB_STATE_ADDRESS
+@@ -618,6 +621,19 @@ static int check_ctrlrecip(struct dev_state *ps, unsigned int requesttype,
+ 	if (USB_TYPE_VENDOR == (USB_TYPE_MASK & requesttype))
+ 		return 0;
+ 
++	/*
++	 * check for the special corner case 'get_device_id' in the printer
++	 * class specification, where wIndex is (interface << 8 | altsetting)
++	 * instead of just interface
++	 */
++	if (requesttype == 0xa1 && request == 0) {
++		alt_setting = usb_find_alt_setting(ps->dev->actconfig,
++						   index >> 8, index & 0xff);
++		if (alt_setting
++		 && alt_setting->desc.bInterfaceClass == USB_CLASS_PRINTER)
++			index >>= 8;
++	}
++
+ 	index &= 0xff;
+ 	switch (requesttype & USB_RECIP_MASK) {
+ 	case USB_RECIP_ENDPOINT:
+@@ -770,7 +786,8 @@ static int proc_control(struct dev_state *ps, void __user *arg)
+ 
+ 	if (copy_from_user(&ctrl, arg, sizeof(ctrl)))
+ 		return -EFAULT;
+-	ret = check_ctrlrecip(ps, ctrl.bRequestType, ctrl.wIndex);
++	ret = check_ctrlrecip(ps, ctrl.bRequestType, ctrl.bRequest,
++			      ctrl.wIndex);
+ 	if (ret)
+ 		return ret;
+ 	wLength = ctrl.wLength;		/* To suppress 64k PAGE_SIZE warning */
+@@ -1100,7 +1117,7 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
+ 			kfree(dr);
+ 			return -EINVAL;
+ 		}
+-		ret = check_ctrlrecip(ps, dr->bRequestType,
++		ret = check_ctrlrecip(ps, dr->bRequestType, dr->bRequest,
+ 				      le16_to_cpup(&dr->wIndex));
+ 		if (ret) {
+ 			kfree(dr);
+diff --git a/drivers/usb/gadget/printer.c b/drivers/usb/gadget/printer.c
+index 271ef94..88a464c 100644
+--- a/drivers/usb/gadget/printer.c
++++ b/drivers/usb/gadget/printer.c
+@@ -1602,7 +1602,7 @@ cleanup(void)
+ 	if (status)
+ 		ERROR(dev, "usb_gadget_unregister_driver %x\n", status);
+ 
+-	unregister_chrdev_region(g_printer_devno, 2);
++	unregister_chrdev_region(g_printer_devno, 1);
+ 	class_destroy(usb_gadget_class);
+ 	mutex_unlock(&usb_printer_gadget.lock_printer_io);
+ }
+diff --git a/drivers/usb/host/ohci-hub.c b/drivers/usb/host/ohci-hub.c
+index 9154615..2f00040 100644
+--- a/drivers/usb/host/ohci-hub.c
++++ b/drivers/usb/host/ohci-hub.c
+@@ -356,10 +356,7 @@ static void ohci_finish_controller_resume(struct usb_hcd *hcd)
+ 		msleep(20);
+ 	}
+ 
+-	/* Does the root hub have a port wakeup pending? */
+-	if (ohci_readl(ohci, &ohci->regs->intrstatus) &
+-			(OHCI_INTR_RD | OHCI_INTR_RHSC))
+-		usb_hcd_resume_root_hub(hcd);
++	usb_hcd_resume_root_hub(hcd);
+ }
+ 
+ /* Carry out polling-, autostop-, and autoresume-related state changes */
+diff --git a/drivers/usb/mon/mon_bin.c b/drivers/usb/mon/mon_bin.c
+index a09dbd2..a04b2ff 100644
+--- a/drivers/usb/mon/mon_bin.c
++++ b/drivers/usb/mon/mon_bin.c
+@@ -1101,7 +1101,7 @@ static long mon_bin_ioctl(struct file *file, unsigned int cmd, unsigned long arg
+ 		nevents = mon_bin_queued(rp);
+ 
+ 		sp = (struct mon_bin_stats __user *)arg;
+-		if (put_user(rp->cnt_lost, &sp->dropped))
++		if (put_user(ndropped, &sp->dropped))
+ 			return -EFAULT;
+ 		if (put_user(nevents, &sp->queued))
+ 			return -EFAULT;
+diff --git a/drivers/usb/storage/transport.c b/drivers/usb/storage/transport.c
+index e8ae21b..ff32390 100644
+--- a/drivers/usb/storage/transport.c
++++ b/drivers/usb/storage/transport.c
+@@ -691,6 +691,9 @@ void usb_stor_invoke_transport(struct scsi_cmnd *srb, struct us_data *us)
+ 		int temp_result;
+ 		struct scsi_eh_save ses;
+ 		int sense_size = US_SENSE_SIZE;
++		struct scsi_sense_hdr sshdr;
++		const u8 *scdd;
++		u8 fm_ili;
+ 
+ 		/* device supports and needs bigger sense buffer */
+ 		if (us->fflags & US_FL_SANE_SENSE)
+@@ -774,32 +777,30 @@ Retry_Sense:
+ 			srb->sense_buffer[7] = (US_SENSE_SIZE - 8);
+ 		}
+ 
++		scsi_normalize_sense(srb->sense_buffer, SCSI_SENSE_BUFFERSIZE,
++				     &sshdr);
++
+ 		US_DEBUGP("-- Result from auto-sense is %d\n", temp_result);
+ 		US_DEBUGP("-- code: 0x%x, key: 0x%x, ASC: 0x%x, ASCQ: 0x%x\n",
+-			  srb->sense_buffer[0],
+-			  srb->sense_buffer[2] & 0xf,
+-			  srb->sense_buffer[12], 
+-			  srb->sense_buffer[13]);
++			  sshdr.response_code, sshdr.sense_key,
++			  sshdr.asc, sshdr.ascq);
+ #ifdef CONFIG_USB_STORAGE_DEBUG
+-		usb_stor_show_sense(
+-			  srb->sense_buffer[2] & 0xf,
+-			  srb->sense_buffer[12], 
+-			  srb->sense_buffer[13]);
++		usb_stor_show_sense(sshdr.sense_key, sshdr.asc, sshdr.ascq);
+ #endif
+ 
+ 		/* set the result so the higher layers expect this data */
+ 		srb->result = SAM_STAT_CHECK_CONDITION;
+ 
++		scdd = scsi_sense_desc_find(srb->sense_buffer,
++					    SCSI_SENSE_BUFFERSIZE, 4);
++		fm_ili = (scdd ? scdd[3] : srb->sense_buffer[2]) & 0xA0;
++
+ 		/* We often get empty sense data.  This could indicate that
+ 		 * everything worked or that there was an unspecified
+ 		 * problem.  We have to decide which.
+ 		 */
+-		if (	/* Filemark 0, ignore EOM, ILI 0, no sense */
+-				(srb->sense_buffer[2] & 0xaf) == 0 &&
+-			/* No ASC or ASCQ */
+-				srb->sense_buffer[12] == 0 &&
+-				srb->sense_buffer[13] == 0) {
+-
++		if (sshdr.sense_key == 0 && sshdr.asc == 0 && sshdr.ascq == 0 &&
++		    fm_ili == 0) {
+ 			/* If things are really okay, then let's show that.
+ 			 * Zero out the sense buffer so the higher layers
+ 			 * won't realize we did an unsolicited auto-sense.
+@@ -814,7 +815,10 @@ Retry_Sense:
+ 			 */
+ 			} else {
+ 				srb->result = DID_ERROR << 16;
+-				srb->sense_buffer[2] = HARDWARE_ERROR;
++				if ((sshdr.response_code & 0x72) == 0x72)
++					srb->sense_buffer[1] = HARDWARE_ERROR;
++				else
++					srb->sense_buffer[2] = HARDWARE_ERROR;
+ 			}
+ 		}
+ 	}
+diff --git a/fs/eventpoll.c b/fs/eventpoll.c
+index f9cfd16..2acaf60 100644
+--- a/fs/eventpoll.c
++++ b/fs/eventpoll.c
+@@ -70,6 +70,15 @@
+  * simultaneous inserts (A into B and B into A) from racing and
+  * constructing a cycle without either insert observing that it is
+  * going to.
++ * It is necessary to acquire multiple "ep->mtx"es at once in the
++ * case when one epoll fd is added to another. In this case, we
++ * always acquire the locks in the order of nesting (i.e. after
++ * epoll_ctl(e1, EPOLL_CTL_ADD, e2), e1->mtx will always be acquired
++ * before e2->mtx). Since we disallow cycles of epoll file
++ * descriptors, this ensures that the mutexes are well-ordered. In
++ * order to communicate this nesting to lockdep, when walking a tree
++ * of epoll file descriptors, we use the current recursion depth as
++ * the lockdep subkey.
+  * It is possible to drop the "ep->mtx" and to use the global
+  * mutex "epmutex" (together with "ep->lock") to have it working,
+  * but having "ep->mtx" will make the interface more scalable.
+@@ -464,13 +473,15 @@ static void ep_unregister_pollwait(struct eventpoll *ep, struct epitem *epi)
+  * @ep: Pointer to the epoll private data structure.
+  * @sproc: Pointer to the scan callback.
+  * @priv: Private opaque data passed to the @sproc callback.
++ * @depth: The current depth of recursive f_op->poll calls.
+  *
+  * Returns: The same integer error code returned by the @sproc callback.
+  */
+ static int ep_scan_ready_list(struct eventpoll *ep,
+ 			      int (*sproc)(struct eventpoll *,
+ 					   struct list_head *, void *),
+-			      void *priv)
++			      void *priv,
++			      int depth)
+ {
+ 	int error, pwake = 0;
+ 	unsigned long flags;
+@@ -481,7 +492,7 @@ static int ep_scan_ready_list(struct eventpoll *ep,
+ 	 * We need to lock this because we could be hit by
+ 	 * eventpoll_release_file() and epoll_ctl().
+ 	 */
+-	mutex_lock(&ep->mtx);
++	mutex_lock_nested(&ep->mtx, depth);
+ 
+ 	/*
+ 	 * Steal the ready list, and re-init the original one to the
+@@ -670,7 +681,7 @@ static int ep_read_events_proc(struct eventpoll *ep, struct list_head *head,
+ 
+ static int ep_poll_readyevents_proc(void *priv, void *cookie, int call_nests)
+ {
+-	return ep_scan_ready_list(priv, ep_read_events_proc, NULL);
++	return ep_scan_ready_list(priv, ep_read_events_proc, NULL, call_nests + 1);
+ }
+ 
+ static unsigned int ep_eventpoll_poll(struct file *file, poll_table *wait)
+@@ -737,7 +748,7 @@ void eventpoll_release_file(struct file *file)
+ 
+ 		ep = epi->ep;
+ 		list_del_init(&epi->fllink);
+-		mutex_lock(&ep->mtx);
++		mutex_lock_nested(&ep->mtx, 0);
+ 		ep_remove(ep, epi);
+ 		mutex_unlock(&ep->mtx);
+ 	}
+@@ -1134,7 +1145,7 @@ static int ep_send_events(struct eventpoll *ep,
+ 	esed.maxevents = maxevents;
+ 	esed.events = events;
+ 
+-	return ep_scan_ready_list(ep, ep_send_events_proc, &esed);
++	return ep_scan_ready_list(ep, ep_send_events_proc, &esed, 0);
+ }
+ 
+ static inline struct timespec ep_set_mstimeout(long ms)
+@@ -1267,7 +1278,7 @@ static int ep_loop_check_proc(void *priv, void *cookie, int call_nests)
+ 	struct rb_node *rbp;
+ 	struct epitem *epi;
+ 
+-	mutex_lock(&ep->mtx);
++	mutex_lock_nested(&ep->mtx, call_nests + 1);
+ 	for (rbp = rb_first(&ep->rbr); rbp; rbp = rb_next(rbp)) {
+ 		epi = rb_entry(rbp, struct epitem, rbn);
+ 		if (unlikely(is_file_epoll(epi->ffd.file))) {
+@@ -1409,7 +1420,7 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
+ 	}
+ 
+ 
+-	mutex_lock(&ep->mtx);
++	mutex_lock_nested(&ep->mtx, 0);
+ 
+ 	/*
+ 	 * Try to lookup the file inside our RB tree, Since we grabbed "mtx"
