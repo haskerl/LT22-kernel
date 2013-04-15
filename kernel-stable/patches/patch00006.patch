@@ -1,0 +1,66 @@
+diff --git a/drivers/tty/serial/serial_core.c b/drivers/tty/serial/serial_core.c
+index db7912c..6bc20d7 100644
+--- a/drivers/tty/serial/serial_core.c
++++ b/drivers/tty/serial/serial_core.c
+@@ -2003,6 +2003,8 @@ int uart_resume_port(struct uart_driver *drv, struct uart_port *uport)
+ 		if (port->tty && port->tty->termios && termios.c_cflag == 0)
+ 			termios = *(port->tty->termios);
+ 
++		if (console_suspend_enabled)
++			uart_change_pm(state, 0);
+ 		uport->ops->set_termios(uport, &termios, NULL);
+ 		if (console_suspend_enabled)
+ 			console_start(uport->cons);
+diff --git a/drivers/usb/host/ehci-hcd.c b/drivers/usb/host/ehci-hcd.c
+index 9ff9abc..c45a116 100644
+--- a/drivers/usb/host/ehci-hcd.c
++++ b/drivers/usb/host/ehci-hcd.c
+@@ -761,6 +761,35 @@ static int ehci_run (struct usb_hcd *hcd)
+ 	return 0;
+ }
+ 
++static int __maybe_unused ehci_setup (struct usb_hcd *hcd)
++{
++	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
++	int retval;
++
++	ehci->regs = (void __iomem *)ehci->caps +
++	    HC_LENGTH(ehci, ehci_readl(ehci, &ehci->caps->hc_capbase));
++	dbg_hcs_params(ehci, "reset");
++	dbg_hcc_params(ehci, "reset");
++
++	/* cache this readonly data; minimize chip reads */
++	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
++
++	ehci->sbrn = HCD_USB2;
++
++	retval = ehci_halt(ehci);
++	if (retval)
++		return retval;
++
++	/* data structure init */
++	retval = ehci_init(hcd);
++	if (retval)
++		return retval;
++
++	ehci_reset(ehci);
++
++	return 0;
++}
++
+ /*-------------------------------------------------------------------------*/
+ 
+ static irqreturn_t ehci_irq (struct usb_hcd *hcd)
+diff --git a/include/linux/usb/hcd.h b/include/linux/usb/hcd.h
+index 0097136..c0ecc5a 100644
+--- a/include/linux/usb/hcd.h
++++ b/include/linux/usb/hcd.h
+@@ -178,7 +178,7 @@ struct usb_hcd {
+ 	 * this structure.
+ 	 */
+ 	unsigned long hcd_priv[0]
+-			__attribute__ ((aligned(sizeof(unsigned long))));
++			__attribute__ ((aligned(sizeof(s64))));
+ };
+ 
+ /* 2.4 does this a bit differently ... */
