@@ -1,0 +1,44 @@
+diff --git a/drivers/leds/led-class.c b/drivers/leds/led-class.c
+index 661b692..6d5628b 100644
+--- a/drivers/leds/led-class.c
++++ b/drivers/leds/led-class.c
+@@ -270,11 +270,8 @@ void led_blink_set(struct led_classdev *led_cdev,
+ 	del_timer_sync(&led_cdev->blink_timer);
+ 
+ 	if (led_cdev->blink_set &&
+-	    !led_cdev->blink_set(led_cdev, delay_on, delay_off)) {
+-		led_cdev->blink_delay_on = *delay_on;
+-		led_cdev->blink_delay_off = *delay_off;
++	    !led_cdev->blink_set(led_cdev, delay_on, delay_off))
+ 		return;
+-	}
+ 
+ 	/* blink with 1 Hz as default if nothing specified */
+ 	if (!*delay_on && !*delay_off)
+diff --git a/fs/hfs/trans.c b/fs/hfs/trans.c
+index e673a88..b1ce4c7 100644
+--- a/fs/hfs/trans.c
++++ b/fs/hfs/trans.c
+@@ -40,6 +40,8 @@ int hfs_mac2asc(struct super_block *sb, char *out, const struct hfs_name *in)
+ 
+ 	src = in->name;
+ 	srclen = in->len;
++	if (srclen > HFS_NAMELEN)
++		srclen = HFS_NAMELEN;
+ 	dst = out;
+ 	dstlen = HFS_MAX_NAMELEN;
+ 	if (nls_io) {
+diff --git a/security/keys/user_defined.c b/security/keys/user_defined.c
+index 5b366d7..69ff52c 100644
+--- a/security/keys/user_defined.c
++++ b/security/keys/user_defined.c
+@@ -102,7 +102,8 @@ int user_update(struct key *key, const void *data, size_t datalen)
+ 		key->expiry = 0;
+ 	}
+ 
+-	kfree_rcu(zap, rcu);
++	if (zap)
++		kfree_rcu(zap, rcu);
+ 
+ error:
+ 	return ret;
