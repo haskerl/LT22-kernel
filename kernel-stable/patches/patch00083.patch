@@ -1,0 +1,235 @@
+diff --git a/drivers/tty/hvc/hvc_dcc.c b/drivers/tty/hvc/hvc_dcc.c
+index 435f6fa..44fbeba 100644
+--- a/drivers/tty/hvc/hvc_dcc.c
++++ b/drivers/tty/hvc/hvc_dcc.c
+@@ -46,6 +46,7 @@ static inline char __dcc_getchar(void)
+ 
+ 	asm volatile("mrc p14, 0, %0, c0, c5, 0	@ read comms data reg"
+ 		: "=r" (__c));
++	isb();
+ 
+ 	return __c;
+ }
+@@ -55,6 +56,7 @@ static inline void __dcc_putchar(char c)
+ 	asm volatile("mcr p14, 0, %0, c0, c5, 0	@ write a char"
+ 		: /* no output register */
+ 		: "r" (c));
++	isb();
+ }
+ 
+ static int hvc_dcc_put_chars(uint32_t vt, const char *buf, int count)
+diff --git a/drivers/tty/tty_ldisc.c b/drivers/tty/tty_ldisc.c
+index ef925d5..a76c808 100644
+--- a/drivers/tty/tty_ldisc.c
++++ b/drivers/tty/tty_ldisc.c
+@@ -36,6 +36,7 @@
+ 
+ #include <linux/kmod.h>
+ #include <linux/nsproxy.h>
++#include <linux/ratelimit.h>
+ 
+ /*
+  *	This guards the refcounted line discipline lists. The lock
+@@ -548,15 +549,16 @@ static void tty_ldisc_flush_works(struct tty_struct *tty)
+ /**
+  *	tty_ldisc_wait_idle	-	wait for the ldisc to become idle
+  *	@tty: tty to wait for
++ *	@timeout: for how long to wait at most
+  *
+  *	Wait for the line discipline to become idle. The discipline must
+  *	have been halted for this to guarantee it remains idle.
+  */
+-static int tty_ldisc_wait_idle(struct tty_struct *tty)
++static int tty_ldisc_wait_idle(struct tty_struct *tty, long timeout)
+ {
+-	int ret;
++	long ret;
+ 	ret = wait_event_timeout(tty_ldisc_idle,
+-			atomic_read(&tty->ldisc->users) == 1, 5 * HZ);
++			atomic_read(&tty->ldisc->users) == 1, timeout);
+ 	if (ret < 0)
+ 		return ret;
+ 	return ret > 0 ? 0 : -EBUSY;
+@@ -666,7 +668,7 @@ int tty_set_ldisc(struct tty_struct *tty, int ldisc)
+ 
+ 	tty_ldisc_flush_works(tty);
+ 
+-	retval = tty_ldisc_wait_idle(tty);
++	retval = tty_ldisc_wait_idle(tty, 5 * HZ);
+ 
+ 	tty_lock();
+ 	mutex_lock(&tty->ldisc_mutex);
+@@ -763,8 +765,6 @@ static int tty_ldisc_reinit(struct tty_struct *tty, int ldisc)
+ 	if (IS_ERR(ld))
+ 		return -1;
+ 
+-	WARN_ON_ONCE(tty_ldisc_wait_idle(tty));
+-
+ 	tty_ldisc_close(tty, tty->ldisc);
+ 	tty_ldisc_put(tty->ldisc);
+ 	tty->ldisc = NULL;
+@@ -839,7 +839,7 @@ void tty_ldisc_hangup(struct tty_struct *tty)
+ 	tty_unlock();
+ 	cancel_work_sync(&tty->buf.work);
+ 	mutex_unlock(&tty->ldisc_mutex);
+-
++retry:
+ 	tty_lock();
+ 	mutex_lock(&tty->ldisc_mutex);
+ 
+@@ -848,6 +848,22 @@ void tty_ldisc_hangup(struct tty_struct *tty)
+ 	   it means auditing a lot of other paths so this is
+ 	   a FIXME */
+ 	if (tty->ldisc) {	/* Not yet closed */
++		if (atomic_read(&tty->ldisc->users) != 1) {
++			char cur_n[TASK_COMM_LEN], tty_n[64];
++			long timeout = 3 * HZ;
++			tty_unlock();
++
++			while (tty_ldisc_wait_idle(tty, timeout) == -EBUSY) {
++				timeout = MAX_SCHEDULE_TIMEOUT;
++				printk_ratelimited(KERN_WARNING
++					"%s: waiting (%s) for %s took too long, but we keep waiting...\n",
++					__func__, get_task_comm(cur_n, current),
++					tty_name(tty, tty_n));
++			}
++			mutex_unlock(&tty->ldisc_mutex);
++			goto retry;
++		}
++
+ 		if (reset == 0) {
+ 
+ 			if (!tty_ldisc_reinit(tty, tty->termios->c_line))
+diff --git a/fs/nfs/dir.c b/fs/nfs/dir.c
+index f91c62d..462a006 100644
+--- a/fs/nfs/dir.c
++++ b/fs/nfs/dir.c
+@@ -1458,12 +1458,12 @@ static struct dentry *nfs_atomic_lookup(struct inode *dir, struct dentry *dentry
+ 				res = NULL;
+ 				goto out;
+ 			/* This turned out not to be a regular file */
++			case -EISDIR:
+ 			case -ENOTDIR:
+ 				goto no_open;
+ 			case -ELOOP:
+ 				if (!(nd->intent.open.flags & O_NOFOLLOW))
+ 					goto no_open;
+-			/* case -EISDIR: */
+ 			/* case -EINVAL: */
+ 			default:
+ 				res = ERR_CAST(inode);
+diff --git a/fs/nfs/file.c b/fs/nfs/file.c
+index 2f093ed..dd2f130 100644
+--- a/fs/nfs/file.c
++++ b/fs/nfs/file.c
+@@ -887,3 +887,35 @@ static int nfs_setlease(struct file *file, long arg, struct file_lock **fl)
+ 			file->f_path.dentry->d_name.name, arg);
+ 	return -EINVAL;
+ }
++
++#ifdef CONFIG_NFS_V4
++static int
++nfs4_file_open(struct inode *inode, struct file *filp)
++{
++	/*
++	 * NFSv4 opens are handled in d_lookup and d_revalidate. If we get to
++	 * this point, then something is very wrong
++	 */
++	dprintk("NFS: %s called! inode=%p filp=%p\n", __func__, inode, filp);
++	return -ENOTDIR;
++}
++
++const struct file_operations nfs4_file_operations = {
++	.llseek		= nfs_file_llseek,
++	.read		= do_sync_read,
++	.write		= do_sync_write,
++	.aio_read	= nfs_file_read,
++	.aio_write	= nfs_file_write,
++	.mmap		= nfs_file_mmap,
++	.open		= nfs4_file_open,
++	.flush		= nfs_file_flush,
++	.release	= nfs_file_release,
++	.fsync		= nfs_file_fsync,
++	.lock		= nfs_lock,
++	.flock		= nfs_flock,
++	.splice_read	= nfs_file_splice_read,
++	.splice_write	= nfs_file_splice_write,
++	.check_flags	= nfs_check_flags,
++	.setlease	= nfs_setlease,
++};
++#endif /* CONFIG_NFS_V4 */
+diff --git a/fs/nfs/inode.c b/fs/nfs/inode.c
+index 6f4850d..c48f9f6 100644
+--- a/fs/nfs/inode.c
++++ b/fs/nfs/inode.c
+@@ -291,7 +291,7 @@ nfs_fhget(struct super_block *sb, struct nfs_fh *fh, struct nfs_fattr *fattr)
+ 		 */
+ 		inode->i_op = NFS_SB(sb)->nfs_client->rpc_ops->file_inode_ops;
+ 		if (S_ISREG(inode->i_mode)) {
+-			inode->i_fop = &nfs_file_operations;
++			inode->i_fop = NFS_SB(sb)->nfs_client->rpc_ops->file_ops;
+ 			inode->i_data.a_ops = &nfs_file_aops;
+ 			inode->i_data.backing_dev_info = &NFS_SB(sb)->backing_dev_info;
+ 		} else if (S_ISDIR(inode->i_mode)) {
+diff --git a/fs/nfs/nfs3proc.c b/fs/nfs/nfs3proc.c
+index 38053d8..771741f 100644
+--- a/fs/nfs/nfs3proc.c
++++ b/fs/nfs/nfs3proc.c
+@@ -853,6 +853,7 @@ const struct nfs_rpc_ops nfs_v3_clientops = {
+ 	.dentry_ops	= &nfs_dentry_operations,
+ 	.dir_inode_ops	= &nfs3_dir_inode_operations,
+ 	.file_inode_ops	= &nfs3_file_inode_operations,
++	.file_ops	= &nfs_file_operations,
+ 	.getroot	= nfs3_proc_get_root,
+ 	.getattr	= nfs3_proc_getattr,
+ 	.setattr	= nfs3_proc_setattr,
+diff --git a/fs/nfs/nfs4proc.c b/fs/nfs/nfs4proc.c
+index 92cfd2e..a2a7d0a 100644
+--- a/fs/nfs/nfs4proc.c
++++ b/fs/nfs/nfs4proc.c
+@@ -6008,6 +6008,7 @@ const struct nfs_rpc_ops nfs_v4_clientops = {
+ 	.dentry_ops	= &nfs4_dentry_operations,
+ 	.dir_inode_ops	= &nfs4_dir_inode_operations,
+ 	.file_inode_ops	= &nfs4_file_inode_operations,
++	.file_ops	= &nfs4_file_operations,
+ 	.getroot	= nfs4_proc_get_root,
+ 	.getattr	= nfs4_proc_getattr,
+ 	.setattr	= nfs4_proc_setattr,
+diff --git a/fs/nfs/proc.c b/fs/nfs/proc.c
+index ac40b85..f48125d 100644
+--- a/fs/nfs/proc.c
++++ b/fs/nfs/proc.c
+@@ -710,6 +710,7 @@ const struct nfs_rpc_ops nfs_v2_clientops = {
+ 	.dentry_ops	= &nfs_dentry_operations,
+ 	.dir_inode_ops	= &nfs_dir_inode_operations,
+ 	.file_inode_ops	= &nfs_file_inode_operations,
++	.file_ops	= &nfs_file_operations,
+ 	.getroot	= nfs_proc_get_root,
+ 	.getattr	= nfs_proc_getattr,
+ 	.setattr	= nfs_proc_setattr,
+diff --git a/include/linux/nfs_fs.h b/include/linux/nfs_fs.h
+index b522370..acdc370 100644
+--- a/include/linux/nfs_fs.h
++++ b/include/linux/nfs_fs.h
+@@ -410,6 +410,9 @@ extern const struct inode_operations nfs_file_inode_operations;
+ extern const struct inode_operations nfs3_file_inode_operations;
+ #endif /* CONFIG_NFS_V3 */
+ extern const struct file_operations nfs_file_operations;
++#ifdef CONFIG_NFS_V4
++extern const struct file_operations nfs4_file_operations;
++#endif /* CONFIG_NFS_V4 */
+ extern const struct address_space_operations nfs_file_aops;
+ extern const struct address_space_operations nfs_dir_aops;
+ 
+diff --git a/include/linux/nfs_xdr.h b/include/linux/nfs_xdr.h
+index be2eba7..0012fc3 100644
+--- a/include/linux/nfs_xdr.h
++++ b/include/linux/nfs_xdr.h
+@@ -1149,6 +1149,7 @@ struct nfs_rpc_ops {
+ 	const struct dentry_operations *dentry_ops;
+ 	const struct inode_operations *dir_inode_ops;
+ 	const struct inode_operations *file_inode_ops;
++	const struct file_operations *file_ops;
+ 
+ 	int	(*getroot) (struct nfs_server *, struct nfs_fh *,
+ 			    struct nfs_fsinfo *);
