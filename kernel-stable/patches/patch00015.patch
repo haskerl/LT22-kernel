@@ -1,0 +1,12 @@
+diff --git a/net/core/dev.c b/net/core/dev.c
+index 9c58c1e..f14f601 100644
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -6105,6 +6105,7 @@ int dev_change_net_namespace(struct net_device *dev, struct net *net, const char
+ 	*/
+ 	call_netdevice_notifiers(NETDEV_UNREGISTER, dev);
+ 	call_netdevice_notifiers(NETDEV_UNREGISTER_BATCH, dev);
++	rtmsg_ifinfo(RTM_DELLINK, dev, ~0U);
+ 
+ 	/*
+ 	 *	Flush the unicast and multicast chains
