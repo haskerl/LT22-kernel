@@ -1,5 +1,7 @@
---- drivers/net/wireless/bcmdhd/wl_cfg80211.c
-+++ drivers/net/wireless/bcmdhd/wl_cfg80211.c
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index a7b88f8..00cbfaf 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
 @@ -2866,7 +2866,8 @@
  			if (memcmp(mac, curmacp, ETHER_ADDR_LEN)) {
  				WL_ERR(("Wrong Mac address: "MACSTR" != "MACSTR"\n",
