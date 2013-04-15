@@ -1,0 +1,191 @@
+diff --git a/arch/s390/kernel/ptrace.c b/arch/s390/kernel/ptrace.c
+index ef86ad2..ae0e14b 100644
+--- a/arch/s390/kernel/ptrace.c
++++ b/arch/s390/kernel/ptrace.c
+@@ -47,29 +47,31 @@ enum s390_regset {
+ 
+ void update_per_regs(struct task_struct *task)
+ {
+-	static const struct per_regs per_single_step = {
+-		.control = PER_EVENT_IFETCH,
+-		.start = 0,
+-		.end = PSW_ADDR_INSN,
+-	};
+ 	struct pt_regs *regs = task_pt_regs(task);
+ 	struct thread_struct *thread = &task->thread;
+-	const struct per_regs *new;
+-	struct per_regs old;
+-
+-	/* TIF_SINGLE_STEP overrides the user specified PER registers. */
+-	new = test_tsk_thread_flag(task, TIF_SINGLE_STEP) ?
+-		&per_single_step : &thread->per_user;
++	struct per_regs old, new;
++
++	/* Copy user specified PER registers */
++	new.control = thread->per_user.control;
++	new.start = thread->per_user.start;
++	new.end = thread->per_user.end;
++
++	/* merge TIF_SINGLE_STEP into user specified PER registers. */
++	if (test_tsk_thread_flag(task, TIF_SINGLE_STEP)) {
++		new.control |= PER_EVENT_IFETCH;
++		new.start = 0;
++		new.end = PSW_ADDR_INSN;
++	}
+ 
+ 	/* Take care of the PER enablement bit in the PSW. */
+-	if (!(new->control & PER_EVENT_MASK)) {
++	if (!(new.control & PER_EVENT_MASK)) {
+ 		regs->psw.mask &= ~PSW_MASK_PER;
+ 		return;
+ 	}
+ 	regs->psw.mask |= PSW_MASK_PER;
+ 	__ctl_store(old, 9, 11);
+-	if (memcmp(new, &old, sizeof(struct per_regs)) != 0)
+-		__ctl_load(*new, 9, 11);
++	if (memcmp(&new, &old, sizeof(struct per_regs)) != 0)
++		__ctl_load(new, 9, 11);
+ }
+ 
+ void user_enable_single_step(struct task_struct *task)
+diff --git a/arch/s390/mm/pgtable.c b/arch/s390/mm/pgtable.c
+index 37a23c22..458893f 100644
+--- a/arch/s390/mm/pgtable.c
++++ b/arch/s390/mm/pgtable.c
+@@ -291,8 +291,9 @@ void page_table_free_rcu(struct mmu_gather *tlb, unsigned long *table)
+ 
+ void __tlb_remove_table(void *_table)
+ {
+-	void *table = (void *)((unsigned long) _table & PAGE_MASK);
+-	unsigned type = (unsigned long) _table & ~PAGE_MASK;
++	const unsigned long mask = (FRAG_MASK << 4) | FRAG_MASK;
++	void *table = (void *)((unsigned long) _table & ~mask);
++	unsigned type = (unsigned long) _table & mask;
+ 
+ 	if (type)
+ 		__page_table_free_rcu(table, type);
+diff --git a/drivers/platform/x86/wmi.c b/drivers/platform/x86/wmi.c
+index f23d5a8..9b88be4 100644
+--- a/drivers/platform/x86/wmi.c
++++ b/drivers/platform/x86/wmi.c
+@@ -754,9 +754,13 @@ static void wmi_free_devices(void)
+ 	struct wmi_block *wblock, *next;
+ 
+ 	/* Delete devices for all the GUIDs */
+-	list_for_each_entry_safe(wblock, next, &wmi_block_list, list)
++	list_for_each_entry_safe(wblock, next, &wmi_block_list, list) {
++		list_del(&wblock->list);
+ 		if (wblock->dev.class)
+ 			device_unregister(&wblock->dev);
++		else
++			kfree(wblock);
++	}
+ }
+ 
+ static bool guid_already_parsed(const char *guid_string)
+diff --git a/drivers/s390/cio/ccwgroup.c b/drivers/s390/cio/ccwgroup.c
+index 5c56741..cda9bd6 100644
+--- a/drivers/s390/cio/ccwgroup.c
++++ b/drivers/s390/cio/ccwgroup.c
+@@ -87,6 +87,12 @@ static void __ccwgroup_remove_cdev_refs(struct ccwgroup_device *gdev)
+ 	}
+ }
+ 
++static ssize_t ccwgroup_online_store(struct device *dev,
++				     struct device_attribute *attr,
++				     const char *buf, size_t count);
++static ssize_t ccwgroup_online_show(struct device *dev,
++				    struct device_attribute *attr,
++				    char *buf);
+ /*
+  * Provide an 'ungroup' attribute so the user can remove group devices no
+  * longer needed or accidentially created. Saves memory :)
+@@ -134,6 +140,20 @@ out:
+ }
+ 
+ static DEVICE_ATTR(ungroup, 0200, NULL, ccwgroup_ungroup_store);
++static DEVICE_ATTR(online, 0644, ccwgroup_online_show, ccwgroup_online_store);
++
++static struct attribute *ccwgroup_attrs[] = {
++	&dev_attr_online.attr,
++	&dev_attr_ungroup.attr,
++	NULL,
++};
++static struct attribute_group ccwgroup_attr_group = {
++	.attrs = ccwgroup_attrs,
++};
++static const struct attribute_group *ccwgroup_attr_groups[] = {
++	&ccwgroup_attr_group,
++	NULL,
++};
+ 
+ static void
+ ccwgroup_release (struct device *dev)
+@@ -293,25 +313,17 @@ int ccwgroup_create_from_string(struct device *root, unsigned int creator_id,
+ 	}
+ 
+ 	dev_set_name(&gdev->dev, "%s", dev_name(&gdev->cdev[0]->dev));
+-
++	gdev->dev.groups = ccwgroup_attr_groups;
+ 	rc = device_add(&gdev->dev);
+ 	if (rc)
+ 		goto error;
+ 	get_device(&gdev->dev);
+-	rc = device_create_file(&gdev->dev, &dev_attr_ungroup);
+-
+-	if (rc) {
+-		device_unregister(&gdev->dev);
+-		goto error;
+-	}
+-
+ 	rc = __ccwgroup_create_symlinks(gdev);
+ 	if (!rc) {
+ 		mutex_unlock(&gdev->reg_mutex);
+ 		put_device(&gdev->dev);
+ 		return 0;
+ 	}
+-	device_remove_file(&gdev->dev, &dev_attr_ungroup);
+ 	device_unregister(&gdev->dev);
+ error:
+ 	for (i = 0; i < num_devices; i++)
+@@ -423,7 +435,7 @@ ccwgroup_online_store (struct device *dev, struct device_attribute *attr, const
+ 	int ret;
+ 
+ 	if (!dev->driver)
+-		return -ENODEV;
++		return -EINVAL;
+ 
+ 	gdev = to_ccwgroupdev(dev);
+ 	gdrv = to_ccwgroupdrv(dev->driver);
+@@ -456,8 +468,6 @@ ccwgroup_online_show (struct device *dev, struct device_attribute *attr, char *b
+ 	return sprintf(buf, online ? "1\n" : "0\n");
+ }
+ 
+-static DEVICE_ATTR(online, 0644, ccwgroup_online_show, ccwgroup_online_store);
+-
+ static int
+ ccwgroup_probe (struct device *dev)
+ {
+@@ -469,12 +479,7 @@ ccwgroup_probe (struct device *dev)
+ 	gdev = to_ccwgroupdev(dev);
+ 	gdrv = to_ccwgroupdrv(dev->driver);
+ 
+-	if ((ret = device_create_file(dev, &dev_attr_online)))
+-		return ret;
+-
+ 	ret = gdrv->probe ? gdrv->probe(gdev) : -ENODEV;
+-	if (ret)
+-		device_remove_file(dev, &dev_attr_online);
+ 
+ 	return ret;
+ }
+@@ -485,9 +490,6 @@ ccwgroup_remove (struct device *dev)
+ 	struct ccwgroup_device *gdev;
+ 	struct ccwgroup_driver *gdrv;
+ 
+-	device_remove_file(dev, &dev_attr_online);
+-	device_remove_file(dev, &dev_attr_ungroup);
+-
+ 	if (!dev->driver)
+ 		return 0;
+ 
