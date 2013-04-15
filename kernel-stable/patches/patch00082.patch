@@ -1,0 +1,143 @@
+diff --git a/drivers/base/core.c b/drivers/base/core.c
+index bc8729d..78445f4 100644
+--- a/drivers/base/core.c
++++ b/drivers/base/core.c
+@@ -22,6 +22,7 @@
+ #include <linux/kallsyms.h>
+ #include <linux/mutex.h>
+ #include <linux/async.h>
++#include <linux/pm_runtime.h>
+ 
+ #include "base.h"
+ #include "power/power.h"
+@@ -1742,6 +1743,8 @@ void device_shutdown(void)
+ 		 */
+ 		list_del_init(&dev->kobj.entry);
+ 		spin_unlock(&devices_kset->list_lock);
++		/* Disable all device's runtime power management */
++		pm_runtime_disable(dev);
+ 
+ 		if (dev->bus && dev->bus->shutdown) {
+ 			dev_dbg(dev, "shutdown\n");
+diff --git a/net/ipv6/ip6_tunnel.c b/net/ipv6/ip6_tunnel.c
+index 36c2842..848e494 100644
+--- a/net/ipv6/ip6_tunnel.c
++++ b/net/ipv6/ip6_tunnel.c
+@@ -289,6 +289,8 @@ static struct ip6_tnl *ip6_tnl_create(struct net *net, struct ip6_tnl_parm *p)
+ 	if ((err = register_netdevice(dev)) < 0)
+ 		goto failed_free;
+ 
++	strcpy(t->parms.name, dev->name);
++
+ 	dev_hold(dev);
+ 	ip6_tnl_link(ip6n, t);
+ 	return t;
+@@ -1397,7 +1399,6 @@ ip6_tnl_dev_init_gen(struct net_device *dev)
+ 	struct ip6_tnl *t = netdev_priv(dev);
+ 
+ 	t->dev = dev;
+-	strcpy(t->parms.name, dev->name);
+ 	dev->tstats = alloc_percpu(struct pcpu_tstats);
+ 	if (!dev->tstats)
+ 		return -ENOMEM;
+@@ -1477,6 +1478,7 @@ static void __net_exit ip6_tnl_destroy_tunnels(struct ip6_tnl_net *ip6n)
+ static int __net_init ip6_tnl_init_net(struct net *net)
+ {
+ 	struct ip6_tnl_net *ip6n = net_generic(net, ip6_tnl_net_id);
++	struct ip6_tnl *t = NULL;
+ 	int err;
+ 
+ 	ip6n->tnls[0] = ip6n->tnls_wc;
+@@ -1497,6 +1499,10 @@ static int __net_init ip6_tnl_init_net(struct net *net)
+ 	err = register_netdev(ip6n->fb_tnl_dev);
+ 	if (err < 0)
+ 		goto err_register;
++
++	t = netdev_priv(ip6n->fb_tnl_dev);
++
++	strcpy(t->parms.name, ip6n->fb_tnl_dev->name);
+ 	return 0;
+ 
+ err_register:
+diff --git a/net/mac80211/rx.c b/net/mac80211/rx.c
+index 7fa8c6b..378bd67 100644
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -140,8 +140,9 @@ ieee80211_add_rx_radiotap_header(struct ieee80211_local *local,
+ 	pos++;
+ 
+ 	/* IEEE80211_RADIOTAP_RATE */
+-	if (status->flag & RX_FLAG_HT) {
++	if (!rate || status->flag & RX_FLAG_HT) {
+ 		/*
++		 * Without rate information don't add it. If we have,
+ 		 * MCS information is a separate field in radiotap,
+ 		 * added below. The byte here is needed as padding
+ 		 * for the channel though, so initialise it to 0.
+@@ -162,12 +163,14 @@ ieee80211_add_rx_radiotap_header(struct ieee80211_local *local,
+ 	else if (status->flag & RX_FLAG_HT)
+ 		put_unaligned_le16(IEEE80211_CHAN_DYN | IEEE80211_CHAN_2GHZ,
+ 				   pos);
+-	else if (rate->flags & IEEE80211_RATE_ERP_G)
++	else if (rate && rate->flags & IEEE80211_RATE_ERP_G)
+ 		put_unaligned_le16(IEEE80211_CHAN_OFDM | IEEE80211_CHAN_2GHZ,
+ 				   pos);
+-	else
++	else if (rate)
+ 		put_unaligned_le16(IEEE80211_CHAN_CCK | IEEE80211_CHAN_2GHZ,
+ 				   pos);
++	else
++		put_unaligned_le16(IEEE80211_CHAN_2GHZ, pos);
+ 	pos += 2;
+ 
+ 	/* IEEE80211_RADIOTAP_DBM_ANTSIGNAL */
+diff --git a/net/mac80211/util.c b/net/mac80211/util.c
+index d3fe2d2..2124db8 100644
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -1047,6 +1047,8 @@ struct sk_buff *ieee80211_build_probe_req(struct ieee80211_sub_if_data *sdata,
+ 	skb = ieee80211_probereq_get(&local->hw, &sdata->vif,
+ 				     ssid, ssid_len,
+ 				     buf, buf_len);
++	if (!skb)
++		goto out;
+ 
+ 	if (dst) {
+ 		mgmt = (struct ieee80211_mgmt *) skb->data;
+@@ -1055,6 +1057,8 @@ struct sk_buff *ieee80211_build_probe_req(struct ieee80211_sub_if_data *sdata,
+ 	}
+ 
+ 	IEEE80211_SKB_CB(skb)->flags |= IEEE80211_TX_INTFL_DONT_ENCRYPT;
++
++ out:
+ 	kfree(buf);
+ 
+ 	return skb;
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index 1ac9443..3dac76f 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -126,8 +126,7 @@ static const struct nla_policy nl80211_policy[NL80211_ATTR_MAX+1] = {
+ 	[NL80211_ATTR_MESH_CONFIG] = { .type = NLA_NESTED },
+ 	[NL80211_ATTR_SUPPORT_MESH_AUTH] = { .type = NLA_FLAG },
+ 
+-	[NL80211_ATTR_HT_CAPABILITY] = { .type = NLA_BINARY,
+-					 .len = NL80211_HT_CAPABILITY_LEN },
++	[NL80211_ATTR_HT_CAPABILITY] = { .len = NL80211_HT_CAPABILITY_LEN },
+ 
+ 	[NL80211_ATTR_MGMT_SUBTYPE] = { .type = NLA_U8 },
+ 	[NL80211_ATTR_IE] = { .type = NLA_BINARY,
+diff --git a/net/wireless/reg.c b/net/wireless/reg.c
+index 379574c..213103e 100644
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -2254,6 +2254,9 @@ void /* __init_or_exit */ regulatory_exit(void)
+ 
+ 	kfree(last_request);
+ 
++	last_request = NULL;
++	dev_set_uevent_suppress(&reg_pdev->dev, true);
++
+ 	platform_device_unregister(reg_pdev);
+ 
+ 	spin_lock_bh(&reg_pending_beacons_lock);
