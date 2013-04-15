@@ -1,0 +1,33 @@
+diff --git a/net/bridge/br_device.c b/net/bridge/br_device.c
+index 32b8f9f..ff3ed60 100644
+--- a/net/bridge/br_device.c
++++ b/net/bridge/br_device.c
+@@ -91,7 +91,6 @@ static int br_dev_open(struct net_device *dev)
+ {
+ 	struct net_bridge *br = netdev_priv(dev);
+ 
+-	netif_carrier_off(dev);
+ 	netdev_update_features(dev);
+ 	netif_start_queue(dev);
+ 	br_stp_enable_bridge(br);
+@@ -108,8 +107,6 @@ static int br_dev_stop(struct net_device *dev)
+ {
+ 	struct net_bridge *br = netdev_priv(dev);
+ 
+-	netif_carrier_off(dev);
+-
+ 	br_stp_disable_bridge(br);
+ 	br_multicast_stop(br);
+ 
+diff --git a/net/core/sock.c b/net/core/sock.c
+index 6e81978..aebb419 100644
+--- a/net/core/sock.c
++++ b/net/core/sock.c
+@@ -1257,6 +1257,7 @@ struct sock *sk_clone(const struct sock *sk, const gfp_t priority)
+ 			/* It is still raw copy of parent, so invalidate
+ 			 * destructor and make plain sk_free() */
+ 			newsk->sk_destruct = NULL;
++			bh_unlock_sock(newsk);
+ 			sk_free(newsk);
+ 			newsk = NULL;
+ 			goto out;
