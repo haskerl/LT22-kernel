@@ -1,0 +1,198 @@
+diff --git a/fs/namei.c b/fs/namei.c
+index b456c7a..49472a1 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -136,7 +136,7 @@ static int do_getname(const char __user *filename, char *page)
+ 	return retval;
+ }
+ 
+-static char *getname_flags(const char __user * filename, int flags)
++static char *getname_flags(const char __user *filename, int flags, int *empty)
+ {
+ 	char *tmp, *result;
+ 
+@@ -147,6 +147,8 @@ static char *getname_flags(const char __user * filename, int flags)
+ 
+ 		result = tmp;
+ 		if (retval < 0) {
++			if (retval == -ENOENT && empty)
++				*empty = 1;
+ 			if (retval != -ENOENT || !(flags & LOOKUP_EMPTY)) {
+ 				__putname(tmp);
+ 				result = ERR_PTR(retval);
+@@ -159,7 +161,7 @@ static char *getname_flags(const char __user * filename, int flags)
+ 
+ char *getname(const char __user * filename)
+ {
+-	return getname_flags(filename, 0);
++	return getname_flags(filename, 0, 0);
+ }
+ 
+ #ifdef CONFIG_AUDITSYSCALL
+@@ -779,17 +781,20 @@ static int follow_automount(struct path *path, unsigned flags,
+ 	if ((flags & LOOKUP_NO_AUTOMOUNT) && !(flags & LOOKUP_CONTINUE))
+ 		return -EISDIR; /* we actually want to stop here */
+ 
+-	/* We want to mount if someone is trying to open/create a file of any
+-	 * type under the mountpoint, wants to traverse through the mountpoint
+-	 * or wants to open the mounted directory.
++	/* We don't want to mount if someone's just doing a stat -
++	 * unless they're stat'ing a directory and appended a '/' to
++	 * the name.
+ 	 *
+-	 * We don't want to mount if someone's just doing a stat and they've
+-	 * set AT_SYMLINK_NOFOLLOW - unless they're stat'ing a directory and
+-	 * appended a '/' to the name.
++	 * We do, however, want to mount if someone wants to open or
++	 * create a file of any type under the mountpoint, wants to
++	 * traverse through the mountpoint or wants to open the
++	 * mounted directory.  Also, autofs may mark negative dentries
++	 * as being automount points.  These will need the attentions
++	 * of the daemon to instantiate them before they can be used.
+ 	 */
+-	if (!(flags & LOOKUP_FOLLOW) &&
+-	    !(flags & (LOOKUP_CONTINUE | LOOKUP_DIRECTORY |
+-		       LOOKUP_OPEN | LOOKUP_CREATE)))
++	if (!(flags & (LOOKUP_CONTINUE | LOOKUP_DIRECTORY |
++		     LOOKUP_OPEN | LOOKUP_CREATE | LOOKUP_AUTOMOUNT)) &&
++	    path->dentry->d_inode)
+ 		return -EISDIR;
+ 
+ 	current->total_link_count++;
+@@ -1747,11 +1752,11 @@ struct dentry *lookup_one_len(const char *name, struct dentry *base, int len)
+ 	return __lookup_hash(&this, base, NULL);
+ }
+ 
+-int user_path_at(int dfd, const char __user *name, unsigned flags,
+-		 struct path *path)
++int user_path_at_empty(int dfd, const char __user *name, unsigned flags,
++		 struct path *path, int *empty)
+ {
+ 	struct nameidata nd;
+-	char *tmp = getname_flags(name, flags);
++	char *tmp = getname_flags(name, flags, empty);
+ 	int err = PTR_ERR(tmp);
+ 	if (!IS_ERR(tmp)) {
+ 
+@@ -1765,6 +1770,12 @@ int user_path_at(int dfd, const char __user *name, unsigned flags,
+ 	return err;
+ }
+ 
++int user_path_at(int dfd, const char __user *name, unsigned flags,
++		 struct path *path)
++{
++	return user_path_at_empty(dfd, name, flags, path, 0);
++}
++
+ static int user_path_parent(int dfd, const char __user *path,
+ 			struct nameidata *nd, char **name)
+ {
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 304a55d..537dd96 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -1758,7 +1758,7 @@ static int do_loopback(struct path *path, char *old_name,
+ 		return err;
+ 	if (!old_name || !*old_name)
+ 		return -EINVAL;
+-	err = kern_path(old_name, LOOKUP_FOLLOW, &old_path);
++	err = kern_path(old_name, LOOKUP_FOLLOW|LOOKUP_AUTOMOUNT, &old_path);
+ 	if (err)
+ 		return err;
+ 
+diff --git a/fs/nfs/super.c b/fs/nfs/super.c
+index ce40e5c..858d31b 100644
+--- a/fs/nfs/super.c
++++ b/fs/nfs/super.c
+@@ -2793,7 +2793,7 @@ static struct dentry *nfs_follow_remote_path(struct vfsmount *root_mnt,
+ 		goto out_put_mnt_ns;
+ 
+ 	ret = vfs_path_lookup(root_mnt->mnt_root, root_mnt,
+-			export_path, LOOKUP_FOLLOW, nd);
++			export_path, LOOKUP_FOLLOW|LOOKUP_AUTOMOUNT, nd);
+ 
+ 	nfs_referral_loop_unprotect();
+ 	put_mnt_ns(ns_private);
+diff --git a/fs/quota/quota.c b/fs/quota/quota.c
+index b34bdb2..10b6be3 100644
+--- a/fs/quota/quota.c
++++ b/fs/quota/quota.c
+@@ -355,7 +355,7 @@ SYSCALL_DEFINE4(quotactl, unsigned int, cmd, const char __user *, special,
+ 	 * resolution (think about autofs) and thus deadlocks could arise.
+ 	 */
+ 	if (cmds == Q_QUOTAON) {
+-		ret = user_path_at(AT_FDCWD, addr, LOOKUP_FOLLOW, &path);
++		ret = user_path_at(AT_FDCWD, addr, LOOKUP_FOLLOW|LOOKUP_AUTOMOUNT, &path);
+ 		if (ret)
+ 			pathp = ERR_PTR(ret);
+ 		else
+diff --git a/fs/stat.c b/fs/stat.c
+index 9610391..02a6061 100644
+--- a/fs/stat.c
++++ b/fs/stat.c
+@@ -296,15 +296,16 @@ SYSCALL_DEFINE4(readlinkat, int, dfd, const char __user *, pathname,
+ {
+ 	struct path path;
+ 	int error;
++	int empty = 0;
+ 
+ 	if (bufsiz <= 0)
+ 		return -EINVAL;
+ 
+-	error = user_path_at(dfd, pathname, LOOKUP_EMPTY, &path);
++	error = user_path_at_empty(dfd, pathname, LOOKUP_EMPTY, &path, &empty);
+ 	if (!error) {
+ 		struct inode *inode = path.dentry->d_inode;
+ 
+-		error = -EINVAL;
++		error = empty ? -ENOENT : -EINVAL;
+ 		if (inode->i_op->readlink) {
+ 			error = security_inode_readlink(path.dentry);
+ 			if (!error) {
+diff --git a/include/linux/namei.h b/include/linux/namei.h
+index eba45ea..82ab16b 100644
+--- a/include/linux/namei.h
++++ b/include/linux/namei.h
+@@ -49,6 +49,7 @@ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
+ #define LOOKUP_FOLLOW		0x0001
+ #define LOOKUP_DIRECTORY	0x0002
+ #define LOOKUP_CONTINUE		0x0004
++#define LOOKUP_AUTOMOUNT	0x0008
+ 
+ #define LOOKUP_PARENT		0x0010
+ #define LOOKUP_REVAL		0x0020
+@@ -67,6 +68,7 @@ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
+ #define LOOKUP_EMPTY		0x4000
+ 
+ extern int user_path_at(int, const char __user *, unsigned, struct path *);
++extern int user_path_at_empty(int, const char __user *, unsigned, struct path *, int *empty);
+ 
+ #define user_path(name, path) user_path_at(AT_FDCWD, name, LOOKUP_FOLLOW, path)
+ #define user_lpath(name, path) user_path_at(AT_FDCWD, name, 0, path)
+diff --git a/kernel/signal.c b/kernel/signal.c
+index 415d85d..43fee1c 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -1894,21 +1894,19 @@ static int do_signal_stop(int signr)
+ 		 */
+ 		if (!(sig->flags & SIGNAL_STOP_STOPPED))
+ 			sig->group_exit_code = signr;
+-		else
+-			WARN_ON_ONCE(!task_ptrace(current));
+ 
+ 		current->group_stop &= ~GROUP_STOP_SIGMASK;
+ 		current->group_stop |= signr | gstop;
+ 		sig->group_stop_count = 1;
+ 		for (t = next_thread(current); t != current;
+ 		     t = next_thread(t)) {
+-			t->group_stop &= ~GROUP_STOP_SIGMASK;
+ 			/*
+ 			 * Setting state to TASK_STOPPED for a group
+ 			 * stop is always done with the siglock held,
+ 			 * so this check has no races.
+ 			 */
+ 			if (!(t->flags & PF_EXITING) && !task_is_stopped(t)) {
++				t->group_stop &= ~GROUP_STOP_SIGMASK;
+ 				t->group_stop |= signr | gstop;
+ 				sig->group_stop_count++;
+ 				signal_wake_up(t, 0);
