@@ -1,0 +1,66 @@
+diff --git a/include/linux/ftrace.h b/include/linux/ftrace.h
+index 9d88e1c..ed0eb52 100644
+--- a/include/linux/ftrace.h
++++ b/include/linux/ftrace.h
+@@ -123,7 +123,8 @@
+ struct ftrace_func_command {
+ 	struct list_head	list;
+ 	char			*name;
+-	int			(*func)(char *func, char *cmd,
++	int			(*func)(struct ftrace_hash *hash,
++					char *func, char *cmd,
+ 					char *params, int enable);
+ };
+ 
+diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
+index 908038f..1c4c0b0 100644
+--- a/kernel/trace/ftrace.c
++++ b/kernel/trace/ftrace.c
+@@ -2407,10 +2407,9 @@
+  */
+ 
+ static int
+-ftrace_mod_callback(char *func, char *cmd, char *param, int enable)
++ftrace_mod_callback(struct ftrace_hash *hash,
++		    char *func, char *cmd, char *param, int enable)
+ {
+-	struct ftrace_ops *ops = &global_ops;
+-	struct ftrace_hash *hash;
+ 	char *mod;
+ 	int ret = -EINVAL;
+ 
+@@ -2429,11 +2428,6 @@
+ 	mod = strsep(&param, ":");
+ 	if (!strlen(mod))
+ 		return ret;
+-
+-	if (enable)
+-		hash = ops->filter_hash;
+-	else
+-		hash = ops->notrace_hash;
+ 
+ 	ret = ftrace_match_module_records(hash, func, mod);
+ 	if (!ret)
+@@ -2760,7 +2754,7 @@
+ 	mutex_lock(&ftrace_cmd_mutex);
+ 	list_for_each_entry(p, &ftrace_commands, list) {
+ 		if (strcmp(p->name, command) == 0) {
+-			ret = p->func(func, command, next, enable);
++			ret = p->func(hash, func, command, next, enable);
+ 			goto out_unlock;
+ 		}
+ 	}
+diff --git a/kernel/trace/trace_functions.c b/kernel/trace/trace_functions.c
+index 8d0e1cc..c7b0c6a 100644
+--- a/kernel/trace/trace_functions.c
++++ b/kernel/trace/trace_functions.c
+@@ -324,7 +324,8 @@
+ }
+ 
+ static int
+-ftrace_trace_onoff_callback(char *glob, char *cmd, char *param, int enable)
++ftrace_trace_onoff_callback(struct ftrace_hash *hash,
++			    char *glob, char *cmd, char *param, int enable)
+ {
+ 	struct ftrace_probe_ops *ops;
+ 	void *count = (void *)-1;
