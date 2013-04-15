@@ -1345,10 +1345,8 @@ static void handle_port_status(struct xhci_hcd *xhci,
 			xhci_ring_device(xhci, slot_id);
 			xhci_dbg(xhci, "resume SS port %d finished\n", port_id);
 			/* Clear PORT_PLC */
-			temp = xhci_readl(xhci, port_array[faked_port_index]);
-			temp = xhci_port_state_to_neutral(temp);
-			temp |= PORT_PLC;
-			xhci_writel(xhci, temp, port_array[faked_port_index]);
+			xhci_test_and_clear_bit(xhci, port_array,
+						faked_port_index, PORT_PLC);
 		} else {
 			xhci_dbg(xhci, "resume HS port %d\n", port_id);
 			bus_state->resume_done[faked_port_index] = jiffies +
@@ -1358,6 +1356,10 @@ static void handle_port_status(struct xhci_hcd *xhci,
 			/* Do the rest in GetPortStatus */
 		}
 	}
+
+	if (hcd->speed != HCD_USB3)
+		xhci_test_and_clear_bit(xhci, port_array, faked_port_index,
+					PORT_PLC);
 
 cleanup:
 	/* Update event ring dequeue pointer before dropping the lock */

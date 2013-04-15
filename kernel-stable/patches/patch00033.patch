@@ -1,0 +1,128 @@
+diff --git a/drivers/usb/host/xhci-hub.c b/drivers/usb/host/xhci-hub.c
+index 723f823..ce9f974 100644
+--- a/drivers/usb/host/xhci-hub.c
++++ b/drivers/usb/host/xhci-hub.c
+@@ -392,6 +392,20 @@ static int xhci_get_ports(struct usb_hcd *hcd, __le32 __iomem ***port_array)
+ 	return max_ports;
+ }
+ 
++/* Test and clear port RWC bit */
++void xhci_test_and_clear_bit(struct xhci_hcd *xhci, __le32 __iomem **port_array,
++				int port_id, u32 port_bit)
++{
++	u32 temp;
++
++	temp = xhci_readl(xhci, port_array[port_id]);
++	if (temp & port_bit) {
++		temp = xhci_port_state_to_neutral(temp);
++		temp |= port_bit;
++		xhci_writel(xhci, temp, port_array[port_id]);
++	}
++}
++
+ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
+ 		u16 wIndex, char *buf, u16 wLength)
+ {
+@@ -938,12 +952,8 @@ int xhci_bus_resume(struct usb_hcd *hcd)
+ 			spin_lock_irqsave(&xhci->lock, flags);
+ 
+ 			/* Clear PLC */
+-			temp = xhci_readl(xhci, port_array[port_index]);
+-			if (temp & PORT_PLC) {
+-				temp = xhci_port_state_to_neutral(temp);
+-				temp |= PORT_PLC;
+-				xhci_writel(xhci, temp, port_array[port_index]);
+-			}
++			xhci_test_and_clear_bit(xhci, port_array, port_index,
++						PORT_PLC);
+ 
+ 			slot_id = xhci_find_slot_id_by_port(hcd,
+ 					xhci, port_index + 1);
+diff --git a/drivers/usb/host/xhci-ring.c b/drivers/usb/host/xhci-ring.c
+index b689397..b20d2f7 100644
+--- a/drivers/usb/host/xhci-ring.c
++++ b/drivers/usb/host/xhci-ring.c
+@@ -1347,10 +1347,8 @@ static void handle_port_status(struct xhci_hcd *xhci,
+ 			xhci_ring_device(xhci, slot_id);
+ 			xhci_dbg(xhci, "resume SS port %d finished\n", port_id);
+ 			/* Clear PORT_PLC */
+-			temp = xhci_readl(xhci, port_array[faked_port_index]);
+-			temp = xhci_port_state_to_neutral(temp);
+-			temp |= PORT_PLC;
+-			xhci_writel(xhci, temp, port_array[faked_port_index]);
++			xhci_test_and_clear_bit(xhci, port_array,
++						faked_port_index, PORT_PLC);
+ 		} else {
+ 			xhci_dbg(xhci, "resume HS port %d\n", port_id);
+ 			bus_state->resume_done[faked_port_index] = jiffies +
+@@ -1361,6 +1359,10 @@ static void handle_port_status(struct xhci_hcd *xhci,
+ 		}
+ 	}
+ 
++	if (hcd->speed != HCD_USB3)
++		xhci_test_and_clear_bit(xhci, port_array, faked_port_index,
++					PORT_PLC);
++
+ cleanup:
+ 	/* Update event ring dequeue pointer before dropping the lock */
+ 	inc_deq(xhci, xhci->event_ring, true);
+diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
+index 7ea48b3..fb61e9d 100644
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -1889,6 +1889,12 @@ int xhci_check_bandwidth(struct usb_hcd *hcd, struct usb_device *udev)
+ 	ctrl_ctx->add_flags |= cpu_to_le32(SLOT_FLAG);
+ 	ctrl_ctx->add_flags &= cpu_to_le32(~EP0_FLAG);
+ 	ctrl_ctx->drop_flags &= cpu_to_le32(~(SLOT_FLAG | EP0_FLAG));
++
++	/* Don't issue the command if there's no endpoints to update. */
++	if (ctrl_ctx->add_flags == cpu_to_le32(SLOT_FLAG) &&
++			ctrl_ctx->drop_flags == 0)
++		return 0;
++
+ 	xhci_dbg(xhci, "New Input Control Context:\n");
+ 	slot_ctx = xhci_get_slot_ctx(xhci, virt_dev->in_ctx);
+ 	xhci_dbg_ctx(xhci, virt_dev->in_ctx,
+diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
+index 8a98416..49ce76c 100644
+--- a/drivers/usb/host/xhci.h
++++ b/drivers/usb/host/xhci.h
+@@ -1566,6 +1566,8 @@ void xhci_ring_ep_doorbell(struct xhci_hcd *xhci, unsigned int slot_id,
+ 		unsigned int ep_index, unsigned int stream_id);
+ 
+ /* xHCI roothub code */
++void xhci_test_and_clear_bit(struct xhci_hcd *xhci, __le32 __iomem **port_array,
++				int port_id, u32 port_bit);
+ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue, u16 wIndex,
+ 		char *buf, u16 wLength);
+ int xhci_hub_status_data(struct usb_hcd *hcd, char *buf);
+diff --git a/drivers/usb/storage/usb.c b/drivers/usb/storage/usb.c
+index 0ca0958..c325e69 100644
+--- a/drivers/usb/storage/usb.c
++++ b/drivers/usb/storage/usb.c
+@@ -831,12 +831,22 @@ static int usb_stor_scan_thread(void * __us)
+ 
+ 	dev_dbg(dev, "device found\n");
+ 
+-	set_freezable();
+-	/* Wait for the timeout to expire or for a disconnect */
++	set_freezable_with_signal();
++	/*
++	 * Wait for the timeout to expire or for a disconnect
++	 *
++	 * We can't freeze in this thread or we risk causing khubd to
++	 * fail to freeze, but we can't be non-freezable either. Nor can
++	 * khubd freeze while waiting for scanning to complete as it may
++	 * hold the device lock, causing a hang when suspending devices.
++	 * So we request a fake signal when freezing and use
++	 * interruptible sleep to kick us out of our wait early when
++	 * freezing happens.
++	 */
+ 	if (delay_use > 0) {
+ 		dev_dbg(dev, "waiting for device to settle "
+ 				"before scanning\n");
+-		wait_event_freezable_timeout(us->delay_wait,
++		wait_event_interruptible_timeout(us->delay_wait,
+ 				test_bit(US_FLIDX_DONT_SCAN, &us->dflags),
+ 				delay_use * HZ);
+ 	}
