@@ -1,0 +1,19 @@
+diff --git a/mm/migrate.c b/mm/migrate.c
+index 666e4e6..14d0a6a 100644
+--- a/mm/migrate.c
++++ b/mm/migrate.c
+@@ -120,10 +120,10 @@
+ 
+ 		ptep = pte_offset_map(pmd, addr);
+ 
+-		if (!is_swap_pte(*ptep)) {
+-			pte_unmap(ptep);
+-			goto out;
+-		}
++		/*
++		 * Peek to check is_swap_pte() before taking ptlock?  No, we
++		 * can race mremap's move_ptes(), which skips anon_vma lock.
++		 */
+ 
+ 		ptl = pte_lockptr(mm, pmd);
+ 	}
