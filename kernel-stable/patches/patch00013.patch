@@ -1,0 +1,36 @@
+diff --git a/lib/kobject_uevent.c b/lib/kobject_uevent.c
+index 70af0a7..ad72a03 100644
+--- a/lib/kobject_uevent.c
++++ b/lib/kobject_uevent.c
+@@ -282,7 +282,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
+ 							    kobj_bcast_filter,
+ 							    kobj);
+ 			/* ENOBUFS should be handled in userspace */
+-			if (retval == -ENOBUFS)
++			if (retval == -ENOBUFS || retval == -ESRCH)
+ 				retval = 0;
+ 		} else
+ 			retval = -ENOMEM;
+diff --git a/net/caif/caif_dev.c b/net/caif/caif_dev.c
+index 682c0fe..dbdaa95 100644
+--- a/net/caif/caif_dev.c
++++ b/net/caif/caif_dev.c
+@@ -209,8 +209,7 @@ static int caif_device_notify(struct notifier_block *me, unsigned long what,
+ 	enum cfcnfg_phy_preference pref;
+ 	enum cfcnfg_phy_type phy_type;
+ 	struct cfcnfg *cfg;
+-	struct caif_device_entry_list *caifdevs =
+-	    caif_device_list(dev_net(dev));
++	struct caif_device_entry_list *caifdevs;
+ 
+ 	if (dev->type != ARPHRD_CAIF)
+ 		return 0;
+@@ -219,6 +218,8 @@ static int caif_device_notify(struct notifier_block *me, unsigned long what,
+ 	if (cfg == NULL)
+ 		return 0;
+ 
++	caifdevs = caif_device_list(dev_net(dev));
++
+ 	switch (what) {
+ 	case NETDEV_REGISTER:
+ 		caifd = caif_device_alloc(dev);
