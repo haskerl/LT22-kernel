@@ -70,7 +70,7 @@ struct fiq_debugger_state {
 	bool debug_enable;
 	bool ignore_next_wakeup_irq;
 	struct timer_list sleep_timer;
-	bool uart_clk_enabled;
+	bool uart_enabled;
 	struct wake_lock debugger_wake_lock;
 	bool console_enable;
 	int current_cpu;
@@ -140,6 +140,22 @@ static void debug_force_irq(struct fiq_debugger_state *state)
 		if (chip && chip->irq_retrigger)
 			chip->irq_retrigger(irq_get_irq_data(irq));
 	}
+}
+
+static void debug_uart_enable(struct fiq_debugger_state *state)
+{
+	if (state->clk)
+		clk_enable(state->clk);
+	if (state->pdata->uart_enable)
+		state->pdata->uart_enable(state->pdev);
+}
+
+static void debug_uart_disable(struct fiq_debugger_state *state)
+{
+	if (state->pdata->uart_disable)
+		state->pdata->uart_disable(state->pdev);
+	if (state->clk)
+		clk_disable(state->clk);
 }
 
 static void debug_uart_flush(struct fiq_debugger_state *state)
@@ -605,15 +621,14 @@ static void sleep_timer_expired(unsigned long data)
 {
 	struct fiq_debugger_state *state = (struct fiq_debugger_state *)data;
 
-	if (state->uart_clk_enabled && !state->no_sleep) {
+	if (state->uart_enabled && !state->no_sleep) {
 		if (state->debug_enable && !state->console_enable) {
 			state->debug_enable = false;
 			debug_printf_nfiq(state, "suspending fiq debugger\n");
 		}
 		state->ignore_next_wakeup_irq = true;
-		if (state->clk)
-			clk_disable(state->clk);
-		state->uart_clk_enabled = false;
+		debug_uart_disable(state);
+		state->uart_enabled = false;
 		enable_wakeup_irq(state);
 	}
 	wake_unlock(&state->debugger_wake_lock);
@@ -627,11 +642,9 @@ static irqreturn_t wakeup_irq_handler(int irq, void *dev)
 		debug_puts(state, "WAKEUP\n");
 	if (state->ignore_next_wakeup_irq)
 		state->ignore_next_wakeup_irq = false;
-	else if (!state->uart_clk_enabled) {
-		wake_lock(&state->debugger_wake_lock);
-		if (state->clk)
-			clk_enable(state->clk);
-		state->uart_clk_enabled = true;
+		} else if (!state->uart_enabled) {
+		debug_uart_enable(state);
+		state->uart_enabled = true;
 		disable_wakeup_irq(state);
 		mod_timer(&state->sleep_timer, jiffies + HZ / 2);
 	}
@@ -787,12 +800,14 @@ static void debug_console_write(struct console *co,
 	if (!state->console_enable && !state->syslog_dumping)
 		return;
 
+	debug_uart_enable(state);
 	while (count--) {
 		if (*s == '\n')
 			state->pdata->uart_putc(state->pdev, '\r');
 		state->pdata->uart_putc(state->pdev, *s++);
 	}
 	debug_uart_flush(state);
+	debug_uart_disable(state);
 }
 
 static struct console fiq_debugger_console = {
@@ -829,12 +844,10 @@ int  fiq_tty_write(struct tty_struct *tty, const unsigned char *buf, int count)
 	if (!state->console_enable)
 		return count;
 
-	if (state->clk)
-		clk_enable(state->clk);
+	debug_uart_enable(state);
 	for (i = 0; i < count; i++)
 		state->pdata->uart_putc(state->pdev, *buf++);
-	if (state->clk)
-		clk_disable(state->clk);
+	debug_uart_disable(state);
 
 	return count;
 }
@@ -907,6 +920,9 @@ static int fiq_debugger_probe(struct platform_device *pdev)
 
 	if (!pdata->uart_getc || !pdata->uart_putc || !pdata->fiq_enable)
 		return -EINVAL;
+	if ((pdata->uart_enable && !pdata->uart_disable) ||
+	    (!pdata->uart_enable && pdata->uart_disable))
+		return -EINVAL;
 
 	state = kzalloc(sizeof(*state), GFP_KERNEL);
 	state->handler.fiq = debug_fiq;
@@ -934,6 +950,10 @@ static int fiq_debugger_probe(struct platform_device *pdev)
 	if (IS_ERR(state->clk))
 		state->clk = NULL;
 
+	/* do not call pdata->uart_enable here since uart_init may still
+	 * need to do some initialization before uart_enable can work.
+	 * So, only try to manage the clock during init.
+	 */
 	if (state->clk)
 		clk_enable(state->clk);
 
