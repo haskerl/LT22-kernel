@@ -1,0 +1,38 @@
+diff --git a/drivers/video/fbmem.c b/drivers/video/fbmem.c
+index 5aac00e..ad93629 100644
+--- a/drivers/video/fbmem.c
++++ b/drivers/video/fbmem.c
+@@ -1738,8 +1738,6 @@ void fb_set_suspend(struct fb_info *info, int state)
+ {
+ 	struct fb_event event;
+ 
+-	if (!lock_fb_info(info))
+-		return;
+ 	event.info = info;
+ 	if (state) {
+ 		fb_notifier_call_chain(FB_EVENT_SUSPEND, &event);
+@@ -1748,7 +1746,6 @@ void fb_set_suspend(struct fb_info *info, int state)
+ 		info->state = FBINFO_STATE_RUNNING;
+ 		fb_notifier_call_chain(FB_EVENT_RESUME, &event);
+ 	}
+-	unlock_fb_info(info);
+ }
+ 
+ /**
+diff --git a/drivers/video/fbsysfs.c b/drivers/video/fbsysfs.c
+index 04251ce..67afa9c 100644
+--- a/drivers/video/fbsysfs.c
++++ b/drivers/video/fbsysfs.c
+@@ -399,9 +399,12 @@ static ssize_t store_fbstate(struct device *device,
+ 
+ 	state = simple_strtoul(buf, &last, 0);
+ 
++	if (!lock_fb_info(fb_info))
++		return -ENODEV;
+ 	console_lock();
+ 	fb_set_suspend(fb_info, (int)state);
+ 	console_unlock();
++	unlock_fb_info(fb_info);
+ 
+ 	return count;
+ }
