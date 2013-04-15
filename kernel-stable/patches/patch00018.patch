@@ -1,0 +1,461 @@
+diff --git a/drivers/xen/events.c b/drivers/xen/events.c
+index 30df85d..a5493f8 100644
+--- a/drivers/xen/events.c
++++ b/drivers/xen/events.c
+@@ -1026,7 +1026,7 @@ int bind_ipi_to_irqhandler(enum ipi_vector ipi,
+ 	if (irq < 0)
+ 		return irq;
+ 
+-	irqflags |= IRQF_NO_SUSPEND | IRQF_FORCE_RESUME;
++	irqflags |= IRQF_NO_SUSPEND | IRQF_FORCE_RESUME | IRQF_EARLY_RESUME;
+ 	retval = request_irq(irq, handler, irqflags, devname, dev_id);
+ 	if (retval != 0) {
+ 		unbind_from_irq(irq);
+diff --git a/fs/hppfs/hppfs.c b/fs/hppfs/hppfs.c
+index 85c098a..9d71c95 100644
+--- a/fs/hppfs/hppfs.c
++++ b/fs/hppfs/hppfs.c
+@@ -16,6 +16,7 @@
+ #include <linux/statfs.h>
+ #include <linux/types.h>
+ #include <linux/pid_namespace.h>
++#include <linux/namei.h>
+ #include <asm/uaccess.h>
+ #include "os.h"
+ 
+diff --git a/fs/namespace.c b/fs/namespace.c
+index fe59bd1..304a55d 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -1109,6 +1109,7 @@ static int show_vfsstat(struct seq_file *m, void *v)
+ 
+ 	/* device */
+ 	if (mnt->mnt_sb->s_op->show_devname) {
++		seq_puts(m, "device ");
+ 		err = mnt->mnt_sb->s_op->show_devname(m, mnt);
+ 	} else {
+ 		if (mnt->mnt_devname) {
+diff --git a/fs/nfs/write.c b/fs/nfs/write.c
+index 6015c7a..f2f80c0 100644
+--- a/fs/nfs/write.c
++++ b/fs/nfs/write.c
+@@ -1664,34 +1664,20 @@ out_error:
+ int nfs_migrate_page(struct address_space *mapping, struct page *newpage,
+ 		struct page *page)
+ {
+-	struct nfs_page *req;
+-	int ret;
++	/*
++	 * If PagePrivate is set, then the page is currently associated with
++	 * an in-progress read or write request. Don't try to migrate it.
++	 *
++	 * FIXME: we could do this in principle, but we'll need a way to ensure
++	 *        that we can safely release the inode reference while holding
++	 *        the page lock.
++	 */
++	if (PagePrivate(page))
++		return -EBUSY;
+ 
+ 	nfs_fscache_release_page(page, GFP_KERNEL);
+ 
+-	req = nfs_find_and_lock_request(page, false);
+-	ret = PTR_ERR(req);
+-	if (IS_ERR(req))
+-		goto out;
+-
+-	ret = migrate_page(mapping, newpage, page);
+-	if (!req)
+-		goto out;
+-	if (ret)
+-		goto out_unlock;
+-	page_cache_get(newpage);
+-	spin_lock(&mapping->host->i_lock);
+-	req->wb_page = newpage;
+-	SetPagePrivate(newpage);
+-	set_page_private(newpage, (unsigned long)req);
+-	ClearPagePrivate(page);
+-	set_page_private(page, 0);
+-	spin_unlock(&mapping->host->i_lock);
+-	page_cache_release(page);
+-out_unlock:
+-	nfs_clear_page_tag_locked(req);
+-out:
+-	return ret;
++	return migrate_page(mapping, newpage, page);
+ }
+ #endif
+ 
+diff --git a/fs/nfsd/nfs4proc.c b/fs/nfsd/nfs4proc.c
+index 3a6dbd7..0b8830c 100644
+--- a/fs/nfsd/nfs4proc.c
++++ b/fs/nfsd/nfs4proc.c
+@@ -156,6 +156,8 @@ do_open_permission(struct svc_rqst *rqstp, struct svc_fh *current_fh, struct nfs
+ 		!(open->op_share_access & NFS4_SHARE_ACCESS_WRITE))
+ 		return nfserr_inval;
+ 
++	accmode |= NFSD_MAY_READ_IF_EXEC;
++
+ 	if (open->op_share_access & NFS4_SHARE_ACCESS_READ)
+ 		accmode |= NFSD_MAY_READ;
+ 	if (open->op_share_access & NFS4_SHARE_ACCESS_WRITE)
+@@ -682,7 +684,7 @@ nfsd4_readdir(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
+ 	readdir->rd_bmval[1] &= nfsd_suppattrs1(cstate->minorversion);
+ 	readdir->rd_bmval[2] &= nfsd_suppattrs2(cstate->minorversion);
+ 
+-	if ((cookie > ~(u32)0) || (cookie == 1) || (cookie == 2) ||
++	if ((cookie == 1) || (cookie == 2) ||
+ 	    (cookie == 0 && memcmp(readdir->rd_verf.data, zeroverf.data, NFS4_VERIFIER_SIZE)))
+ 		return nfserr_bad_cookie;
+ 
+@@ -921,7 +923,7 @@ _nfsd4_verify(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
+ 	count = 4 + (verify->ve_attrlen >> 2);
+ 	buf = kmalloc(count << 2, GFP_KERNEL);
+ 	if (!buf)
+-		return nfserr_resource;
++		return nfserr_jukebox;
+ 
+ 	status = nfsd4_encode_fattr(&cstate->current_fh,
+ 				    cstate->current_fh.fh_export,
+diff --git a/fs/nfsd/nfs4recover.c b/fs/nfsd/nfs4recover.c
+index ffb59ef..be26814 100644
+--- a/fs/nfsd/nfs4recover.c
++++ b/fs/nfsd/nfs4recover.c
+@@ -88,7 +88,7 @@ nfs4_make_rec_clidname(char *dname, struct xdr_netobj *clname)
+ 	struct xdr_netobj cksum;
+ 	struct hash_desc desc;
+ 	struct scatterlist sg;
+-	__be32 status = nfserr_resource;
++	__be32 status = nfserr_jukebox;
+ 
+ 	dprintk("NFSD: nfs4_make_rec_clidname for %.*s\n",
+ 			clname->len, clname->data);
+diff --git a/fs/nfsd/nfs4state.c b/fs/nfsd/nfs4state.c
+index 3b8ad35..ecd8152 100644
+--- a/fs/nfsd/nfs4state.c
++++ b/fs/nfsd/nfs4state.c
+@@ -188,8 +188,15 @@ static void nfs4_file_put_fd(struct nfs4_file *fp, int oflag)
+ static void __nfs4_file_put_access(struct nfs4_file *fp, int oflag)
+ {
+ 	if (atomic_dec_and_test(&fp->fi_access[oflag])) {
+-		nfs4_file_put_fd(fp, O_RDWR);
+ 		nfs4_file_put_fd(fp, oflag);
++		/*
++		 * It's also safe to get rid of the RDWR open *if*
++		 * we no longer have need of the other kind of access
++		 * or if we already have the other kind of open:
++		 */
++		if (fp->fi_fds[1-oflag]
++			|| atomic_read(&fp->fi_access[1 - oflag]) == 0)
++			nfs4_file_put_fd(fp, O_RDWR);
+ 	}
+ }
+ 
+@@ -1903,7 +1910,7 @@ nfsd4_setclientid(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
+ 	 * of 5 bullet points, labeled as CASE0 - CASE4 below.
+ 	 */
+ 	unconf = find_unconfirmed_client_by_str(dname, strhashval);
+-	status = nfserr_resource;
++	status = nfserr_jukebox;
+ 	if (!conf) {
+ 		/*
+ 		 * RFC 3530 14.2.33 CASE 4:
+@@ -2440,7 +2447,7 @@ renew:
+ 	if (open->op_stateowner == NULL) {
+ 		sop = alloc_init_open_stateowner(strhashval, clp, open);
+ 		if (sop == NULL)
+-			return nfserr_resource;
++			return nfserr_jukebox;
+ 		open->op_stateowner = sop;
+ 	}
+ 	list_del_init(&sop->so_close_lru);
+@@ -2576,7 +2583,7 @@ nfs4_new_open(struct svc_rqst *rqstp, struct nfs4_stateid **stpp,
+ 
+ 	stp = nfs4_alloc_stateid();
+ 	if (stp == NULL)
+-		return nfserr_resource;
++		return nfserr_jukebox;
+ 
+ 	status = nfs4_get_vfs_file(rqstp, fp, cur_fh, open);
+ 	if (status) {
+@@ -2807,7 +2814,7 @@ nfsd4_process_open2(struct svc_rqst *rqstp, struct svc_fh *current_fh, struct nf
+ 		status = nfserr_bad_stateid;
+ 		if (open->op_claim_type == NFS4_OPEN_CLAIM_DELEGATE_CUR)
+ 			goto out;
+-		status = nfserr_resource;
++		status = nfserr_jukebox;
+ 		fp = alloc_init_file(ino);
+ 		if (fp == NULL)
+ 			goto out;
+@@ -3381,8 +3388,9 @@ static inline void nfs4_file_downgrade(struct nfs4_stateid *stp, unsigned int to
+ 	int i;
+ 
+ 	for (i = 1; i < 4; i++) {
+-		if (test_bit(i, &stp->st_access_bmap) && !(i & to_access)) {
+-			nfs4_file_put_access(stp->st_file, i);
++		if (test_bit(i, &stp->st_access_bmap)
++					&& ((i & to_access) != i)) {
++			nfs4_file_put_access(stp->st_file, nfs4_access_to_omode(i));
+ 			__clear_bit(i, &stp->st_access_bmap);
+ 		}
+ 	}
+@@ -3413,6 +3421,8 @@ nfsd4_open_downgrade(struct svc_rqst *rqstp,
+ 	if (!access_valid(od->od_share_access, cstate->minorversion)
+ 			|| !deny_valid(od->od_share_deny))
+ 		return nfserr_inval;
++	/* We don't yet support WANT bits: */
++	od->od_share_access &= NFS4_SHARE_ACCESS_MASK;
+ 
+ 	nfs4_lock_state();
+ 	if ((status = nfs4_preprocess_seqid_op(cstate,
+@@ -3840,7 +3850,7 @@ nfsd4_lock(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
+ 		/* XXX: Do we need to check for duplicate stateowners on
+ 		 * the same file, or should they just be allowed (and
+ 		 * create new stateids)? */
+-		status = nfserr_resource;
++		status = nfserr_jukebox;
+ 		lock_sop = alloc_init_lock_stateowner(strhashval,
+ 				open_sop->so_client, open_stp, lock);
+ 		if (lock_sop == NULL)
+@@ -3924,9 +3934,9 @@ nfsd4_lock(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
+ 	case (EDEADLK):
+ 		status = nfserr_deadlock;
+ 		break;
+-	default:        
++	default:
+ 		dprintk("NFSD: nfsd4_lock: vfs_lock_file() failed! status %d\n",err);
+-		status = nfserr_resource;
++		status = nfserrno(err);
+ 		break;
+ 	}
+ out:
+diff --git a/fs/nfsd/nfs4xdr.c b/fs/nfsd/nfs4xdr.c
+index 9901811..6c74097 100644
+--- a/fs/nfsd/nfs4xdr.c
++++ b/fs/nfsd/nfs4xdr.c
+@@ -1548,6 +1548,18 @@ static void write_cinfo(__be32 **p, struct nfsd4_change_info *c)
+ 								\
+ 	save = resp->p;
+ 
++static bool seqid_mutating_err(__be32 err)
++{
++	/* rfc 3530 section 8.1.5: */
++	return	err != nfserr_stale_clientid &&
++		err != nfserr_stale_stateid &&
++		err != nfserr_bad_stateid &&
++		err != nfserr_bad_seqid &&
++		err != nfserr_bad_xdr &&
++		err != nfserr_resource &&
++		err != nfserr_nofilehandle;
++}
++
+ /*
+  * Routine for encoding the result of a "seqid-mutating" NFSv4 operation.  This
+  * is where sequence id's are incremented, and the replay cache is filled.
+diff --git a/fs/nfsd/state.h b/fs/nfsd/state.h
+index 6bd2f3c..858c7ba 100644
+--- a/fs/nfsd/state.h
++++ b/fs/nfsd/state.h
+@@ -447,12 +447,6 @@ struct nfs4_stateid {
+ #define WR_STATE	        0x00000020
+ #define CLOSE_STATE             0x00000040
+ 
+-#define seqid_mutating_err(err)                       \
+-	(((err) != nfserr_stale_clientid) &&    \
+-	((err) != nfserr_bad_seqid) &&          \
+-	((err) != nfserr_stale_stateid) &&      \
+-	((err) != nfserr_bad_stateid))
+-
+ struct nfsd4_compound_state;
+ 
+ extern __be32 nfs4_preprocess_stateid_op(struct nfsd4_compound_state *cstate,
+diff --git a/fs/nfsd/vfs.c b/fs/nfsd/vfs.c
+index fd0acca..acf88ae 100644
+--- a/fs/nfsd/vfs.c
++++ b/fs/nfsd/vfs.c
+@@ -2114,7 +2114,8 @@ nfsd_permission(struct svc_rqst *rqstp, struct svc_export *exp,
+ 
+ 	/* Allow read access to binaries even when mode 111 */
+ 	if (err == -EACCES && S_ISREG(inode->i_mode) &&
+-	    acc == (NFSD_MAY_READ | NFSD_MAY_OWNER_OVERRIDE))
++	     (acc == (NFSD_MAY_READ | NFSD_MAY_OWNER_OVERRIDE) ||
++	      acc == (NFSD_MAY_READ | NFSD_MAY_READ_IF_EXEC)))
+ 		err = inode_permission(inode, MAY_EXEC);
+ 
+ 	return err? nfserrno(err) : 0;
+diff --git a/fs/nfsd/vfs.h b/fs/nfsd/vfs.h
+index e0bbac0..a22e40e 100644
+--- a/fs/nfsd/vfs.h
++++ b/fs/nfsd/vfs.h
+@@ -25,6 +25,7 @@
+ #define NFSD_MAY_BYPASS_GSS_ON_ROOT 256
+ #define NFSD_MAY_NOT_BREAK_LEASE 512
+ #define NFSD_MAY_BYPASS_GSS	1024
++#define NFSD_MAY_READ_IF_EXEC	2048
+ 
+ #define NFSD_MAY_CREATE		(NFSD_MAY_EXEC|NFSD_MAY_WRITE)
+ #define NFSD_MAY_REMOVE		(NFSD_MAY_EXEC|NFSD_MAY_WRITE|NFSD_MAY_TRUNC)
+diff --git a/include/linux/interrupt.h b/include/linux/interrupt.h
+index f6efed0..b9490bf 100644
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -59,6 +59,8 @@
+  * IRQF_NO_SUSPEND - Do not disable this IRQ during suspend
+  * IRQF_FORCE_RESUME - Force enable it on resume even if IRQF_NO_SUSPEND is set
+  * IRQF_NO_THREAD - Interrupt cannot be threaded
++ * IRQF_EARLY_RESUME - Resume IRQ early during syscore instead of at device
++ *                resume time.
+  */
+ #define IRQF_DISABLED		0x00000020
+ #define IRQF_SAMPLE_RANDOM	0x00000040
+@@ -72,6 +74,7 @@
+ #define IRQF_NO_SUSPEND		0x00004000
+ #define IRQF_FORCE_RESUME	0x00008000
+ #define IRQF_NO_THREAD		0x00010000
++#define IRQF_EARLY_RESUME	0x00020000
+ 
+ #define IRQF_TIMER		(__IRQF_TIMER | IRQF_NO_SUSPEND | IRQF_NO_THREAD)
+ 
+diff --git a/include/linux/io-mapping.h b/include/linux/io-mapping.h
+index 8cdcc2a1..1feeb52 100644
+--- a/include/linux/io-mapping.h
++++ b/include/linux/io-mapping.h
+@@ -117,6 +117,8 @@ io_mapping_unmap(void __iomem *vaddr)
+ 
+ #else
+ 
++#include <linux/uaccess.h>
++
+ /* this struct isn't actually defined anywhere */
+ struct io_mapping;
+ 
+@@ -138,12 +140,14 @@ static inline void __iomem *
+ io_mapping_map_atomic_wc(struct io_mapping *mapping,
+ 			 unsigned long offset)
+ {
++	pagefault_disable();
+ 	return ((char __force __iomem *) mapping) + offset;
+ }
+ 
+ static inline void
+ io_mapping_unmap_atomic(void __iomem *vaddr)
+ {
++	pagefault_enable();
+ }
+ 
+ /* Non-atomic map/unmap */
+diff --git a/kernel/irq/pm.c b/kernel/irq/pm.c
+index f76fc00..15e53b1 100644
+--- a/kernel/irq/pm.c
++++ b/kernel/irq/pm.c
+@@ -9,6 +9,7 @@
+ #include <linux/irq.h>
+ #include <linux/module.h>
+ #include <linux/interrupt.h>
++#include <linux/syscore_ops.h>
+ 
+ #include "internals.h"
+ 
+@@ -39,25 +40,58 @@ void suspend_device_irqs(void)
+ }
+ EXPORT_SYMBOL_GPL(suspend_device_irqs);
+ 
+-/**
+- * resume_device_irqs - enable interrupt lines disabled by suspend_device_irqs()
+- *
+- * Enable all interrupt lines previously disabled by suspend_device_irqs() that
+- * have the IRQS_SUSPENDED flag set.
+- */
+-void resume_device_irqs(void)
++static void resume_irqs(bool want_early)
+ {
+ 	struct irq_desc *desc;
+ 	int irq;
+ 
+ 	for_each_irq_desc(irq, desc) {
+ 		unsigned long flags;
++		bool is_early = desc->action &&
++			desc->action->flags & IRQF_EARLY_RESUME;
++
++		if (is_early != want_early)
++			continue;
+ 
+ 		raw_spin_lock_irqsave(&desc->lock, flags);
+ 		__enable_irq(desc, irq, true);
+ 		raw_spin_unlock_irqrestore(&desc->lock, flags);
+ 	}
+ }
++
++/**
++ * irq_pm_syscore_ops - enable interrupt lines early
++ *
++ * Enable all interrupt lines with %IRQF_EARLY_RESUME set.
++ */
++static void irq_pm_syscore_resume(void)
++{
++	resume_irqs(true);
++}
++
++static struct syscore_ops irq_pm_syscore_ops = {
++	.resume		= irq_pm_syscore_resume,
++};
++
++static int __init irq_pm_init_ops(void)
++{
++	register_syscore_ops(&irq_pm_syscore_ops);
++	return 0;
++}
++
++device_initcall(irq_pm_init_ops);
++
++/**
++ * resume_device_irqs - enable interrupt lines disabled by suspend_device_irqs()
++ *
++ * Enable all non-%IRQF_EARLY_RESUME interrupt lines previously
++ * disabled by suspend_device_irqs() that have the IRQS_SUSPENDED flag
++ * set as well as those with %IRQF_FORCE_RESUME.
++ */
++void resume_device_irqs(void)
++{
++	resume_irqs(false);
++}
+ EXPORT_SYMBOL_GPL(resume_device_irqs);
+ 
+ /**
+diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
+index ee9c921..0731e81a 100644
+--- a/kernel/trace/trace.c
++++ b/kernel/trace/trace.c
+@@ -3704,8 +3704,6 @@ tracing_buffers_read(struct file *filp, char __user *ubuf,
+ 	if (info->read < PAGE_SIZE)
+ 		goto read;
+ 
+-	info->read = 0;
+-
+ 	trace_access_lock(info->cpu);
+ 	ret = ring_buffer_read_page(info->tr->buffer,
+ 				    &info->spare,
+@@ -3715,6 +3713,8 @@ tracing_buffers_read(struct file *filp, char __user *ubuf,
+ 	if (ret < 0)
+ 		return 0;
+ 
++	info->read = 0;
++
+ read:
+ 	size = PAGE_SIZE - info->read;
+ 	if (size > count)
+diff --git a/tools/perf/util/probe-event.c b/tools/perf/util/probe-event.c
+index f022316..8c50da8 100644
+--- a/tools/perf/util/probe-event.c
++++ b/tools/perf/util/probe-event.c
+@@ -1869,8 +1869,10 @@ static int __del_trace_probe_event(int fd, struct str_node *ent)
+ 
+ 	pr_debug("Writing event: %s\n", buf);
+ 	ret = write(fd, buf, strlen(buf));
+-	if (ret < 0)
++	if (ret < 0) {
++		ret = -errno;
+ 		goto error;
++	}
+ 
+ 	printf("Remove event: %s\n", ent->s);
+ 	return 0;
