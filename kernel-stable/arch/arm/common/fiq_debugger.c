@@ -888,7 +888,7 @@ static int fiq_debugger_probe(struct platform_device *pdev)
 		clk_disable(state->clk);
 
        ret = request_irq(state->signal_irq, debug_irq,
-                         IRQF_TRIGGER_RISING, "debug", state);
+				IRQF_NO_SUSPEND, "debug", state);
        if (ret)
                pr_err("serial_debugger: could not install signal_irq");
 
