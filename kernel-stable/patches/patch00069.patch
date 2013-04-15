@@ -1,0 +1,22 @@
+diff --git a/fs/fuse/dev.c b/fs/fuse/dev.c
+index 168a80f..5cb8614 100644
+--- a/fs/fuse/dev.c
++++ b/fs/fuse/dev.c
+@@ -258,10 +258,14 @@
+ 	forget->forget_one.nlookup = nlookup;
+ 
+ 	spin_lock(&fc->lock);
+-	fc->forget_list_tail->next = forget;
+-	fc->forget_list_tail = forget;
+-	wake_up(&fc->waitq);
+-	kill_fasync(&fc->fasync, SIGIO, POLL_IN);
++	if (fc->connected) {
++		fc->forget_list_tail->next = forget;
++		fc->forget_list_tail = forget;
++		wake_up(&fc->waitq);
++		kill_fasync(&fc->fasync, SIGIO, POLL_IN);
++	} else {
++		kfree(forget);
++	}
+ 	spin_unlock(&fc->lock);
+ }
