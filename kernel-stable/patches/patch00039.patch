@@ -1,0 +1,13 @@
+diff --git a/fs/statfs.c b/fs/statfs.c
+index 8244924..9cf04a1 100644
+--- a/fs/statfs.c
++++ b/fs/statfs.c
+@@ -76,7 +76,7 @@ EXPORT_SYMBOL(vfs_statfs);
+ int user_statfs(const char __user *pathname, struct kstatfs *st)
+ {
+ 	struct path path;
+-	int error = user_path(pathname, &path);
++	int error = user_path_at(AT_FDCWD, pathname, LOOKUP_FOLLOW|LOOKUP_AUTOMOUNT, &path);
+ 	if (!error) {
+ 		error = vfs_statfs(&path, st);
+ 		path_put(&path);
