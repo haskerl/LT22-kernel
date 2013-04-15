@@ -1,0 +1,75 @@
+diff --git a/drivers/usb/class/cdc-acm.c b/drivers/usb/class/cdc-acm.c
+index 5112f57..2ffcaa0 100644
+--- a/drivers/usb/class/cdc-acm.c
++++ b/drivers/usb/class/cdc-acm.c
+@@ -539,7 +539,6 @@ static void acm_port_down(struct acm *acm)
+ {
+ 	int i;
+ 
+-	mutex_lock(&open_mutex);
+ 	if (acm->dev) {
+ 		usb_autopm_get_interface(acm->control);
+ 		acm_set_control(acm, acm->ctrlout = 0);
+@@ -551,14 +550,15 @@ static void acm_port_down(struct acm *acm)
+ 		acm->control->needs_remote_wakeup = 0;
+ 		usb_autopm_put_interface(acm->control);
+ 	}
+-	mutex_unlock(&open_mutex);
+ }
+ 
+ static void acm_tty_hangup(struct tty_struct *tty)
+ {
+ 	struct acm *acm = tty->driver_data;
+ 	tty_port_hangup(&acm->port);
++	mutex_lock(&open_mutex);
+ 	acm_port_down(acm);
++	mutex_unlock(&open_mutex);
+ }
+ 
+ static void acm_tty_close(struct tty_struct *tty, struct file *filp)
+@@ -569,8 +569,9 @@ static void acm_tty_close(struct tty_struct *tty, struct file *filp)
+ 	   shutdown */
+ 	if (!acm)
+ 		return;
++
++	mutex_lock(&open_mutex);
+ 	if (tty_port_close_start(&acm->port, tty, filp) == 0) {
+-		mutex_lock(&open_mutex);
+ 		if (!acm->dev) {
+ 			tty_port_tty_set(&acm->port, NULL);
+ 			acm_tty_unregister(acm);
+@@ -582,6 +583,7 @@ static void acm_tty_close(struct tty_struct *tty, struct file *filp)
+ 	acm_port_down(acm);
+ 	tty_port_close_end(&acm->port, tty);
+ 	tty_port_tty_set(&acm->port, NULL);
++	mutex_unlock(&open_mutex);
+ }
+ 
+ static int acm_tty_write(struct tty_struct *tty,
+diff --git a/drivers/usb/host/pci-quirks.c b/drivers/usb/host/pci-quirks.c
+index 629a968..a495d48 100644
+--- a/drivers/usb/host/pci-quirks.c
++++ b/drivers/usb/host/pci-quirks.c
+@@ -626,7 +626,7 @@ static void __devinit quirk_usb_disable_ehci(struct pci_dev *pdev)
+ 	void __iomem *base, *op_reg_base;
+ 	u32	hcc_params, cap, val;
+ 	u8	offset, cap_length;
+-	int	wait_time, delta, count = 256/4;
++	int	wait_time, count = 256/4;
+ 
+ 	if (!mmio_resource_enabled(pdev, 0))
+ 		return;
+@@ -672,11 +672,10 @@ static void __devinit quirk_usb_disable_ehci(struct pci_dev *pdev)
+ 		writel(val, op_reg_base + EHCI_USBCMD);
+ 
+ 		wait_time = 2000;
+-		delta = 100;
+ 		do {
+ 			writel(0x3f, op_reg_base + EHCI_USBSTS);
+-			udelay(delta);
+-			wait_time -= delta;
++			udelay(100);
++			wait_time -= 100;
+ 			val = readl(op_reg_base + EHCI_USBSTS);
+ 			if ((val == ~(u32)0) || (val & EHCI_USBSTS_HALTED)) {
+ 				break;
