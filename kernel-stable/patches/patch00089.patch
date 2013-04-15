@@ -1,0 +1,73 @@
+diff --git a/drivers/crypto/mv_cesa.c b/drivers/crypto/mv_cesa.c
+index 3cf303e..38a3297 100644
+--- a/drivers/crypto/mv_cesa.c
++++ b/drivers/crypto/mv_cesa.c
+@@ -342,11 +342,13 @@ static void mv_process_hash_current(int first_block)
+ 		else
+ 			op.config |= CFG_MID_FRAG;
+ 
+-		writel(req_ctx->state[0], cpg->reg + DIGEST_INITIAL_VAL_A);
+-		writel(req_ctx->state[1], cpg->reg + DIGEST_INITIAL_VAL_B);
+-		writel(req_ctx->state[2], cpg->reg + DIGEST_INITIAL_VAL_C);
+-		writel(req_ctx->state[3], cpg->reg + DIGEST_INITIAL_VAL_D);
+-		writel(req_ctx->state[4], cpg->reg + DIGEST_INITIAL_VAL_E);
++		if (first_block) {
++			writel(req_ctx->state[0], cpg->reg + DIGEST_INITIAL_VAL_A);
++			writel(req_ctx->state[1], cpg->reg + DIGEST_INITIAL_VAL_B);
++			writel(req_ctx->state[2], cpg->reg + DIGEST_INITIAL_VAL_C);
++			writel(req_ctx->state[3], cpg->reg + DIGEST_INITIAL_VAL_D);
++			writel(req_ctx->state[4], cpg->reg + DIGEST_INITIAL_VAL_E);
++		}
+ 	}
+ 
+ 	memcpy(cpg->sram + SRAM_CONFIG, &op, sizeof(struct sec_accel_config));
+diff --git a/drivers/gpu/drm/drm_crtc.c b/drivers/gpu/drm/drm_crtc.c
+index 82db185..1367ced 100644
+--- a/drivers/gpu/drm/drm_crtc.c
++++ b/drivers/gpu/drm/drm_crtc.c
+@@ -1866,6 +1866,10 @@ int drm_mode_dirtyfb_ioctl(struct drm_device *dev,
+ 	}
+ 
+ 	if (num_clips && clips_ptr) {
++		if (num_clips < 0 || num_clips > DRM_MODE_FB_DIRTY_MAX_CLIPS) {
++			ret = -EINVAL;
++			goto out_err1;
++		}
+ 		clips = kzalloc(num_clips * sizeof(*clips), GFP_KERNEL);
+ 		if (!clips) {
+ 			ret = -ENOMEM;
+diff --git a/fs/ecryptfs/crypto.c b/fs/ecryptfs/crypto.c
+index 58609bd..7cf5c3e 100644
+--- a/fs/ecryptfs/crypto.c
++++ b/fs/ecryptfs/crypto.c
+@@ -1943,7 +1943,7 @@ static unsigned char *portable_filename_chars = ("-.0123456789ABCD"
+ 
+ /* We could either offset on every reverse map or just pad some 0x00's
+  * at the front here */
+-static const unsigned char filename_rev_map[] = {
++static const unsigned char filename_rev_map[256] = {
+ 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 7 */
+ 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 15 */
+ 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 23 */
+@@ -1959,7 +1959,7 @@ static const unsigned char filename_rev_map[] = {
+ 	0x00, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, /* 103 */
+ 	0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x34, /* 111 */
+ 	0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, /* 119 */
+-	0x3D, 0x3E, 0x3F
++	0x3D, 0x3E, 0x3F /* 123 - 255 initialized to 0x00 */
+ };
+ 
+ /**
+diff --git a/include/drm/drm_mode.h b/include/drm/drm_mode.h
+index c4961ea..53dfa109 100644
+--- a/include/drm/drm_mode.h
++++ b/include/drm/drm_mode.h
+@@ -233,6 +233,8 @@ struct drm_mode_fb_cmd {
+ #define DRM_MODE_FB_DIRTY_ANNOTATE_FILL 0x02
+ #define DRM_MODE_FB_DIRTY_FLAGS         0x03
+ 
++#define DRM_MODE_FB_DIRTY_MAX_CLIPS     256
++
+ /*
+  * Mark a region of a framebuffer as dirty.
+  *
