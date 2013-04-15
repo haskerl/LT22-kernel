@@ -1,0 +1,108 @@
+diff --git a/block/genhd.c b/block/genhd.c
+index 3608289..8c0829a 100644
+--- a/block/genhd.c
++++ b/block/genhd.c
+@@ -611,6 +611,12 @@ void add_disk(struct gendisk *disk)
+ 	register_disk(disk);
+ 	blk_register_queue(disk);
+ 
++	/*
++	 * Take an extra ref on queue which will be put on disk_release()
++	 * so that it sticks around as long as @disk is there.
++	 */
++	WARN_ON_ONCE(blk_get_queue(disk->queue));
++
+ 	retval = sysfs_create_link(&disk_to_dev(disk)->kobj, &bdi->dev->kobj,
+ 				   "bdi");
+ 	WARN_ON(retval);
+@@ -1103,6 +1109,8 @@ static void disk_release(struct device *dev)
+ 	disk_replace_part_tbl(disk, NULL);
+ 	free_part_stats(&disk->part0);
+ 	free_part_info(&disk->part0);
++	if (disk->queue)
++		blk_put_queue(disk->queue);
+ 	kfree(disk);
+ }
+ struct class block_class = {
+diff --git a/fs/block_dev.c b/fs/block_dev.c
+index 194cf66..34503ba 100644
+--- a/fs/block_dev.c
++++ b/fs/block_dev.c
+@@ -1075,6 +1075,7 @@ static int __blkdev_put(struct block_device *bdev, fmode_t mode, int for_part);
+ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
+ {
+ 	struct gendisk *disk;
++	struct module *owner;
+ 	int ret;
+ 	int partno;
+ 	int perm = 0;
+@@ -1100,6 +1101,7 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
+ 	disk = get_gendisk(bdev->bd_dev, &partno);
+ 	if (!disk)
+ 		goto out;
++	owner = disk->fops->owner;
+ 
+ 	disk_block_events(disk);
+ 	mutex_lock_nested(&bdev->bd_mutex, for_part);
+@@ -1127,8 +1129,8 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
+ 					bdev->bd_disk = NULL;
+ 					mutex_unlock(&bdev->bd_mutex);
+ 					disk_unblock_events(disk);
+-					module_put(disk->fops->owner);
+ 					put_disk(disk);
++					module_put(owner);
+ 					goto restart;
+ 				}
+ 			}
+@@ -1184,8 +1186,8 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
+ 				goto out_unlock_bdev;
+ 		}
+ 		/* only one opener holds refs to the module and disk */
+-		module_put(disk->fops->owner);
+ 		put_disk(disk);
++		module_put(owner);
+ 	}
+ 	bdev->bd_openers++;
+ 	if (for_part)
+@@ -1205,8 +1207,8 @@ static int __blkdev_get(struct block_device *bdev, fmode_t mode, int for_part)
+  out_unlock_bdev:
+ 	mutex_unlock(&bdev->bd_mutex);
+ 	disk_unblock_events(disk);
+-	module_put(disk->fops->owner);
+ 	put_disk(disk);
++	module_put(owner);
+  out:
+ 	bdput(bdev);
+ 
+@@ -1432,14 +1434,15 @@ static int __blkdev_put(struct block_device *bdev, fmode_t mode, int for_part)
+ 	if (!bdev->bd_openers) {
+ 		struct module *owner = disk->fops->owner;
+ 
+-		put_disk(disk);
+-		module_put(owner);
+ 		disk_put_part(bdev->bd_part);
+ 		bdev->bd_part = NULL;
+ 		bdev->bd_disk = NULL;
+ 		if (bdev != bdev->bd_contains)
+ 			victim = bdev->bd_contains;
+ 		bdev->bd_contains = NULL;
++
++		put_disk(disk);
++		module_put(owner);
+ 	}
+ 	mutex_unlock(&bdev->bd_mutex);
+ 	bdput(bdev);
+diff --git a/net/sunrpc/auth_unix.c b/net/sunrpc/auth_unix.c
+index 4cb70dc..e50502d 100644
+--- a/net/sunrpc/auth_unix.c
++++ b/net/sunrpc/auth_unix.c
+@@ -129,6 +129,9 @@ unx_match(struct auth_cred *acred, struct rpc_cred *rcred, int flags)
+ 	for (i = 0; i < groups ; i++)
+ 		if (cred->uc_gids[i] != GROUP_AT(acred->group_info, i))
+ 			return 0;
++	if (groups < NFS_NGROUPS &&
++	    cred->uc_gids[groups] != NOGROUP)
++		return 0;
+ 	return 1;
+ }
+ 
