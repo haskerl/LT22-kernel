@@ -1,0 +1,166 @@
+diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
+index 38089b2..75db30e6 100644
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -1057,7 +1057,7 @@ static void mmc_power_up(struct mmc_host *host)
+ 	mmc_host_clk_release(host);
+ }
+ 
+-static void mmc_power_off(struct mmc_host *host)
++void mmc_power_off(struct mmc_host *host)
+ {
+ 	mmc_host_clk_hold(host);
+ 
+@@ -1147,8 +1147,7 @@ void mmc_attach_bus(struct mmc_host *host, const struct mmc_bus_ops *ops)
+ }
+ 
+ /*
+- * Remove the current bus handler from a host. Assumes that there are
+- * no interesting cards left, so the bus is powered down.
++ * Remove the current bus handler from a host.
+  */
+ void mmc_detach_bus(struct mmc_host *host)
+ {
+@@ -1165,8 +1164,6 @@ void mmc_detach_bus(struct mmc_host *host)
+ 
+ 	spin_unlock_irqrestore(&host->lock, flags);
+ 
+-	mmc_power_off(host);
+-
+ 	mmc_bus_put(host);
+ }
+ 
+@@ -1675,6 +1672,7 @@ void mmc_stop_host(struct mmc_host *host)
+ 
+ 		mmc_claim_host(host);
+ 		mmc_detach_bus(host);
++		mmc_power_off(host);
+ 		mmc_release_host(host);
+ 		mmc_bus_put(host);
+ 		return;
+@@ -1796,6 +1794,7 @@ int mmc_suspend_host(struct mmc_host *host)
+ 				host->bus_ops->remove(host);
+ 			mmc_claim_host(host);
+ 			mmc_detach_bus(host);
++			mmc_power_off(host);
+ 			mmc_release_host(host);
+ 			host->pm_flags = 0;
+ 			err = 0;
+@@ -1883,6 +1882,7 @@ int mmc_pm_notify(struct notifier_block *notify_block,
+ 			host->bus_ops->remove(host);
+ 
+ 		mmc_detach_bus(host);
++		mmc_power_off(host);
+ 		mmc_release_host(host);
+ 		host->pm_flags = 0;
+ 		break;
+diff --git a/drivers/mmc/core/core.h b/drivers/mmc/core/core.h
+index d9411ed..14664f1 100644
+--- a/drivers/mmc/core/core.h
++++ b/drivers/mmc/core/core.h
+@@ -43,6 +43,7 @@ int mmc_set_signal_voltage(struct mmc_host *host, int signal_voltage,
+ 			   bool cmd11);
+ void mmc_set_timing(struct mmc_host *host, unsigned int timing);
+ void mmc_set_driver_type(struct mmc_host *host, unsigned int drv_type);
++void mmc_power_off(struct mmc_host *host);
+ 
+ static inline void mmc_delay(unsigned int ms)
+ {
+diff --git a/drivers/mmc/core/mmc.c b/drivers/mmc/core/mmc.c
+index aa7d1d7..20b42c8 100644
+--- a/drivers/mmc/core/mmc.c
++++ b/drivers/mmc/core/mmc.c
+@@ -359,6 +359,7 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
+ 		 * card has the Enhanced area enabled.  If so, export enhanced
+ 		 * area offset and size to user by adding sysfs interface.
+ 		 */
++		card->ext_csd.raw_partition_support = ext_csd[EXT_CSD_PARTITION_SUPPORT];
+ 		if ((ext_csd[EXT_CSD_PARTITION_SUPPORT] & 0x2) &&
+ 		    (ext_csd[EXT_CSD_PARTITION_ATTRIBUTE] & 0x1)) {
+ 			u8 hc_erase_grp_sz =
+@@ -405,6 +406,7 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
+ 	if (card->ext_csd.rev >= 5)
+ 		card->ext_csd.rel_param = ext_csd[EXT_CSD_WR_REL_PARAM];
+ 
++	card->ext_csd.raw_erased_mem_count = ext_csd[EXT_CSD_ERASED_MEM_CONT];
+ 	if (ext_csd[EXT_CSD_ERASED_MEM_CONT])
+ 		card->erased_byte = 0xFF;
+ 	else
+@@ -891,6 +893,7 @@ static void mmc_detect(struct mmc_host *host)
+ 
+ 		mmc_claim_host(host);
+ 		mmc_detach_bus(host);
++		mmc_power_off(host);
+ 		mmc_release_host(host);
+ 	}
+ }
+diff --git a/drivers/mmc/core/sd.c b/drivers/mmc/core/sd.c
+index ff27741..bd8805c 100644
+--- a/drivers/mmc/core/sd.c
++++ b/drivers/mmc/core/sd.c
+@@ -1008,6 +1008,7 @@ static void mmc_sd_detect(struct mmc_host *host)
+ 
+ 		mmc_claim_host(host);
+ 		mmc_detach_bus(host);
++		mmc_power_off(host);
+ 		mmc_release_host(host);
+ 	}
+ }
+diff --git a/drivers/mmc/core/sdio.c b/drivers/mmc/core/sdio.c
+index 262fff0..ac492ac 100644
+--- a/drivers/mmc/core/sdio.c
++++ b/drivers/mmc/core/sdio.c
+@@ -597,6 +597,7 @@ out:
+ 
+ 		mmc_claim_host(host);
+ 		mmc_detach_bus(host);
++		mmc_power_off(host);
+ 		mmc_release_host(host);
+ 	}
+ }
+diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
+index 1196f61..cec4629 100644
+--- a/drivers/pci/quirks.c
++++ b/drivers/pci/quirks.c
+@@ -2745,20 +2745,6 @@ static void ricoh_mmc_fixup_r5c832(struct pci_dev *dev)
+ 	/* disable must be done via function #0 */
+ 	if (PCI_FUNC(dev->devfn))
+ 		return;
+-
+-	pci_read_config_byte(dev, 0xCB, &disable);
+-
+-	if (disable & 0x02)
+-		return;
+-
+-	pci_read_config_byte(dev, 0xCA, &write_enable);
+-	pci_write_config_byte(dev, 0xCA, 0x57);
+-	pci_write_config_byte(dev, 0xCB, disable | 0x02);
+-	pci_write_config_byte(dev, 0xCA, write_enable);
+-
+-	dev_notice(&dev->dev, "proprietary Ricoh MMC controller disabled (via firewire function)\n");
+-	dev_notice(&dev->dev, "MMC cards are now supported by standard SDHCI controller\n");
+-
+ 	/*
+ 	 * RICOH 0xe823 SD/MMC card reader fails to recognize
+ 	 * certain types of SD/MMC cards. Lowering the SD base
+@@ -2781,6 +2767,20 @@ static void ricoh_mmc_fixup_r5c832(struct pci_dev *dev)
+ 
+ 		dev_notice(&dev->dev, "MMC controller base frequency changed to 50Mhz.\n");
+ 	}
++
++	pci_read_config_byte(dev, 0xCB, &disable);
++
++	if (disable & 0x02)
++		return;
++
++	pci_read_config_byte(dev, 0xCA, &write_enable);
++	pci_write_config_byte(dev, 0xCA, 0x57);
++	pci_write_config_byte(dev, 0xCB, disable | 0x02);
++	pci_write_config_byte(dev, 0xCA, write_enable);
++
++	dev_notice(&dev->dev, "proprietary Ricoh MMC controller disabled (via firewire function)\n");
++	dev_notice(&dev->dev, "MMC cards are now supported by standard SDHCI controller\n");
++
+ }
+ DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_RICOH, PCI_DEVICE_ID_RICOH_R5C832, ricoh_mmc_fixup_r5c832);
+ DECLARE_PCI_FIXUP_RESUME_EARLY(PCI_VENDOR_ID_RICOH, PCI_DEVICE_ID_RICOH_R5C832, ricoh_mmc_fixup_r5c832);
