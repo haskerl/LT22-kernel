@@ -912,6 +912,26 @@ err:
 }
 #endif
 
+static int fiq_debugger_dev_suspend(struct device *dev)
+{
+	struct platform_device *pdev = to_platform_device(dev);
+	struct fiq_debugger_state *state = platform_get_drvdata(pdev);
+
+	if (state->pdata->uart_dev_suspend)
+		return state->pdata->uart_dev_suspend(pdev);
+	return 0;
+}
+
+static int fiq_debugger_dev_resume(struct device *dev)
+{
+	struct platform_device *pdev = to_platform_device(dev);
+	struct fiq_debugger_state *state = platform_get_drvdata(pdev);
+
+	if (state->pdata->uart_dev_resume)
+		return state->pdata->uart_dev_resume(pdev);
+	return 0;
+}
+
 static int fiq_debugger_probe(struct platform_device *pdev)
 {
 	int ret;
@@ -938,6 +958,8 @@ static int fiq_debugger_probe(struct platform_device *pdev)
 	state->fiq = platform_get_irq_byname(pdev, "fiq");
 	state->signal_irq = platform_get_irq_byname(pdev, "signal");
 	state->wakeup_irq = platform_get_irq_byname(pdev, "wakeup");
+
+	platform_set_drvdata(pdev, state);
 
 	if (state->wakeup_irq < 0)
 		state->no_sleep = true;
@@ -1019,13 +1041,22 @@ err_uart_init:
 	if (state->clk)
 		clk_put(state->clk);
 	wake_lock_destroy(&state->debugger_wake_lock);
+	platform_set_drvdata(pdev, NULL);
 	kfree(state);
 	return ret;
 }
 
+static const struct dev_pm_ops fiq_debugger_dev_pm_ops = {
+	.suspend	= fiq_debugger_dev_suspend,
+	.resume		= fiq_debugger_dev_resume,
+};
+
 static struct platform_driver fiq_debugger_driver = {
-	.probe = fiq_debugger_probe,
-	.driver.name = "fiq_debugger",
+	.probe	= fiq_debugger_probe,
+	.driver	= {
+		.name	= "fiq_debugger",
+		.pm	= &fiq_debugger_dev_pm_ops,
+	},
 };
 
 static int __init fiq_debugger_init(void)

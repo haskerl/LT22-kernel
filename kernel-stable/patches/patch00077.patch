@@ -1,0 +1,148 @@
+diff --git a/arch/arm/common/fiq_debugger.c b/arch/arm/common/fiq_debugger.c
+index 4c04cec..6804b25 100644
+--- a/arch/arm/common/fiq_debugger.c
++++ b/arch/arm/common/fiq_debugger.c
+@@ -73,7 +73,7 @@
+ 	bool debug_enable;
+ 	bool ignore_next_wakeup_irq;
+ 	struct timer_list sleep_timer;
+-	bool uart_clk_enabled;
++	bool uart_enabled;
+ 	struct wake_lock debugger_wake_lock;
+ 	bool console_enable;
+ 	int current_cpu;
+@@ -150,6 +150,22 @@
+ 		if (chip && chip->irq_retrigger)
+ 			chip->irq_retrigger(irq_get_irq_data(irq));
+ 	}
++}
++
++static void debug_uart_enable(struct fiq_debugger_state *state)
++{
++	if (state->clk)
++		clk_enable(state->clk);
++	if (state->pdata->uart_enable)
++		state->pdata->uart_enable(state->pdev);
++}
++
++static void debug_uart_disable(struct fiq_debugger_state *state)
++{
++	if (state->pdata->uart_disable)
++		state->pdata->uart_disable(state->pdev);
++	if (state->clk)
++		clk_disable(state->clk);
+ }
+ 
+ static void debug_uart_flush(struct fiq_debugger_state *state)
+@@ -564,15 +580,14 @@
+ {
+ 	struct fiq_debugger_state *state = (struct fiq_debugger_state *)data;
+ 
+-	if (state->uart_clk_enabled && !state->no_sleep) {
++	if (state->uart_enabled && !state->no_sleep) {
+ 		if (state->debug_enable && !state->console_enable) {
+ 			state->debug_enable = false;
+ 			debug_printf_nfiq(state, "suspending fiq debugger\n");
+ 		}
+ 		state->ignore_next_wakeup_irq = true;
+-		if (state->clk)
+-			clk_disable(state->clk);
+-		state->uart_clk_enabled = false;
++		debug_uart_disable(state);
++		state->uart_enabled = false;
+ 		enable_wakeup_irq(state);
+ 	}
+ 	wake_unlock(&state->debugger_wake_lock);
+@@ -582,11 +597,10 @@
+ {
+ 	if (state->wakeup_irq >= 0 && state->ignore_next_wakeup_irq) {
+ 		state->ignore_next_wakeup_irq = false;
+-	} else if (!state->uart_clk_enabled) {
++	} else if (!state->uart_enabled) {
+ 		wake_lock(&state->debugger_wake_lock);
+-		if (state->clk)
+-			clk_enable(state->clk);
+-		state->uart_clk_enabled = true;
++		debug_uart_enable(state);
++		state->uart_enabled = true;
+ 		disable_wakeup_irq(state);
+ 		mod_timer(&state->sleep_timer, jiffies + HZ / 2);
+ 	}
+@@ -806,12 +820,14 @@
+ 	if (!state->console_enable)
+ 		return;
+ 
++	debug_uart_enable(state);
+ 	while (count--) {
+ 		if (*s == '\n')
+ 			state->pdata->uart_putc(state->pdev, '\r');
+ 		state->pdata->uart_putc(state->pdev, *s++);
+ 	}
+ 	debug_uart_flush(state);
++	debug_uart_disable(state);
+ }
+ 
+ static struct console fiq_debugger_console = {
+@@ -848,12 +864,10 @@
+ 	if (!state->console_enable)
+ 		return count;
+ 
+-	if (state->clk)
+-		clk_enable(state->clk);
++	debug_uart_enable(state);
+ 	for (i = 0; i < count; i++)
+ 		state->pdata->uart_putc(state->pdev, *buf++);
+-	if (state->clk)
+-		clk_disable(state->clk);
++	debug_uart_disable(state);
+ 
+ 	return count;
+ }
+@@ -928,6 +942,9 @@
+ 
+ 	if (!pdata->uart_getc || !pdata->uart_putc)
+ 		return -EINVAL;
++	if ((pdata->uart_enable && !pdata->uart_disable) ||
++	    (!pdata->uart_enable && pdata->uart_disable))
++		return -EINVAL;
+ 
+ 	fiq = platform_get_irq_byname(pdev, "fiq");
+ 	uart_irq = platform_get_irq_byname(pdev, "uart_irq");
+@@ -964,6 +981,10 @@
+ 	if (IS_ERR(state->clk))
+ 		state->clk = NULL;
+ 
++	/* do not call pdata->uart_enable here since uart_init may still
++	 * need to do some initialization before uart_enable can work.
++	 * So, only try to manage the clock during init.
++	 */
+ 	if (state->clk)
+ 		clk_enable(state->clk);
+ 
+diff --git a/arch/arm/include/asm/fiq_debugger.h b/arch/arm/include/asm/fiq_debugger.h
+index e711b57..39a7c16 100644
+--- a/arch/arm/include/asm/fiq_debugger.h
++++ b/arch/arm/include/asm/fiq_debugger.h
+@@ -27,6 +27,13 @@
+ #define FIQ_DEBUGGER_SIGNAL_IRQ_NAME	"signal"
+ #define FIQ_DEBUGGER_WAKEUP_IRQ_NAME	"wakeup"
+ 
++/**
++ * struct fiq_debugger_pdata - fiq debugger platform data
++ * @uart_enable:	Do the work necessary to communicate with the uart
++ *			hw (enable clocks, etc.). This must be ref-counted.
++ * @uart_disable:	Do the work necessary to disable the uart hw
++ *			(disable clocks, etc.). This must be ref-counted.
++ */
+ struct fiq_debugger_pdata {
+ 	int (*uart_init)(struct platform_device *pdev);
+ 	void (*uart_free)(struct platform_device *pdev);
+@@ -34,6 +41,8 @@
+ 	int (*uart_getc)(struct platform_device *pdev);
+ 	void (*uart_putc)(struct platform_device *pdev, unsigned int c);
+ 	void (*uart_flush)(struct platform_device *pdev);
++	void (*uart_enable)(struct platform_device *pdev);
++	void (*uart_disable)(struct platform_device *pdev);
+ 
+ 	void (*fiq_enable)(struct platform_device *pdev, unsigned int fiq,
+ 								bool enable);
