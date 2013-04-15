@@ -1,0 +1,59 @@
+diff --git a/net/bridge/br_if.c b/net/bridge/br_if.c
+index 6f156c1..4490873 100644
+--- a/net/bridge/br_if.c
++++ b/net/bridge/br_if.c
+@@ -161,9 +161,10 @@ static void del_nbp(struct net_bridge_port *p)
+ 	call_rcu(&p->rcu, destroy_nbp_rcu);
+ }
+ 
+-/* called with RTNL */
+-static void del_br(struct net_bridge *br, struct list_head *head)
++/* Delete bridge device */
++void br_dev_delete(struct net_device *dev, struct list_head *head)
+ {
++	struct net_bridge *br = netdev_priv(dev);
+ 	struct net_bridge_port *p, *n;
+ 
+ 	list_for_each_entry_safe(p, n, &br->port_list, list) {
+@@ -268,7 +269,7 @@ int br_del_bridge(struct net *net, const char *name)
+ 	}
+ 
+ 	else
+-		del_br(netdev_priv(dev), NULL);
++		br_dev_delete(dev, NULL);
+ 
+ 	rtnl_unlock();
+ 	return ret;
+@@ -445,7 +446,7 @@ void __net_exit br_net_exit(struct net *net)
+ 	rtnl_lock();
+ 	for_each_netdev(net, dev)
+ 		if (dev->priv_flags & IFF_EBRIDGE)
+-			del_br(netdev_priv(dev), &list);
++			br_dev_delete(dev, &list);
+ 
+ 	unregister_netdevice_many(&list);
+ 	rtnl_unlock();
+diff --git a/net/bridge/br_netlink.c b/net/bridge/br_netlink.c
+index ffb0dc4..2c16055 100644
+--- a/net/bridge/br_netlink.c
++++ b/net/bridge/br_netlink.c
+@@ -208,6 +208,7 @@ static struct rtnl_link_ops br_link_ops __read_mostly = {
+ 	.priv_size	= sizeof(struct net_bridge),
+ 	.setup		= br_dev_setup,
+ 	.validate	= br_validate,
++	.dellink	= br_dev_delete,
+ };
+ 
+ int __init br_netlink_init(void)
+diff --git a/net/bridge/br_private.h b/net/bridge/br_private.h
+index 78cc364..857a021 100644
+--- a/net/bridge/br_private.h
++++ b/net/bridge/br_private.h
+@@ -294,6 +294,7 @@ static inline int br_is_root_bridge(const struct net_bridge *br)
+ 
+ /* br_device.c */
+ extern void br_dev_setup(struct net_device *dev);
++extern void br_dev_delete(struct net_device *dev, struct list_head *list);
+ extern netdev_tx_t br_dev_xmit(struct sk_buff *skb,
+ 			       struct net_device *dev);
+ #ifdef CONFIG_NET_POLL_CONTROLLER
