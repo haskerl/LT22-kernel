@@ -1,0 +1,25 @@
+diff --git a/drivers/acpi/atomicio.c b/drivers/acpi/atomicio.c
+index 7489b89..f151afe 100644
+--- a/drivers/acpi/atomicio.c
++++ b/drivers/acpi/atomicio.c
+@@ -76,7 +76,7 @@ static void __iomem *__acpi_ioremap_fast(phys_addr_t paddr,
+ {
+ 	struct acpi_iomap *map;
+ 
+-	map = __acpi_find_iomap(paddr, size);
++	map = __acpi_find_iomap(paddr, size/8);
+ 	if (map)
+ 		return map->vaddr + (paddr - map->paddr);
+ 	else
+diff --git a/lib/nlattr.c b/lib/nlattr.c
+index ac09f22..a8408b6 100644
+--- a/lib/nlattr.c
++++ b/lib/nlattr.c
+@@ -20,6 +20,7 @@ static const u16 nla_attr_minlen[NLA_TYPE_MAX+1] = {
+ 	[NLA_U16]	= sizeof(u16),
+ 	[NLA_U32]	= sizeof(u32),
+ 	[NLA_U64]	= sizeof(u64),
++	[NLA_MSECS]	= sizeof(u64),
+ 	[NLA_NESTED]	= NLA_HDRLEN,
+ };
+ 
