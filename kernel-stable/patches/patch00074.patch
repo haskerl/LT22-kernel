@@ -1,0 +1,13 @@
+diff --git a/arch/arm/common/fiq_debugger.c b/arch/arm/common/fiq_debugger.c
+index 080f69e..d44690d 100644
+--- a/arch/arm/common/fiq_debugger.c
++++ b/arch/arm/common/fiq_debugger.c
+@@ -531,7 +531,7 @@
+ 	struct fiq_debugger_state *state = (struct fiq_debugger_state *)data;
+ 
+ 	if (state->uart_clk_enabled && !state->no_sleep) {
+-		if (state->debug_enable) {
++		if (state->debug_enable && !state->console_enable) {
+ 			state->debug_enable = false;
+ 			debug_printf_nfiq(state, "suspending fiq debugger\n");
+ 		}
