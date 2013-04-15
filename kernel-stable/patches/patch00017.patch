@@ -1,0 +1,26 @@
+diff --git a/include/linux/jiffies.h b/include/linux/jiffies.h
+index f97672a..265e2c3 100644
+--- a/include/linux/jiffies.h
++++ b/include/linux/jiffies.h
+@@ -303,7 +303,7 @@ extern void jiffies_to_timespec(const unsigned long jiffies,
+ extern unsigned long timeval_to_jiffies(const struct timeval *value);
+ extern void jiffies_to_timeval(const unsigned long jiffies,
+ 			       struct timeval *value);
+-extern clock_t jiffies_to_clock_t(long x);
++extern clock_t jiffies_to_clock_t(unsigned long x);
+ extern unsigned long clock_t_to_jiffies(unsigned long x);
+ extern u64 jiffies_64_to_clock_t(u64 x);
+ extern u64 nsec_to_clock_t(u64 x);
+diff --git a/kernel/time.c b/kernel/time.c
+index 8e8dc6d..d776062 100644
+--- a/kernel/time.c
++++ b/kernel/time.c
+@@ -575,7 +575,7 @@ EXPORT_SYMBOL(jiffies_to_timeval);
+ /*
+  * Convert jiffies/jiffies_64 to clock_t and back.
+  */
+-clock_t jiffies_to_clock_t(long x)
++clock_t jiffies_to_clock_t(unsigned long x)
+ {
+ #if (TICK_NSEC % (NSEC_PER_SEC / USER_HZ)) == 0
+ # if HZ < USER_HZ
