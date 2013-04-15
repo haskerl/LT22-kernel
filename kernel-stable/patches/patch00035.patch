@@ -1,0 +1,94 @@
+diff --git a/Documentation/power/runtime_pm.txt b/Documentation/power/runtime_pm.txt
+index b24875b..6ade987 100644
+--- a/Documentation/power/runtime_pm.txt
++++ b/Documentation/power/runtime_pm.txt
+@@ -708,6 +708,16 @@ will behave normally, not taking the autosuspend delay into account.
+ Similarly, if the power.use_autosuspend field isn't set then the autosuspend
+ helper functions will behave just like the non-autosuspend counterparts.
+ 
++Under some circumstances a driver or subsystem may want to prevent a device
++from autosuspending immediately, even though the usage counter is zero and the
++autosuspend delay time has expired.  If the ->runtime_suspend() callback
++returns -EAGAIN or -EBUSY, and if the next autosuspend delay expiration time is
++in the future (as it normally would be if the callback invoked
++pm_runtime_mark_last_busy()), the PM core will automatically reschedule the
++autosuspend.  The ->runtime_suspend() callback can't do this rescheduling
++itself because no suspend requests of any kind are accepted while the device is
++suspending (i.e., while the callback is running).
++
+ The implementation is well suited for asynchronous use in interrupt contexts.
+ However such use inevitably involves races, because the PM core can't
+ synchronize ->runtime_suspend() callbacks with the arrival of I/O requests.
+diff --git a/drivers/base/power/runtime.c b/drivers/base/power/runtime.c
+index 0d4587b..1023392 100644
+--- a/drivers/base/power/runtime.c
++++ b/drivers/base/power/runtime.c
+@@ -278,6 +278,9 @@ static int rpm_callback(int (*cb)(struct device *), struct device *dev)
+  * If a deferred resume was requested while the callback was running then carry
+  * it out; otherwise send an idle notification for the device (if the suspend
+  * failed) or for its parent (if the suspend succeeded).
++ * If ->runtime_suspend failed with -EAGAIN or -EBUSY, and if the RPM_AUTO
++ * flag is set and the next autosuspend-delay expiration time is in the
++ * future, schedule another autosuspend attempt.
+  *
+  * This function must be called under dev->power.lock with interrupts disabled.
+  */
+@@ -389,10 +392,21 @@ static int rpm_suspend(struct device *dev, int rpmflags)
+ 	if (retval) {
+ 		__update_runtime_status(dev, RPM_ACTIVE);
+ 		dev->power.deferred_resume = 0;
+-		if (retval == -EAGAIN || retval == -EBUSY)
++		if (retval == -EAGAIN || retval == -EBUSY) {
+ 			dev->power.runtime_error = 0;
+-		else
++
++			/*
++			 * If the callback routine failed an autosuspend, and
++			 * if the last_busy time has been updated so that there
++			 * is a new autosuspend expiration time, automatically
++			 * reschedule another autosuspend.
++			 */
++			if ((rpmflags & RPM_AUTO) &&
++			    pm_runtime_autosuspend_expiration(dev) != 0)
++				goto repeat;
++		} else {
+ 			pm_runtime_cancel_pending(dev);
++		}
+ 	} else {
+  no_callback:
+ 		__update_runtime_status(dev, RPM_SUSPENDED);
+diff --git a/drivers/usb/core/driver.c b/drivers/usb/core/driver.c
+index 14b83f2..75b4bc0 100644
+--- a/drivers/usb/core/driver.c
++++ b/drivers/usb/core/driver.c
+@@ -1668,6 +1668,11 @@ int usb_runtime_suspend(struct device *dev)
+ 		return -EAGAIN;
+ 
+ 	status = usb_suspend_both(udev, PMSG_AUTO_SUSPEND);
++
++	/* Allow a retry if autosuspend failed temporarily */
++	if (status == -EAGAIN || status == -EBUSY)
++		usb_mark_last_busy(udev);
++
+ 	/* The PM core reacts badly unless the return code is 0,
+ 	 * -EAGAIN, or -EBUSY, so always return -EBUSY on an error.
+ 	 */
+diff --git a/scripts/kconfig/menu.c b/scripts/kconfig/menu.c
+index 5fdf10d..b1a3cee 100644
+--- a/scripts/kconfig/menu.c
++++ b/scripts/kconfig/menu.c
+@@ -596,11 +596,10 @@ void menu_get_ext_help(struct menu *menu, struct gstr *help)
+ 	struct symbol *sym = menu->sym;
+ 
+ 	if (menu_has_help(menu)) {
+-		if (sym->name) {
++		if (sym->name)
+ 			str_printf(help, "%s%s:\n\n", CONFIG_, sym->name);
+-			str_append(help, _(menu_get_help(menu)));
+-			str_append(help, "\n");
+-		}
++		str_append(help, _(menu_get_help(menu)));
++		str_append(help, "\n");
+ 	} else {
+ 		str_append(help, nohelp_text);
+ 	}
