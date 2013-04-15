@@ -1,0 +1,28 @@
+diff --git a/fs/cifs/cifsfs.c b/fs/cifs/cifsfs.c
+index fc7e57b..53e7d72 100644
+--- a/fs/cifs/cifsfs.c
++++ b/fs/cifs/cifsfs.c
+@@ -566,6 +566,12 @@
+ 		struct inode *dir = dentry->d_inode;
+ 		struct dentry *child;
+ 
++		if (!dir) {
++			dput(dentry);
++			dentry = ERR_PTR(-ENOENT);
++			break;
++		}
++
+ 		/* skip separators */
+ 		while (*s == sep)
+ 			s++;
+@@ -581,10 +587,6 @@
+ 		mutex_unlock(&dir->i_mutex);
+ 		dput(dentry);
+ 		dentry = child;
+-		if (!dentry->d_inode) {
+-			dput(dentry);
+-			dentry = ERR_PTR(-ENOENT);
+-		}
+ 	} while (!IS_ERR(dentry));
+ 	_FreeXid(xid);
+ 	kfree(full_path);
