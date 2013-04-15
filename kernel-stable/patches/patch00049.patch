@@ -1,0 +1,38 @@
+diff --git a/block/blk-map.c b/block/blk-map.c
+index e663ac2..164cd00 100644
+--- a/block/blk-map.c
++++ b/block/blk-map.c
+@@ -204,10 +204,11 @@ int blk_rq_map_user_iov(struct request_queue *q, struct request *rq,
+ 		if (!iov[i].iov_len)
+ 			return -EINVAL;
+ 
+-		if (uaddr & queue_dma_alignment(q)) {
++		/*
++		 * Keep going so we check length of all segments
++		 */
++		if (uaddr & queue_dma_alignment(q))
+ 			unaligned = 1;
+-			break;
+-		}
+ 	}
+ 
+ 	if (unaligned || (q->dma_pad_mask & len) || map_data)
+diff --git a/mm/backing-dev.c b/mm/backing-dev.c
+index e56fe35..b3b122f 100644
+--- a/mm/backing-dev.c
++++ b/mm/backing-dev.c
+@@ -686,6 +686,14 @@ void bdi_destroy(struct backing_dev_info *bdi)
+ 
+ 	bdi_unregister(bdi);
+ 
++	/*
++	 * If bdi_unregister() had already been called earlier, the
++	 * wakeup_timer could still be armed because bdi_prune_sb()
++	 * can race with the bdi_wakeup_thread_delayed() calls from
++	 * __mark_inode_dirty().
++	 */
++	del_timer_sync(&bdi->wb.wakeup_timer);
++
+ 	for (i = 0; i < NR_BDI_STAT_ITEMS; i++)
+ 		percpu_counter_destroy(&bdi->bdi_stat[i]);
+ 
