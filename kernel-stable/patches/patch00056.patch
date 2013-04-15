@@ -1,0 +1,78 @@
+diff --git a/include/net/ipv6.h b/include/net/ipv6.h
+index 3b5ac1f..c39121f 100644
+--- a/include/net/ipv6.h
++++ b/include/net/ipv6.h
+@@ -463,7 +463,7 @@
+ 	return __ipv6_addr_diff(a1, a2, sizeof(struct in6_addr));
+ }
+ 
+-extern void ipv6_select_ident(struct frag_hdr *fhdr, struct rt6_info *rt);
++extern void ipv6_select_ident(struct frag_hdr *fhdr, struct in6_addr *addr);
+ 
+ /*
+  *	Prototypes exported by ipv6
+diff --git a/net/ipv6/ip6_output.c b/net/ipv6/ip6_output.c
+index 1661296..e17596b 100644
+--- a/net/ipv6/ip6_output.c
++++ b/net/ipv6/ip6_output.c
+@@ -620,9 +620,9 @@
+ 	return hash + newid;
+ }
+ 
+-void ipv6_select_ident(struct frag_hdr *fhdr, struct rt6_info *rt)
++void ipv6_select_ident(struct frag_hdr *fhdr, struct in6_addr *addr)
+ {
+-	fhdr->identification = htonl(__ipv6_select_ident(&rt->rt6i_dst.addr));
++	fhdr->identification = htonl(__ipv6_select_ident(addr));
+ }
+ 
+ int ip6_fragment(struct sk_buff *skb, int (*output)(struct sk_buff *))
+@@ -709,7 +709,7 @@
+ 		skb_reset_network_header(skb);
+ 		memcpy(skb_network_header(skb), tmp_hdr, hlen);
+ 
+-		ipv6_select_ident(fh, rt);
++		ipv6_select_ident(fh, &rt->rt6i_dst.addr);
+ 		fh->nexthdr = nexthdr;
+ 		fh->reserved = 0;
+ 		fh->frag_off = htons(IP6_MF);
+@@ -855,7 +855,7 @@
+ 		fh->nexthdr = nexthdr;
+ 		fh->reserved = 0;
+ 		if (!frag_id) {
+-			ipv6_select_ident(fh, rt);
++			ipv6_select_ident(fh, &rt->rt6i_dst.addr);
+ 			frag_id = fh->identification;
+ 		} else
+ 			fh->identification = frag_id;
+@@ -1146,7 +1146,7 @@
+ 		skb_shinfo(skb)->gso_size = (mtu - fragheaderlen -
+ 					     sizeof(struct frag_hdr)) & ~7;
+ 		skb_shinfo(skb)->gso_type = SKB_GSO_UDP;
+-		ipv6_select_ident(&fhdr, rt);
++		ipv6_select_ident(&fhdr, &rt->rt6i_dst.addr);
+ 		skb_shinfo(skb)->ip6_frag_id = fhdr.identification;
+ 		__skb_queue_tail(&sk->sk_write_queue, skb);
+ 
+diff --git a/net/ipv6/udp.c b/net/ipv6/udp.c
+index 29213b5..0d920c5 100644
+--- a/net/ipv6/udp.c
++++ b/net/ipv6/udp.c
+@@ -1309,6 +1309,7 @@
+ 	u8 frag_hdr_sz = sizeof(struct frag_hdr);
+ 	int offset;
+ 	__wsum csum;
++	struct rt6_info *rt = (struct rt6_info *)skb_dst(skb);
+ 
+ 	mss = skb_shinfo(skb)->gso_size;
+ 	if (unlikely(skb->len <= mss))
+@@ -1359,7 +1360,8 @@
+ 	fptr = (struct frag_hdr *)(skb_network_header(skb) + unfrag_ip6hlen);
+ 	fptr->nexthdr = nexthdr;
+ 	fptr->reserved = 0;
+-	ipv6_select_ident(fptr, (struct rt6_info *)skb_dst(skb));
++	ipv6_select_ident(fptr,
++			  rt ? &rt->rt6i_dst.addr : &ipv6_hdr(skb)->daddr);
+ 
+ 	/* Fragment the skb. ipv6 header and the remaining fields of the
+ 	 * fragment header are updated in ipv6_gso_segment()
