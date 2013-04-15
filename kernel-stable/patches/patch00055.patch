@@ -1,0 +1,13 @@
+diff --git a/fs/exec.c b/fs/exec.c
+index 6075a1e..044c13f 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1411,6 +1411,8 @@
+ 			    printable(bprm->buf[2]) &&
+ 			    printable(bprm->buf[3]))
+ 				break; /* -ENOEXEC */
++			if (try)
++				break; /* -ENOEXEC */
+ 			request_module("binfmt-%04x", *(unsigned short *)(&bprm->buf[2]));
+ #endif
+ 		}
