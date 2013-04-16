@@ -1,0 +1,155 @@
+diff --git a/drivers/scsi/mpt2sas/mpt2sas_base.c b/drivers/scsi/mpt2sas/mpt2sas_base.c
+index 83035bd..39e81cd 100644
+--- a/drivers/scsi/mpt2sas/mpt2sas_base.c
++++ b/drivers/scsi/mpt2sas/mpt2sas_base.c
+@@ -1082,41 +1082,6 @@ _base_config_dma_addressing(struct MPT2SAS_ADAPTER *ioc, struct pci_dev *pdev)
+ }
+ 
+ /**
+- * _base_save_msix_table - backup msix vector table
+- * @ioc: per adapter object
+- *
+- * This address an errata where diag reset clears out the table
+- */
+-static void
+-_base_save_msix_table(struct MPT2SAS_ADAPTER *ioc)
+-{
+-	int i;
+-
+-	if (!ioc->msix_enable || ioc->msix_table_backup == NULL)
+-		return;
+-
+-	for (i = 0; i < ioc->msix_vector_count; i++)
+-		ioc->msix_table_backup[i] = ioc->msix_table[i];
+-}
+-
+-/**
+- * _base_restore_msix_table - this restores the msix vector table
+- * @ioc: per adapter object
+- *
+- */
+-static void
+-_base_restore_msix_table(struct MPT2SAS_ADAPTER *ioc)
+-{
+-	int i;
+-
+-	if (!ioc->msix_enable || ioc->msix_table_backup == NULL)
+-		return;
+-
+-	for (i = 0; i < ioc->msix_vector_count; i++)
+-		ioc->msix_table[i] = ioc->msix_table_backup[i];
+-}
+-
+-/**
+  * _base_check_enable_msix - checks MSIX capabable.
+  * @ioc: per adapter object
+  *
+@@ -1128,7 +1093,7 @@ _base_check_enable_msix(struct MPT2SAS_ADAPTER *ioc)
+ {
+ 	int base;
+ 	u16 message_control;
+-	u32 msix_table_offset;
++
+ 
+ 	base = pci_find_capability(ioc->pdev, PCI_CAP_ID_MSIX);
+ 	if (!base) {
+@@ -1141,14 +1106,8 @@ _base_check_enable_msix(struct MPT2SAS_ADAPTER *ioc)
+ 	pci_read_config_word(ioc->pdev, base + 2, &message_control);
+ 	ioc->msix_vector_count = (message_control & 0x3FF) + 1;
+ 
+-	/* get msix table  */
+-	pci_read_config_dword(ioc->pdev, base + 4, &msix_table_offset);
+-	msix_table_offset &= 0xFFFFFFF8;
+-	ioc->msix_table = (u32 *)((void *)ioc->chip + msix_table_offset);
+-
+ 	dinitprintk(ioc, printk(MPT2SAS_INFO_FMT "msix is supported, "
+-	    "vector_count(%d), table_offset(0x%08x), table(%p)\n", ioc->name,
+-	    ioc->msix_vector_count, msix_table_offset, ioc->msix_table));
++	    "vector_count(%d)\n", ioc->name, ioc->msix_vector_count));
+ 	return 0;
+ }
+ 
+@@ -1162,8 +1121,6 @@ _base_disable_msix(struct MPT2SAS_ADAPTER *ioc)
+ {
+ 	if (ioc->msix_enable) {
+ 		pci_disable_msix(ioc->pdev);
+-		kfree(ioc->msix_table_backup);
+-		ioc->msix_table_backup = NULL;
+ 		ioc->msix_enable = 0;
+ 	}
+ }
+@@ -1189,14 +1146,6 @@ _base_enable_msix(struct MPT2SAS_ADAPTER *ioc)
+ 	if (_base_check_enable_msix(ioc) != 0)
+ 		goto try_ioapic;
+ 
+-	ioc->msix_table_backup = kcalloc(ioc->msix_vector_count,
+-	    sizeof(u32), GFP_KERNEL);
+-	if (!ioc->msix_table_backup) {
+-		dfailprintk(ioc, printk(MPT2SAS_INFO_FMT "allocation for "
+-		    "msix_table_backup failed!!!\n", ioc->name));
+-		goto try_ioapic;
+-	}
+-
+ 	memset(&entries, 0, sizeof(struct msix_entry));
+ 	r = pci_enable_msix(ioc->pdev, &entries, 1);
+ 	if (r) {
+@@ -3513,9 +3462,6 @@ _base_diag_reset(struct MPT2SAS_ADAPTER *ioc, int sleep_flag)
+ 	u32 hcb_size;
+ 
+ 	printk(MPT2SAS_INFO_FMT "sending diag reset !!\n", ioc->name);
+-
+-	_base_save_msix_table(ioc);
+-
+ 	drsprintk(ioc, printk(MPT2SAS_INFO_FMT "clear interrupts\n",
+ 	    ioc->name));
+ 
+@@ -3611,7 +3557,6 @@ _base_diag_reset(struct MPT2SAS_ADAPTER *ioc, int sleep_flag)
+ 		goto out;
+ 	}
+ 
+-	_base_restore_msix_table(ioc);
+ 	printk(MPT2SAS_INFO_FMT "diag reset: SUCCESS\n", ioc->name);
+ 	return 0;
+ 
+diff --git a/drivers/scsi/mpt2sas/mpt2sas_base.h b/drivers/scsi/mpt2sas/mpt2sas_base.h
+index 41a57a7..e1735f9 100644
+--- a/drivers/scsi/mpt2sas/mpt2sas_base.h
++++ b/drivers/scsi/mpt2sas/mpt2sas_base.h
+@@ -626,8 +626,6 @@ struct mpt2sas_port_facts {
+  * @wait_for_port_enable_to_complete:
+  * @msix_enable: flag indicating msix is enabled
+  * @msix_vector_count: number msix vectors
+- * @msix_table: virt address to the msix table
+- * @msix_table_backup: backup msix table
+  * @scsi_io_cb_idx: shost generated commands
+  * @tm_cb_idx: task management commands
+  * @scsih_cb_idx: scsih internal commands
+@@ -768,8 +766,6 @@ struct MPT2SAS_ADAPTER {
+ 
+ 	u8		msix_enable;
+ 	u16		msix_vector_count;
+-	u32		*msix_table;
+-	u32		*msix_table_backup;
+ 	u32		ioc_reset_count;
+ 
+ 	/* internal commands, callback index */
+diff --git a/mm/hugetlb.c b/mm/hugetlb.c
+index 80936a1..f9c5849 100644
+--- a/mm/hugetlb.c
++++ b/mm/hugetlb.c
+@@ -901,7 +901,6 @@ retry:
+ 	h->resv_huge_pages += delta;
+ 	ret = 0;
+ 
+-	spin_unlock(&hugetlb_lock);
+ 	/* Free the needed pages to the hugetlb pool */
+ 	list_for_each_entry_safe(page, tmp, &surplus_list, lru) {
+ 		if ((--needed) < 0)
+@@ -915,6 +914,7 @@ retry:
+ 		VM_BUG_ON(page_count(page));
+ 		enqueue_huge_page(h, page);
+ 	}
++	spin_unlock(&hugetlb_lock);
+ 
+ 	/* Free unnecessary surplus pages to the buddy allocator */
+ free:
