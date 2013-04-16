@@ -1,0 +1,108 @@
+diff --git a/arch/x86/include/asm/timer.h b/arch/x86/include/asm/timer.h
+index fa7b917..431793e 100644
+--- a/arch/x86/include/asm/timer.h
++++ b/arch/x86/include/asm/timer.h
+@@ -32,6 +32,22 @@ extern int no_timer_check;
+  *  (mathieu.desnoyers@polymtl.ca)
+  *
+  *			-johnstul@us.ibm.com "math is hard, lets go shopping!"
++ *
++ * In:
++ *
++ * ns = cycles * cyc2ns_scale / SC
++ *
++ * Although we may still have enough bits to store the value of ns,
++ * in some cases, we may not have enough bits to store cycles * cyc2ns_scale,
++ * leading to an incorrect result.
++ *
++ * To avoid this, we can decompose 'cycles' into quotient and remainder
++ * of division by SC.  Then,
++ *
++ * ns = (quot * SC + rem) * cyc2ns_scale / SC
++ *    = quot * cyc2ns_scale + (rem * cyc2ns_scale) / SC
++ *
++ *			- sqazi@google.com
+  */
+ 
+ DECLARE_PER_CPU(unsigned long, cyc2ns);
+@@ -41,9 +57,14 @@ DECLARE_PER_CPU(unsigned long long, cyc2ns_offset);
+ 
+ static inline unsigned long long __cycles_2_ns(unsigned long long cyc)
+ {
++	unsigned long long quot;
++	unsigned long long rem;
+ 	int cpu = smp_processor_id();
+ 	unsigned long long ns = per_cpu(cyc2ns_offset, cpu);
+-	ns += cyc * per_cpu(cyc2ns, cpu) >> CYC2NS_SCALE_FACTOR;
++	quot = (cyc >> CYC2NS_SCALE_FACTOR);
++	rem = cyc & ((1ULL << CYC2NS_SCALE_FACTOR) - 1);
++	ns += quot * per_cpu(cyc2ns, cpu) +
++		((rem * per_cpu(cyc2ns, cpu)) >> CYC2NS_SCALE_FACTOR);
+ 	return ns;
+ }
+ 
+diff --git a/drivers/usb/host/ehci-sched.c b/drivers/usb/host/ehci-sched.c
+index 063c630..8949b23 100644
+--- a/drivers/usb/host/ehci-sched.c
++++ b/drivers/usb/host/ehci-sched.c
+@@ -1479,30 +1479,36 @@ iso_stream_schedule (
+ 	 * jump until after the queue is primed.
+ 	 */
+ 	else {
++		int done = 0;
+ 		start = SCHEDULE_SLOP + (now & ~0x07);
+ 
+ 		/* NOTE:  assumes URB_ISO_ASAP, to limit complexity/bugs */
+ 
+-		/* find a uframe slot with enough bandwidth */
+-		next = start + period;
+-		for (; start < next; start++) {
+-
++		/* find a uframe slot with enough bandwidth.
++		 * Early uframes are more precious because full-speed
++		 * iso IN transfers can't use late uframes,
++		 * and therefore they should be allocated last.
++		 */
++		next = start;
++		start += period;
++		do {
++			start--;
+ 			/* check schedule: enough space? */
+ 			if (stream->highspeed) {
+ 				if (itd_slot_ok(ehci, mod, start,
+ 						stream->usecs, period))
+-					break;
++					done = 1;
+ 			} else {
+ 				if ((start % 8) >= 6)
+ 					continue;
+ 				if (sitd_slot_ok(ehci, mod, stream,
+ 						start, sched, period))
+-					break;
++					done = 1;
+ 			}
+-		}
++		} while (start > next && !done);
+ 
+ 		/* no room in the schedule */
+-		if (start == next) {
++		if (!done) {
+ 			ehci_dbg(ehci, "iso resched full %p (now %d max %d)\n",
+ 				urb, now, now + mod);
+ 			status = -ENOSPC;
+diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
+index 1f0e198..221f14e 100644
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -657,7 +657,10 @@ static void xhci_clear_command_ring(struct xhci_hcd *xhci)
+ 	ring = xhci->cmd_ring;
+ 	seg = ring->deq_seg;
+ 	do {
+-		memset(seg->trbs, 0, SEGMENT_SIZE);
++		memset(seg->trbs, 0,
++			sizeof(union xhci_trb) * (TRBS_PER_SEGMENT - 1));
++		seg->trbs[TRBS_PER_SEGMENT - 1].link.control &=
++			cpu_to_le32(~TRB_CYCLE);
+ 		seg = seg->next;
+ 	} while (seg != ring->deq_seg);
+ 
