@@ -1,0 +1,45 @@
+diff --git a/include/linux/log2.h b/include/linux/log2.h
+index 25b8086..fd7ff3d 100644
+--- a/include/linux/log2.h
++++ b/include/linux/log2.h
+@@ -185,7 +185,6 @@ unsigned long __rounddown_pow_of_two(unsigned long n)
+ #define rounddown_pow_of_two(n)			\
+ (						\
+ 	__builtin_constant_p(n) ? (		\
+-		(n == 1) ? 0 :			\
+ 		(1UL << ilog2(n))) :		\
+ 	__rounddown_pow_of_two(n)		\
+  )
+diff --git a/net/mac80211/agg-tx.c b/net/mac80211/agg-tx.c
+index 42a59c2..db7db43 100644
+--- a/net/mac80211/agg-tx.c
++++ b/net/mac80211/agg-tx.c
+@@ -792,12 +792,27 @@ void ieee80211_process_addba_resp(struct ieee80211_local *local,
+ 		goto out;
+ 	}
+ 
+-	del_timer(&tid_tx->addba_resp_timer);
++	del_timer_sync(&tid_tx->addba_resp_timer);
+ 
+ #ifdef CONFIG_MAC80211_HT_DEBUG
+ 	printk(KERN_DEBUG "switched off addBA timer for tid %d\n", tid);
+ #endif
+ 
++	/*
++	 * addba_resp_timer may have fired before we got here, and
++	 * caused WANT_STOP to be set. If the stop then was already
++	 * processed further, STOPPING might be set.
++	 */
++	if (test_bit(HT_AGG_STATE_WANT_STOP, &tid_tx->state) ||
++	    test_bit(HT_AGG_STATE_STOPPING, &tid_tx->state)) {
++#ifdef CONFIG_MAC80211_HT_DEBUG
++		printk(KERN_DEBUG
++		       "got addBA resp for tid %d but we already gave up\n",
++		       tid);
++#endif
++		goto out;
++	}
++
+ 	if (le16_to_cpu(mgmt->u.action.u.addba_resp.status)
+ 			== WLAN_STATUS_SUCCESS) {
+ 		/*
