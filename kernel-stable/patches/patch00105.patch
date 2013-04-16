@@ -1,0 +1,128 @@
+diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+index 1265904..af09060 100644
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -2126,8 +2126,11 @@ static int mpage_da_submit_io(struct mpage_da_data *mpd,
+ 					clear_buffer_unwritten(bh);
+ 				}
+ 
+-				/* skip page if block allocation undone */
+-				if (buffer_delay(bh) || buffer_unwritten(bh))
++				/*
++				 * skip page if block allocation undone and
++				 * block is dirty
++				 */
++				if (ext4_bh_delay_or_unwritten(NULL, bh))
+ 					skip_page = 1;
+ 				bh = bh->b_this_page;
+ 				block_start += bh->b_size;
+@@ -3231,7 +3234,7 @@ static int ext4_da_write_end(struct file *file,
+ 	 */
+ 
+ 	new_i_size = pos + copied;
+-	if (new_i_size > EXT4_I(inode)->i_disksize) {
++	if (copied && new_i_size > EXT4_I(inode)->i_disksize) {
+ 		if (ext4_da_should_update_i_disksize(page, end)) {
+ 			down_write(&EXT4_I(inode)->i_data_sem);
+ 			if (new_i_size > EXT4_I(inode)->i_disksize) {
+diff --git a/fs/ext4/page-io.c b/fs/ext4/page-io.c
+index bd6a85e..d99d74a 100644
+--- a/fs/ext4/page-io.c
++++ b/fs/ext4/page-io.c
+@@ -405,6 +405,18 @@ int ext4_bio_write_page(struct ext4_io_submit *io,
+ 
+ 		block_end = block_start + blocksize;
+ 		if (block_start >= len) {
++			/*
++			 * Comments copied from block_write_full_page_endio:
++			 *
++			 * The page straddles i_size.  It must be zeroed out on
++			 * each and every writepage invocation because it may
++			 * be mmapped.  "A file is mapped in multiples of the
++			 * page size.  For a file that is not a multiple of
++			 * the  page size, the remaining memory is zeroed when
++			 * mapped, and writes to that region are not written
++			 * out to the file."
++			 */
++			zero_user_segment(page, block_start, block_end);
+ 			clear_buffer_dirty(bh);
+ 			set_buffer_uptodate(bh);
+ 			continue;
+diff --git a/fs/ext4/super.c b/fs/ext4/super.c
+index 111ed9d..7aa77f0 100644
+--- a/fs/ext4/super.c
++++ b/fs/ext4/super.c
+@@ -1113,9 +1113,9 @@ static int ext4_show_options(struct seq_file *seq, struct vfsmount *vfs)
+ 		seq_puts(seq, ",block_validity");
+ 
+ 	if (!test_opt(sb, INIT_INODE_TABLE))
+-		seq_puts(seq, ",noinit_inode_table");
++		seq_puts(seq, ",noinit_itable");
+ 	else if (sbi->s_li_wait_mult != EXT4_DEF_LI_WAIT_MULT)
+-		seq_printf(seq, ",init_inode_table=%u",
++		seq_printf(seq, ",init_itable=%u",
+ 			   (unsigned) sbi->s_li_wait_mult);
+ 
+ 	ext4_show_quota_options(seq, sb);
+@@ -1291,8 +1291,7 @@ enum {
+ 	Opt_nomblk_io_submit, Opt_block_validity, Opt_noblock_validity,
+ 	Opt_inode_readahead_blks, Opt_journal_ioprio,
+ 	Opt_dioread_nolock, Opt_dioread_lock,
+-	Opt_discard, Opt_nodiscard,
+-	Opt_init_inode_table, Opt_noinit_inode_table,
++	Opt_discard, Opt_nodiscard, Opt_init_itable, Opt_noinit_itable,
+ };
+ 
+ static const match_table_t tokens = {
+@@ -1365,9 +1364,9 @@ static const match_table_t tokens = {
+ 	{Opt_dioread_lock, "dioread_lock"},
+ 	{Opt_discard, "discard"},
+ 	{Opt_nodiscard, "nodiscard"},
+-	{Opt_init_inode_table, "init_itable=%u"},
+-	{Opt_init_inode_table, "init_itable"},
+-	{Opt_noinit_inode_table, "noinit_itable"},
++	{Opt_init_itable, "init_itable=%u"},
++	{Opt_init_itable, "init_itable"},
++	{Opt_noinit_itable, "noinit_itable"},
+ 	{Opt_err, NULL},
+ };
+ 
+@@ -1844,7 +1843,7 @@ set_qf_format:
+ 		case Opt_dioread_lock:
+ 			clear_opt(sb, DIOREAD_NOLOCK);
+ 			break;
+-		case Opt_init_inode_table:
++		case Opt_init_itable:
+ 			set_opt(sb, INIT_INODE_TABLE);
+ 			if (args[0].from) {
+ 				if (match_int(&args[0], &option))
+@@ -1855,7 +1854,7 @@ set_qf_format:
+ 				return 0;
+ 			sbi->s_li_wait_mult = option;
+ 			break;
+-		case Opt_noinit_inode_table:
++		case Opt_noinit_itable:
+ 			clear_opt(sb, INIT_INODE_TABLE);
+ 			break;
+ 		default:
+diff --git a/fs/fuse/dev.c b/fs/fuse/dev.c
+index 5cb8614..2aaf3ea 100644
+--- a/fs/fuse/dev.c
++++ b/fs/fuse/dev.c
+@@ -1512,7 +1512,7 @@ static int fuse_retrieve(struct fuse_conn *fc, struct inode *inode,
+ 	else if (outarg->offset + num > file_size)
+ 		num = file_size - outarg->offset;
+ 
+-	while (num) {
++	while (num && req->num_pages < FUSE_MAX_PAGES_PER_REQ) {
+ 		struct page *page;
+ 		unsigned int this_num;
+ 
+@@ -1526,6 +1526,7 @@ static int fuse_retrieve(struct fuse_conn *fc, struct inode *inode,
+ 
+ 		num -= this_num;
+ 		total_len += this_num;
++		index++;
+ 	}
+ 	req->misc.retrieve_in.offset = outarg->offset;
+ 	req->misc.retrieve_in.size = total_len;
