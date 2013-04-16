@@ -1,0 +1,13 @@
+diff --git a/drivers/usb/gadget/android.c b/drivers/usb/gadget/android.c
+index 5d77899..2b76310 100644
+--- a/drivers/usb/gadget/android.c
++++ b/drivers/usb/gadget/android.c
+@@ -837,6 +837,8 @@
+ 		dev->enabled = true;
+ 	} else if (!enabled && dev->enabled) {
+ 		usb_gadget_disconnect(cdev->gadget);
++		/* Cancel pending control requests */
++		usb_ep_dequeue(cdev->gadget->ep0, cdev->req);
+ 		usb_remove_config(cdev, &android_config_driver);
+ 		dev->enabled = false;
+ 	} else {
