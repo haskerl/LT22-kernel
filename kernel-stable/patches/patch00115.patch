@@ -1,0 +1,139 @@
+diff --git a/arch/arm/oprofile/common.c b/arch/arm/oprofile/common.c
+index c074e66..4e0a371 100644
+--- a/arch/arm/oprofile/common.c
++++ b/arch/arm/oprofile/common.c
+@@ -116,7 +116,7 @@ int __init oprofile_arch_init(struct oprofile_operations *ops)
+ 	return oprofile_perf_init(ops);
+ }
+ 
+-void __exit oprofile_arch_exit(void)
++void oprofile_arch_exit(void)
+ {
+ 	oprofile_perf_exit();
+ }
+diff --git a/arch/sh/oprofile/common.c b/arch/sh/oprofile/common.c
+index b4c2d2b..e4dd5d5 100644
+--- a/arch/sh/oprofile/common.c
++++ b/arch/sh/oprofile/common.c
+@@ -49,7 +49,7 @@ int __init oprofile_arch_init(struct oprofile_operations *ops)
+ 	return oprofile_perf_init(ops);
+ }
+ 
+-void __exit oprofile_arch_exit(void)
++void oprofile_arch_exit(void)
+ {
+ 	oprofile_perf_exit();
+ 	kfree(sh_pmu_op_name);
+@@ -60,5 +60,5 @@ int __init oprofile_arch_init(struct oprofile_operations *ops)
+ 	ops->backtrace = sh_backtrace;
+ 	return -ENODEV;
+ }
+-void __exit oprofile_arch_exit(void) {}
++void oprofile_arch_exit(void) {}
+ #endif /* CONFIG_HW_PERF_EVENTS */
+diff --git a/drivers/mmc/host/mmci.c b/drivers/mmc/host/mmci.c
+index fe14072..9394d0b 100644
+--- a/drivers/mmc/host/mmci.c
++++ b/drivers/mmc/host/mmci.c
+@@ -557,7 +557,8 @@ mmci_data_irq(struct mmci_host *host, struct mmc_data *data,
+ 	      unsigned int status)
+ {
+ 	/* First check for errors */
+-	if (status & (MCI_DATACRCFAIL|MCI_DATATIMEOUT|MCI_TXUNDERRUN|MCI_RXOVERRUN)) {
++	if (status & (MCI_DATACRCFAIL|MCI_DATATIMEOUT|MCI_STARTBITERR|
++		      MCI_TXUNDERRUN|MCI_RXOVERRUN)) {
+ 		u32 remain, success;
+ 
+ 		/* Terminate the DMA transfer */
+@@ -636,8 +637,12 @@ mmci_cmd_irq(struct mmci_host *host, struct mmc_command *cmd,
+ 	}
+ 
+ 	if (!cmd->data || cmd->error) {
+-		if (host->data)
++		if (host->data) {
++			/* Terminate the DMA transfer */
++			if (dma_inprogress(host))
++				mmci_dma_data_error(host);
+ 			mmci_stop_data(host);
++		}
+ 		mmci_request_end(host, cmd->mrq);
+ 	} else if (!(cmd->data->flags & MMC_DATA_READ)) {
+ 		mmci_start_data(host, cmd->data);
+@@ -837,8 +842,9 @@ static irqreturn_t mmci_irq(int irq, void *dev_id)
+ 		dev_dbg(mmc_dev(host->mmc), "irq0 (data+cmd) %08x\n", status);
+ 
+ 		data = host->data;
+-		if (status & (MCI_DATACRCFAIL|MCI_DATATIMEOUT|MCI_TXUNDERRUN|
+-			      MCI_RXOVERRUN|MCI_DATAEND|MCI_DATABLOCKEND) && data)
++		if (status & (MCI_DATACRCFAIL|MCI_DATATIMEOUT|MCI_STARTBITERR|
++			      MCI_TXUNDERRUN|MCI_RXOVERRUN|MCI_DATAEND|
++			      MCI_DATABLOCKEND) && data)
+ 			mmci_data_irq(host, data, status);
+ 
+ 		cmd = host->cmd;
+diff --git a/drivers/watchdog/hpwdt.c b/drivers/watchdog/hpwdt.c
+index 8cb2685..9cb60df 100644
+--- a/drivers/watchdog/hpwdt.c
++++ b/drivers/watchdog/hpwdt.c
+@@ -216,6 +216,7 @@ static int __devinit cru_detect(unsigned long map_entry,
+ 
+ 	cmn_regs.u1.reax = CRU_BIOS_SIGNATURE_VALUE;
+ 
++	set_memory_x((unsigned long)bios32_entrypoint, (2 * PAGE_SIZE));
+ 	asminline_call(&cmn_regs, bios32_entrypoint);
+ 
+ 	if (cmn_regs.u1.ral != 0) {
+@@ -233,8 +234,10 @@ static int __devinit cru_detect(unsigned long map_entry,
+ 		if ((physical_bios_base + physical_bios_offset)) {
+ 			cru_rom_addr =
+ 				ioremap(cru_physical_address, cru_length);
+-			if (cru_rom_addr)
++			if (cru_rom_addr) {
++				set_memory_x((unsigned long)cru_rom_addr, cru_length);
+ 				retval = 0;
++			}
+ 		}
+ 
+ 		printk(KERN_DEBUG "hpwdt: CRU Base Address:   0x%lx\n",
+diff --git a/kernel/futex.c b/kernel/futex.c
+index 8b6da25..6487e4c 100644
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -314,17 +314,29 @@ again:
+ #endif
+ 
+ 	lock_page(page_head);
++
++	/*
++	 * If page_head->mapping is NULL, then it cannot be a PageAnon
++	 * page; but it might be the ZERO_PAGE or in the gate area or
++	 * in a special mapping (all cases which we are happy to fail);
++	 * or it may have been a good file page when get_user_pages_fast
++	 * found it, but truncated or holepunched or subjected to
++	 * invalidate_complete_page2 before we got the page lock (also
++	 * cases which we are happy to fail).  And we hold a reference,
++	 * so refcount care in invalidate_complete_page's remove_mapping
++	 * prevents drop_caches from setting mapping to NULL beneath us.
++	 *
++	 * The case we do have to guard against is when memory pressure made
++	 * shmem_writepage move it from filecache to swapcache beneath us:
++	 * an unlikely race, but we do need to retry for page_head->mapping.
++	 */
+ 	if (!page_head->mapping) {
++		int shmem_swizzled = PageSwapCache(page_head);
+ 		unlock_page(page_head);
+ 		put_page(page_head);
+-		/*
+-		* ZERO_PAGE pages don't have a mapping. Avoid a busy loop
+-		* trying to find one. RW mapping would have COW'd (and thus
+-		* have a mapping) so this page is RO and won't ever change.
+-		*/
+-		if ((page_head == ZERO_PAGE(address)))
+-			return -EFAULT;
+-		goto again;
++		if (shmem_swizzled)
++			goto again;
++		return -EFAULT;
+ 	}
+ 
+ 	/*
