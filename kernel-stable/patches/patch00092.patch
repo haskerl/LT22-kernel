@@ -1,0 +1,99 @@
+diff --git a/drivers/hwmon/coretemp.c b/drivers/hwmon/coretemp.c
+index f642194..835ae42 100644
+--- a/drivers/hwmon/coretemp.c
++++ b/drivers/hwmon/coretemp.c
+@@ -539,6 +539,8 @@ static void coretemp_add_core(unsigned int cpu, int pkg_flag)
+ 		return;
+ 
+ 	pdata = platform_get_drvdata(pdev);
++	if (!pdata)
++		return;
+ 
+ 	err = create_core_data(pdata, pdev, cpu, pkg_flag);
+ 	if (err)
+diff --git a/net/mac80211/agg-tx.c b/net/mac80211/agg-tx.c
+index c8be8ef..42a59c2 100644
+--- a/net/mac80211/agg-tx.c
++++ b/net/mac80211/agg-tx.c
+@@ -162,6 +162,12 @@ int ___ieee80211_stop_tx_ba_session(struct sta_info *sta, u16 tid,
+ 		return -ENOENT;
+ 	}
+ 
++	/* if we're already stopping ignore any new requests to stop */
++	if (test_bit(HT_AGG_STATE_STOPPING, &tid_tx->state)) {
++		spin_unlock_bh(&sta->lock);
++		return -EALREADY;
++	}
++
+ 	if (test_bit(HT_AGG_STATE_WANT_START, &tid_tx->state)) {
+ 		/* not even started yet! */
+ 		ieee80211_assign_tid_tx(sta, tid, NULL);
+@@ -170,6 +176,8 @@ int ___ieee80211_stop_tx_ba_session(struct sta_info *sta, u16 tid,
+ 		return 0;
+ 	}
+ 
++	set_bit(HT_AGG_STATE_STOPPING, &tid_tx->state);
++
+ 	spin_unlock_bh(&sta->lock);
+ 
+ #ifdef CONFIG_MAC80211_HT_DEBUG
+@@ -177,8 +185,6 @@ int ___ieee80211_stop_tx_ba_session(struct sta_info *sta, u16 tid,
+ 	       sta->sta.addr, tid);
+ #endif /* CONFIG_MAC80211_HT_DEBUG */
+ 
+-	set_bit(HT_AGG_STATE_STOPPING, &tid_tx->state);
+-
+ 	del_timer_sync(&tid_tx->addba_resp_timer);
+ 
+ 	/*
+@@ -188,6 +194,20 @@ int ___ieee80211_stop_tx_ba_session(struct sta_info *sta, u16 tid,
+ 	 */
+ 	clear_bit(HT_AGG_STATE_OPERATIONAL, &tid_tx->state);
+ 
++	/*
++	 * There might be a few packets being processed right now (on
++	 * another CPU) that have already gotten past the aggregation
++	 * check when it was still OPERATIONAL and consequently have
++	 * IEEE80211_TX_CTL_AMPDU set. In that case, this code might
++	 * call into the driver at the same time or even before the
++	 * TX paths calls into it, which could confuse the driver.
++	 *
++	 * Wait for all currently running TX paths to finish before
++	 * telling the driver. New packets will not go through since
++	 * the aggregation session is no longer OPERATIONAL.
++	 */
++	synchronize_net();
++
+ 	tid_tx->stop_initiator = initiator;
+ 	tid_tx->tx_stop = tx;
+ 
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index 3dac76f..0c2b808 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -83,8 +83,8 @@ static const struct nla_policy nl80211_policy[NL80211_ATTR_MAX+1] = {
+ 	[NL80211_ATTR_IFINDEX] = { .type = NLA_U32 },
+ 	[NL80211_ATTR_IFNAME] = { .type = NLA_NUL_STRING, .len = IFNAMSIZ-1 },
+ 
+-	[NL80211_ATTR_MAC] = { .type = NLA_BINARY, .len = ETH_ALEN },
+-	[NL80211_ATTR_PREV_BSSID] = { .type = NLA_BINARY, .len = ETH_ALEN },
++	[NL80211_ATTR_MAC] = { .len = ETH_ALEN },
++	[NL80211_ATTR_PREV_BSSID] = { .len = ETH_ALEN },
+ 
+ 	[NL80211_ATTR_KEY] = { .type = NLA_NESTED, },
+ 	[NL80211_ATTR_KEY_DATA] = { .type = NLA_BINARY,
+diff --git a/net/wireless/reg.c b/net/wireless/reg.c
+index 213103e..3c5ddeaf 100644
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -2026,6 +2026,10 @@ static int __set_regdom(const struct ieee80211_regdomain *rd)
+ 	}
+ 
+ 	request_wiphy = wiphy_idx_to_wiphy(last_request->wiphy_idx);
++	if (!request_wiphy) {
++		reg_set_request_processed();
++		return -ENODEV;
++	}
+ 
+ 	if (!last_request->intersect) {
+ 		int r;
