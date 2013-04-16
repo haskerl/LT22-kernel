@@ -827,6 +827,7 @@ config ARCH_U8500
 	select ARCH_HAS_CPUFREQ
 	select NOMADIK_GPIO
 	select ARCH_HAS_PASR
+	select CORTEXA9
 	help
 	  Support for ST-Ericsson's Ux500 architecture
 
@@ -1014,6 +1015,9 @@ source "arch/arm/mach-vt8500/Kconfig"
 source "arch/arm/mach-w90x900/Kconfig"
 
 # Definitions to make life easier
+config CORTEXA9
+	bool
+
 config ARCH_ACORN
 	bool
 
