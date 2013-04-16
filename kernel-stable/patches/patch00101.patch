@@ -1,0 +1,554 @@
+diff --git a/arch/x86/mm/gup.c b/arch/x86/mm/gup.c
+index ea30585..dd74e46 100644
+--- a/arch/x86/mm/gup.c
++++ b/arch/x86/mm/gup.c
+@@ -201,6 +201,8 @@ static noinline int gup_huge_pud(pud_t pud, unsigned long addr,
+ 	do {
+ 		VM_BUG_ON(compound_head(page) != head);
+ 		pages[*nr] = page;
++		if (PageTail(page))
++			get_huge_page_tail(page);
+ 		(*nr)++;
+ 		page++;
+ 		refs++;
+diff --git a/drivers/ptp/ptp_clock.c b/drivers/ptp/ptp_clock.c
+index cf3f999..10451a1 100644
+--- a/drivers/ptp/ptp_clock.c
++++ b/drivers/ptp/ptp_clock.c
+@@ -101,7 +101,9 @@ static s32 scaled_ppm_to_ppb(long ppm)
+ 
+ static int ptp_clock_getres(struct posix_clock *pc, struct timespec *tp)
+ {
+-	return 1; /* always round timer functions to one nanosecond */
++	tp->tv_sec = 0;
++	tp->tv_nsec = 1;
++	return 0;
+ }
+ 
+ static int ptp_clock_settime(struct posix_clock *pc, const struct timespec *tp)
+diff --git a/fs/dcache.c b/fs/dcache.c
+index fbdcbca..d2f8feb 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -2487,16 +2487,14 @@ static int prepend_name(char **buffer, int *buflen, struct qstr *name)
+ /**
+  * prepend_path - Prepend path string to a buffer
+  * @path: the dentry/vfsmount to report
+- * @root: root vfsmnt/dentry (may be modified by this function)
++ * @root: root vfsmnt/dentry
+  * @buffer: pointer to the end of the buffer
+  * @buflen: pointer to buffer length
+  *
+  * Caller holds the rename_lock.
+- *
+- * If path is not reachable from the supplied root, then the value of
+- * root is changed (without modifying refcounts).
+  */
+-static int prepend_path(const struct path *path, struct path *root,
++static int prepend_path(const struct path *path,
++			const struct path *root,
+ 			char **buffer, int *buflen)
+ {
+ 	struct dentry *dentry = path->dentry;
+@@ -2531,10 +2529,10 @@ static int prepend_path(const struct path *path, struct path *root,
+ 		dentry = parent;
+ 	}
+ 
+-out:
+ 	if (!error && !slash)
+ 		error = prepend(buffer, buflen, "/", 1);
+ 
++out:
+ 	br_read_unlock(vfsmount_lock);
+ 	return error;
+ 
+@@ -2548,15 +2546,17 @@ global_root:
+ 		WARN(1, "Root dentry has weird name <%.*s>\n",
+ 		     (int) dentry->d_name.len, dentry->d_name.name);
+ 	}
+-	root->mnt = vfsmnt;
+-	root->dentry = dentry;
++	if (!slash)
++		error = prepend(buffer, buflen, "/", 1);
++	if (!error)
++		error = vfsmnt->mnt_ns ? 1 : 2;
+ 	goto out;
+ }
+ 
+ /**
+  * __d_path - return the path of a dentry
+  * @path: the dentry/vfsmount to report
+- * @root: root vfsmnt/dentry (may be modified by this function)
++ * @root: root vfsmnt/dentry
+  * @buf: buffer to return value in
+  * @buflen: buffer length
+  *
+@@ -2567,10 +2567,10 @@ global_root:
+  *
+  * "buflen" should be positive.
+  *
+- * If path is not reachable from the supplied root, then the value of
+- * root is changed (without modifying refcounts).
++ * If the path is not reachable from the supplied root, return %NULL.
+  */
+-char *__d_path(const struct path *path, struct path *root,
++char *__d_path(const struct path *path,
++	       const struct path *root,
+ 	       char *buf, int buflen)
+ {
+ 	char *res = buf + buflen;
+@@ -2581,7 +2581,28 @@ char *__d_path(const struct path *path, struct path *root,
+ 	error = prepend_path(path, root, &res, &buflen);
+ 	write_sequnlock(&rename_lock);
+ 
+-	if (error)
++	if (error < 0)
++		return ERR_PTR(error);
++	if (error > 0)
++		return NULL;
++	return res;
++}
++
++char *d_absolute_path(const struct path *path,
++	       char *buf, int buflen)
++{
++	struct path root = {};
++	char *res = buf + buflen;
++	int error;
++
++	prepend(&res, &buflen, "\0", 1);
++	write_seqlock(&rename_lock);
++	error = prepend_path(path, &root, &res, &buflen);
++	write_sequnlock(&rename_lock);
++
++	if (error > 1)
++		error = -EINVAL;
++	if (error < 0)
+ 		return ERR_PTR(error);
+ 	return res;
+ }
+@@ -2589,8 +2610,9 @@ char *__d_path(const struct path *path, struct path *root,
+ /*
+  * same as __d_path but appends "(deleted)" for unlinked files.
+  */
+-static int path_with_deleted(const struct path *path, struct path *root,
+-				 char **buf, int *buflen)
++static int path_with_deleted(const struct path *path,
++			     const struct path *root,
++			     char **buf, int *buflen)
+ {
+ 	prepend(buf, buflen, "\0", 1);
+ 	if (d_unlinked(path->dentry)) {
+@@ -2627,7 +2649,6 @@ char *d_path(const struct path *path, char *buf, int buflen)
+ {
+ 	char *res = buf + buflen;
+ 	struct path root;
+-	struct path tmp;
+ 	int error;
+ 
+ 	/*
+@@ -2642,9 +2663,8 @@ char *d_path(const struct path *path, char *buf, int buflen)
+ 
+ 	get_fs_root(current->fs, &root);
+ 	write_seqlock(&rename_lock);
+-	tmp = root;
+-	error = path_with_deleted(path, &tmp, &res, &buflen);
+-	if (error)
++	error = path_with_deleted(path, &root, &res, &buflen);
++	if (error < 0)
+ 		res = ERR_PTR(error);
+ 	write_sequnlock(&rename_lock);
+ 	path_put(&root);
+@@ -2665,7 +2685,6 @@ char *d_path_with_unreachable(const struct path *path, char *buf, int buflen)
+ {
+ 	char *res = buf + buflen;
+ 	struct path root;
+-	struct path tmp;
+ 	int error;
+ 
+ 	if (path->dentry->d_op && path->dentry->d_op->d_dname)
+@@ -2673,9 +2692,8 @@ char *d_path_with_unreachable(const struct path *path, char *buf, int buflen)
+ 
+ 	get_fs_root(current->fs, &root);
+ 	write_seqlock(&rename_lock);
+-	tmp = root;
+-	error = path_with_deleted(path, &tmp, &res, &buflen);
+-	if (!error && !path_equal(&tmp, &root))
++	error = path_with_deleted(path, &root, &res, &buflen);
++	if (error > 0)
+ 		error = prepend_unreachable(&res, &buflen);
+ 	write_sequnlock(&rename_lock);
+ 	path_put(&root);
+@@ -2806,19 +2824,18 @@ SYSCALL_DEFINE2(getcwd, char __user *, buf, unsigned long, size)
+ 	write_seqlock(&rename_lock);
+ 	if (!d_unlinked(pwd.dentry)) {
+ 		unsigned long len;
+-		struct path tmp = root;
+ 		char *cwd = page + PAGE_SIZE;
+ 		int buflen = PAGE_SIZE;
+ 
+ 		prepend(&cwd, &buflen, "\0", 1);
+-		error = prepend_path(&pwd, &tmp, &cwd, &buflen);
++		error = prepend_path(&pwd, &root, &cwd, &buflen);
+ 		write_sequnlock(&rename_lock);
+ 
+-		if (error)
++		if (error < 0)
+ 			goto out;
+ 
+ 		/* Unreachable from current root */
+-		if (!path_equal(&tmp, &root)) {
++		if (error > 0) {
+ 			error = prepend_unreachable(&cwd, &buflen);
+ 			if (error)
+ 				goto out;
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 537dd96..edc1c4a 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -1048,15 +1048,12 @@ static int show_mountinfo(struct seq_file *m, void *v)
+ 	if (err)
+ 		goto out;
+ 	seq_putc(m, ' ');
+-	seq_path_root(m, &mnt_path, &root, " \t\n\\");
+-	if (root.mnt != p->root.mnt || root.dentry != p->root.dentry) {
+-		/*
+-		 * Mountpoint is outside root, discard that one.  Ugly,
+-		 * but less so than trying to do that in iterator in a
+-		 * race-free way (due to renames).
+-		 */
+-		return SEQ_SKIP;
+-	}
++
++	/* mountpoints outside of chroot jail will give SEQ_SKIP on this */
++	err = seq_path_root(m, &mnt_path, &root, " \t\n\\");
++	if (err)
++		goto out;
++
+ 	seq_puts(m, mnt->mnt_flags & MNT_READONLY ? " ro" : " rw");
+ 	show_mnt_opts(m, mnt);
+ 
+@@ -2725,3 +2722,8 @@ struct vfsmount *kern_mount_data(struct file_system_type *type, void *data)
+ 	return vfs_kern_mount(type, MS_KERNMOUNT, type->name, data);
+ }
+ EXPORT_SYMBOL_GPL(kern_mount_data);
++
++bool our_mnt(struct vfsmount *mnt)
++{
++	return check_mnt(mnt);
++}
+diff --git a/fs/proc/meminfo.c b/fs/proc/meminfo.c
+index ed257d1..a962827 100644
+--- a/fs/proc/meminfo.c
++++ b/fs/proc/meminfo.c
+@@ -131,12 +131,13 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
+ 		K(i.freeswap),
+ 		K(global_page_state(NR_FILE_DIRTY)),
+ 		K(global_page_state(NR_WRITEBACK)),
+-		K(global_page_state(NR_ANON_PAGES)
+ #ifdef CONFIG_TRANSPARENT_HUGEPAGE
++		K(global_page_state(NR_ANON_PAGES)
+ 		  + global_page_state(NR_ANON_TRANSPARENT_HUGEPAGES) *
+-		  HPAGE_PMD_NR
++		  HPAGE_PMD_NR),
++#else
++		K(global_page_state(NR_ANON_PAGES)),
+ #endif
+-		  ),
+ 		K(global_page_state(NR_FILE_MAPPED)),
+ 		K(global_page_state(NR_SHMEM)),
+ 		K(global_page_state(NR_SLAB_RECLAIMABLE) +
+diff --git a/fs/seq_file.c b/fs/seq_file.c
+index 05d6b0e..dba43c3 100644
+--- a/fs/seq_file.c
++++ b/fs/seq_file.c
+@@ -449,8 +449,6 @@ EXPORT_SYMBOL(seq_path);
+ 
+ /*
+  * Same as seq_path, but relative to supplied root.
+- *
+- * root may be changed, see __d_path().
+  */
+ int seq_path_root(struct seq_file *m, struct path *path, struct path *root,
+ 		  char *esc)
+@@ -463,6 +461,8 @@ int seq_path_root(struct seq_file *m, struct path *path, struct path *root,
+ 		char *p;
+ 
+ 		p = __d_path(path, root, buf, size);
++		if (!p)
++			return SEQ_SKIP;
+ 		res = PTR_ERR(p);
+ 		if (!IS_ERR(p)) {
+ 			char *end = mangle_path(buf, p, esc);
+@@ -474,7 +474,7 @@ int seq_path_root(struct seq_file *m, struct path *path, struct path *root,
+ 	}
+ 	seq_commit(m, res);
+ 
+-	return res < 0 ? res : 0;
++	return res < 0 && res != -ENAMETOOLONG ? res : 0;
+ }
+ 
+ /*
+diff --git a/include/linux/dcache.h b/include/linux/dcache.h
+index 19d90a5..8f848e4 100644
+--- a/include/linux/dcache.h
++++ b/include/linux/dcache.h
+@@ -340,7 +340,8 @@ extern int d_validate(struct dentry *, struct dentry *);
+  */
+ extern char *dynamic_dname(struct dentry *, char *, int, const char *, ...);
+ 
+-extern char *__d_path(const struct path *path, struct path *root, char *, int);
++extern char *__d_path(const struct path *, const struct path *, char *, int);
++extern char *d_absolute_path(const struct path *, char *, int);
+ extern char *d_path(const struct path *, char *, int);
+ extern char *d_path_with_unreachable(const struct path *, char *, int);
+ extern char *dentry_path_raw(struct dentry *, char *, int);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index b5b9792..7b17db7 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1882,6 +1882,7 @@ extern int fd_statfs(int, struct kstatfs *);
+ extern int statfs_by_dentry(struct dentry *, struct kstatfs *);
+ extern int freeze_super(struct super_block *super);
+ extern int thaw_super(struct super_block *super);
++extern bool our_mnt(struct vfsmount *mnt);
+ 
+ extern int current_umask(void);
+ 
+diff --git a/mm/hugetlb.c b/mm/hugetlb.c
+index 2b57cd9..80936a1 100644
+--- a/mm/hugetlb.c
++++ b/mm/hugetlb.c
+@@ -575,6 +575,7 @@ static void prep_compound_gigantic_page(struct page *page, unsigned long order)
+ 	__SetPageHead(page);
+ 	for (i = 1; i < nr_pages; i++, p = mem_map_next(p, page, i)) {
+ 		__SetPageTail(p);
++		set_page_count(p, 0);
+ 		p->first_page = page;
+ 	}
+ }
+diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+index 0f50cdb..8439d2a 100644
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -355,8 +355,8 @@ void prep_compound_page(struct page *page, unsigned long order)
+ 	__SetPageHead(page);
+ 	for (i = 1; i < nr_pages; i++) {
+ 		struct page *p = page + i;
+-
+ 		__SetPageTail(p);
++		set_page_count(p, 0);
+ 		p->first_page = page;
+ 	}
+ }
+@@ -3388,9 +3388,15 @@ static void setup_zone_migrate_reserve(struct zone *zone)
+ 	unsigned long block_migratetype;
+ 	int reserve;
+ 
+-	/* Get the start pfn, end pfn and the number of blocks to reserve */
++	/*
++	 * Get the start pfn, end pfn and the number of blocks to reserve
++	 * We have to be careful to be aligned to pageblock_nr_pages to
++	 * make sure that we always check pfn_valid for the first page in
++	 * the block.
++	 */
+ 	start_pfn = zone->zone_start_pfn;
+ 	end_pfn = start_pfn + zone->spanned_pages;
++	start_pfn = roundup(start_pfn, pageblock_nr_pages);
+ 	reserve = roundup(min_wmark_pages(zone), pageblock_nr_pages) >>
+ 							pageblock_order;
+ 
+diff --git a/mm/vmalloc.c b/mm/vmalloc.c
+index 65d5fd2..43b44db 100644
+--- a/mm/vmalloc.c
++++ b/mm/vmalloc.c
+@@ -1648,6 +1648,8 @@ void *__vmalloc_node_range(unsigned long size, unsigned long align,
+ 		return NULL;
+ 
+ 	addr = __vmalloc_area_node(area, gfp_mask, prot, node, caller);
++	if (!addr)
++		return NULL;
+ 
+ 	/*
+ 	 * In this function, newly allocated vm_struct is not added
+diff --git a/security/apparmor/path.c b/security/apparmor/path.c
+index 36cc0cc..b566eba 100644
+--- a/security/apparmor/path.c
++++ b/security/apparmor/path.c
+@@ -57,23 +57,44 @@ static int prepend(char **buffer, int buflen, const char *str, int namelen)
+ static int d_namespace_path(struct path *path, char *buf, int buflen,
+ 			    char **name, int flags)
+ {
+-	struct path root, tmp;
+ 	char *res;
+-	int connected, error = 0;
++	int error = 0;
++	int connected = 1;
++
++	if (path->mnt->mnt_flags & MNT_INTERNAL) {
++		/* it's not mounted anywhere */
++		res = dentry_path(path->dentry, buf, buflen);
++		*name = res;
++		if (IS_ERR(res)) {
++			*name = buf;
++			return PTR_ERR(res);
++		}
++		if (path->dentry->d_sb->s_magic == PROC_SUPER_MAGIC &&
++		    strncmp(*name, "/sys/", 5) == 0) {
++			/* TODO: convert over to using a per namespace
++			 * control instead of hard coded /proc
++			 */
++			return prepend(name, *name - buf, "/proc", 5);
++		}
++		return 0;
++	}
+ 
+-	/* Get the root we want to resolve too, released below */
++	/* resolve paths relative to chroot?*/
+ 	if (flags & PATH_CHROOT_REL) {
+-		/* resolve paths relative to chroot */
++		struct path root;
+ 		get_fs_root(current->fs, &root);
+-	} else {
+-		/* resolve paths relative to namespace */
+-		root.mnt = current->nsproxy->mnt_ns->root;
+-		root.dentry = root.mnt->mnt_root;
+-		path_get(&root);
++		res = __d_path(path, &root, buf, buflen);
++		if (res && !IS_ERR(res)) {
++			/* everything's fine */
++			*name = res;
++			path_put(&root);
++			goto ok;
++		}
++		path_put(&root);
++		connected = 0;
+ 	}
+ 
+-	tmp = root;
+-	res = __d_path(path, &tmp, buf, buflen);
++	res = d_absolute_path(path, buf, buflen);
+ 
+ 	*name = res;
+ 	/* handle error conditions - and still allow a partial path to
+@@ -84,7 +105,10 @@ static int d_namespace_path(struct path *path, char *buf, int buflen,
+ 		*name = buf;
+ 		goto out;
+ 	}
++	if (!our_mnt(path->mnt))
++		connected = 0;
+ 
++ok:
+ 	/* Handle two cases:
+ 	 * 1. A deleted dentry && profile is not allowing mediation of deleted
+ 	 * 2. On some filesystems, newly allocated dentries appear to the
+@@ -97,10 +121,7 @@ static int d_namespace_path(struct path *path, char *buf, int buflen,
+ 			goto out;
+ 	}
+ 
+-	/* Determine if the path is connected to the expected root */
+-	connected = tmp.dentry == root.dentry && tmp.mnt == root.mnt;
+-
+-	/* If the path is not connected,
++	/* If the path is not connected to the expected root,
+ 	 * check if it is a sysctl and handle specially else remove any
+ 	 * leading / that __d_path may have returned.
+ 	 * Unless
+@@ -112,17 +133,9 @@ static int d_namespace_path(struct path *path, char *buf, int buflen,
+ 	 *     namespace root.
+ 	 */
+ 	if (!connected) {
+-		/* is the disconnect path a sysctl? */
+-		if (tmp.dentry->d_sb->s_magic == PROC_SUPER_MAGIC &&
+-		    strncmp(*name, "/sys/", 5) == 0) {
+-			/* TODO: convert over to using a per namespace
+-			 * control instead of hard coded /proc
+-			 */
+-			error = prepend(name, *name - buf, "/proc", 5);
+-		} else if (!(flags & PATH_CONNECT_PATH) &&
++		if (!(flags & PATH_CONNECT_PATH) &&
+ 			   !(((flags & CHROOT_NSCONNECT) == CHROOT_NSCONNECT) &&
+-			     (tmp.mnt == current->nsproxy->mnt_ns->root &&
+-			      tmp.dentry == tmp.mnt->mnt_root))) {
++			     our_mnt(path->mnt))) {
+ 			/* disconnected path, don't return pathname starting
+ 			 * with '/'
+ 			 */
+@@ -133,8 +146,6 @@ static int d_namespace_path(struct path *path, char *buf, int buflen,
+ 	}
+ 
+ out:
+-	path_put(&root);
+-
+ 	return error;
+ }
+ 
+diff --git a/security/tomoyo/realpath.c b/security/tomoyo/realpath.c
+index d1e05b0..a339187 100644
+--- a/security/tomoyo/realpath.c
++++ b/security/tomoyo/realpath.c
+@@ -95,7 +95,6 @@ char *tomoyo_realpath_from_path(struct path *path)
+ 		return NULL;
+ 	is_dir = dentry->d_inode && S_ISDIR(dentry->d_inode->i_mode);
+ 	while (1) {
+-		struct path ns_root = { .mnt = NULL, .dentry = NULL };
+ 		char *pos;
+ 		buf_len <<= 1;
+ 		kfree(buf);
+@@ -128,8 +127,12 @@ char *tomoyo_realpath_from_path(struct path *path)
+ 		/* If we don't have a vfsmount, we can't calculate. */
+ 		if (!path->mnt)
+ 			break;
+-		/* go to whatever namespace root we are under */
+-		pos = __d_path(path, &ns_root, buf, buf_len);
++		pos = d_absolute_path(path, buf, buf_len - 1);
++		/* If path is disconnected, use "[unknown]" instead. */
++		if (pos == ERR_PTR(-EINVAL)) {
++			name = tomoyo_encode("[unknown]");
++			break;
++		}
+ 		/* Prepend "/proc" prefix if using internal proc vfs mount. */
+ 		if (!IS_ERR(pos) && (path->mnt->mnt_flags & MNT_INTERNAL) &&
+ 		    (path->mnt->mnt_sb->s_magic == PROC_SUPER_MAGIC)) {
+diff --git a/sound/soc/soc-utils.c b/sound/soc/soc-utils.c
+index ec921ec..cd987de 100644
+--- a/sound/soc/soc-utils.c
++++ b/sound/soc/soc-utils.c
+@@ -57,7 +57,36 @@ int snd_soc_params_to_bclk(struct snd_pcm_hw_params *params)
+ }
+ EXPORT_SYMBOL_GPL(snd_soc_params_to_bclk);
+ 
+-static struct snd_soc_platform_driver dummy_platform;
++static const struct snd_pcm_hardware dummy_dma_hardware = {
++	.formats		= 0xffffffff,
++	.channels_min		= 1,
++	.channels_max		= UINT_MAX,
++
++	/* Random values to keep userspace happy when checking constraints */
++	.info			= SNDRV_PCM_INFO_INTERLEAVED |
++				  SNDRV_PCM_INFO_BLOCK_TRANSFER,
++	.buffer_bytes_max	= 128*1024,
++	.period_bytes_min	= PAGE_SIZE,
++	.period_bytes_max	= PAGE_SIZE*2,
++	.periods_min		= 2,
++	.periods_max		= 128,
++};
++
++static int dummy_dma_open(struct snd_pcm_substream *substream)
++{
++	snd_soc_set_runtime_hwparams(substream, &dummy_dma_hardware);
++
++	return 0;
++}
++
++static struct snd_pcm_ops dummy_dma_ops = {
++	.open		= dummy_dma_open,
++	.ioctl		= snd_pcm_lib_ioctl,
++};
++
++static struct snd_soc_platform_driver dummy_platform = {
++	.ops = &dummy_dma_ops,
++};
+ 
+ static __devinit int snd_soc_dummy_probe(struct platform_device *pdev)
+ {
